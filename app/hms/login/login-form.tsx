@@ -162,7 +162,10 @@ export function LoginForm({
         )}
       </div>
 
-      <p className="mt-4 text-center text-[0.64rem]" style={{ color: "var(--text-faint)" }}>
+      <p className="mt-4 text-center text-[0.64rem]">
+        <a href="/login" className="font-semibold" style={{ color: "var(--brand)" }}>Salon booking workspace →</a>
+      </p>
+      <p className="mt-2 text-center text-[0.64rem]" style={{ color: "var(--text-faint)" }}>
         {plan} · {status === "active" ? "Licensed installation" : status === "trial" ? `Trial — ${daysLeft} day(s) remaining` : "Trial expired — activation required"}
       </p>
     </div>
