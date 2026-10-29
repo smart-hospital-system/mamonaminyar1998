@@ -1,0 +1,10 @@
+; ============================================================
+;  Aybek Ten-Bed Specialy Surgical Hospital - disc autorun
+;  Windows asks before running this. Autorun is only a
+;  convenience: if nothing happens, double-click START-HERE.bat
+; ============================================================
+[autorun]
+open=START-HERE.bat
+icon=START-HERE.bat
+label=Aybek HMS v4
+action=Install Aybek Ten-Bed Surgical Hospital

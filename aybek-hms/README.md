@@ -163,6 +163,28 @@ logo mark), clinical rules, fees, monitor behaviour, department switches, ten
 interface themes and the default prescription paper. Every section carries its
 own short guide, and `/hms/guide` holds the full ten-chapter playbook.
 
+
+### Disc (CD/DVD) delivery — `aybek-hms/disc/`
+
+Everything needed to hand the hospital over on physical media:
+
+| File | Purpose |
+|------|---------|
+| `START-HERE.bat` | installs from a read-only disc: copies `APP\` to `C:\AybekHMS`, runs setup, install, seed (or the demo database), then starts the server |
+| `RAHNAMA-FA.html` | the Persian handover guide — for the owner **and** for the person receiving a copy (printable to PDF) |
+| `README-FIRST-FA.txt` | one page: which file to double-click |
+| `CHECKLIST-FA.txt` | printable delivery checklist (new computer, handing to a colleague, monthly) |
+| `AUTORUN.INF` | adds the Windows "install this disc" prompt |
+| `TOOLS/MAKE-ISO.ps1` | builds an `.iso` with Windows IMAPI2 and can burn it directly |
+| `TOOLS/MAKE-OFFLINE-DVD.ps1` | builds the fully offline disc (app + `node_modules` + Node.js installer, ~550 MB) |
+| `TOOLS/PUT-NODEJS-INSTALLER-HERE.txt` | where the offline Node.js `.msi` goes |
+| `README-BUILD-DISC.md` | how to assemble the whole disc master again on Windows |
+
+The disc that ships with the project is about 33 MB, so it fits on any CD. The
+offline variant carries the programs libraries too and fits on a 700 MB CD or
+any DVD. Nothing on the disc needs the internet at run time except the very
+first `npm install` in the slim variant.
+
 ### Licensing (`/hms/activate`)
 A 14-day trial starts with the first sign-in. Serial numbers look like
 `AYBK-XXXX-XXXX-XXXX-CCCC`, where the last group is a SHA-256 checksum — so a
