@@ -1,0 +1,37 @@
+{
+  "name": "slotly",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aybek Ten-Bed Specialy Surgical Hospital \u2014 hospital information system (with the Slotly booking workspace)",
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "seed": "tsx scripts/seed.ts",
+    "db:reset": "node scripts/reset-db.mjs",
+    "lint": "next lint",
+    "hms:verify": "tsx scripts/verify-hms.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "clsx": "2.1.1",
+    "date-fns": "4.4.0",
+    "jose": "6.2.14",
+    "lucide-react": "1.64.0",
+    "next": "15.5.28",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "recharts": "3.10.1",
+    "swr": "2.5.1",
+    "tailwind-merge": "3.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "^4.20.6",
+    "typescript": "5.8.3"
+  }
+}
