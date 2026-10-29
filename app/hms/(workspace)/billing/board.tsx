@@ -58,32 +58,8 @@ export function BillingBoard({ invoices, patients }: { invoices: Inv[]; patients
   }
 
   function print(inv: Inv) {
-    const w = window.open("", "_blank", "width=640,height=800");
-    if (!w) return;
-    let items: Line[] = [];
-    try { items = JSON.parse(inv.items ?? "[]"); } catch { items = []; }
-    w.document.write(`<html><head><title>${inv.invoice_no}</title><style>
-      body{font-family:ui-sans-serif,system-ui;padding:28px;color:#111}
-      h1{font-size:16px;margin:0 0 2px} .muted{color:#666;font-size:11px}
-      table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}
-      th,td{text-align:left;padding:6px;border-bottom:1px solid #e5e7eb}
-      .tot{margin-top:12px;font-size:13px;font-weight:700;text-align:right}
-      .badge{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2f7;font-size:10px;text-transform:uppercase}
-    </style></head><body>
-      <h1>Aybek Ten-Bed Specialy Surgical Hospital</h1>
-      <div class="muted">Street 4 Aybek Medical District, Kabul · +93 20 250 1188</div>
-      <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:12px">
-        <div><b>${inv.patient_name}</b><br><span class="muted">${inv.mrn}</span></div>
-        <div style="text-align:right"><b>${inv.invoice_no}</b><br><span class="muted">${dateShort(inv.created_at)}</span></div>
-      </div>
-      <table><thead><tr><th>Description</th><th>Qty</th><th>Price</th><th>Amount</th></tr></thead><tbody>
-      ${items.map((l) => `<tr><td>${l.label}</td><td>${l.qty}</td><td>${money(l.price)}</td><td>${money(l.price * l.qty)}</td></tr>`).join("")}
-      </tbody></table>
-      <p class="tot">Total ${money(inv.total)} · Paid ${money(inv.paid)} · Balance ${money(inv.total - inv.paid)}</p>
-      <p class="badge">${inv.status}</p>
-      <p class="muted" style="margin-top:22px">Computer-generated document — valid with the electronic signature of the attending physician.</p>
-      <script>window.print()</script></body></html>`);
-    w.document.close();
+    // The receipt is a real A4 statement on the hospital letterhead, not a pop-up.
+    router.push(`/hms/receipt/${inv.id}`);
   }
 
   return (

@@ -71,6 +71,9 @@ export function validateSerial(raw: string) {
 export function activate(serialRaw: string, hospital: string, machine: string) {
   const checked = validateSerial(serialRaw);
   if (!checked.valid) return { ok: false as const, error: checked.reason };
+  // The seat count travels with the plan, not with a hard-coded number.
+  const planKey = (Object.keys(PLAN_LABEL) as SerialPlan[]).find((k) => PLAN_LABEL[k] === checked.plan) ?? "hospital";
+  const seats = PLAN_SEATS[planKey];
 
   const existing = hGet<{ id: string }>("SELECT id FROM hms_licenses WHERE serial = ?", [checked.serial]);
   if (existing) {
@@ -81,14 +84,14 @@ export function activate(serialRaw: string, hospital: string, machine: string) {
   } else {
     hRun(
       "INSERT INTO hms_licenses (id, serial, plan, seats, issued_at, activated_at, hospital, machine, status) VALUES (?,?,?,?,?,?,?,?, 'activated')",
-      [hUid("lic"), checked.serial, checked.plan, 5, hNow(), hNow(), hospital, machine]
+      [hUid("lic"), checked.serial, checked.plan, seats, hNow(), hNow(), hospital, machine]
     );
   }
   saveSettings("license", {
     status: "active",
     serial: checked.serial,
     plan: checked.plan,
-    seats: 5,
+    seats,
     activated_at: hNow(),
     machine,
   });
@@ -110,6 +113,18 @@ export function licenseState(): LicenseState {
   const lic = getSection<Record<string, unknown>>("license");
   const status = String(lic.status ?? "trial");
   const activatedAt = String(lic.activated_at ?? "");
+  if (status === "revoked") {
+    return {
+      status: "expired",
+      plan: `${String(lic.plan ?? "Hospital Edition")} — revoked`,
+      serial: String(lic.serial ?? ""),
+      daysLeft: 0,
+      seats: 0,
+      activatedAt,
+      owner: String(lic.owner ?? "Dr. Mamon Aminyar"),
+      machine: String(lic.machine ?? "local"),
+    };
+  }
   if (status === "active") {
     return {
       status: "active",

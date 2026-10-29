@@ -90,18 +90,21 @@ Open <http://localhost:3000/hms/login>
 | `arash@aybek.hospital` | Dr. Arash Shirazi | physician | OPD, prescribing, results, patients |
 | `evelyn@aybek.hospital` | Dr. Evelyn Reed | physician | OPD, prescribing, results |
 | `yusuf@aybek.hospital` | Dr. Yusuf Karimi | surgeon | OPD, theatre, inpatients |
-| `zahra@aybek.hospital` | Zahra Noori | pharmacist | pharmacy, dispensing, stock |
-| `samir@aybek.hospital` | Samir Popal | laboratory | laboratory worklist |
-| `laila@aybek.hospital` | Dr. Laila Aziz | radiology | imaging worklist |
-| `nadia@aybek.hospital` | Nadia Rahimi | nurse | inpatients, ward, dispensing |
-| `reza@aybek.hospital` | Reza Amin | reception | registration, billing |
+| `pharmacy@aybek.hospital` | Zahra Ahmadi | pharmacist | pharmacy, dispensing, stock |
+| `lab@aybek.hospital` | Samir Hadi | laboratory | laboratory worklist |
+| `laila@aybek.hospital` | Dr. Laila Noor | radiology | imaging worklist |
+| `nurse@aybek.hospital` | Nadia Sultani | nurse | inpatients, ward, dispensing |
+| `reception@aybek.hospital` | Reza Amiri | reception | registration, billing |
 
 **Password for every demonstration account: `mamonaminyar`**
 
 Change the owner password before entering real patient data.
 
-The salon booking workspace from the earlier project is still available at
-`/login` with `mamon.aminyar650432@gmail.com` / `mamonaminyar`.
+The hospital is the front door: opening `http://localhost:3000/` sends staff
+straight to `/hms` (or to the sign-in page if they are not signed in).
+
+The salon booking workspace from the earlier project is untouched and still
+available at `/login` with `mamon.aminyar650432@gmail.com` / `mamonaminyar`.
 
 ---
 
@@ -143,6 +146,11 @@ applies the best repair it knows and writes the change to the audit trail.
 ### Print studio (`/hms/print`)
 Ten prescription papers and four patient-document layouts, all rendered by the
 same engine that prints the real document. See `docs/DESIGN-SYSTEM.md`.
+
+### Receipts and statements (`/hms/receipt/<invoice>`)
+Pressing *Print* on an invoice no longer opens a pop-up: it opens the real A4
+ledger statement on the hospital letterhead, with the invoice lines, the amount
+paid and the status — then the browser prints it or saves it as PDF.
 
 ### Team & access (`/hms/team`)
 Add a member of staff, change a role, suspend access, reset a password, and read
@@ -209,3 +217,33 @@ safe. Anything it cannot fix is described in `docs/TROUBLESHOOTING.md`.
 
 *Aybek Ten-Bed Specialy Surgical Hospital · every action is audited · all data
 stays on this computer.*
+
+---
+
+## 9. What was verified before delivery
+
+Every item below was checked against a clean database and a production build
+(`npm run build` then `npm run start`), not against the development server.
+
+| Check | Result |
+|-------|--------|
+| Production build | compiles clean, 28 routes, no type errors (`npx tsc --noEmit` silent) |
+| Database reset → seed → verify | 16 tables, 9 users, 26 patients, 539 appointments, 10 prescriptions, 64 invoices |
+| Sign-in for all nine accounts | all 200 |
+| Every page (`/hms`, five departments, billing, analytics, alerts, settings, guide, licence, print, team) | all 200, no error boundary |
+| Patient chart, prescription sheet, receipt | all 200 |
+| Role checks | pharmacist is redirected away from settings/team, `/api/hms/users` answers 403 |
+| Bed admit → transfer → discharge | 201 / 200 / 200 |
+| Laboratory result with critical value | 200, alarm raised automatically |
+| Radiology report | 200 |
+| Dispensing an unsigned prescription | refused with 409 (clinic-safety gate) |
+| Sign → dispense | 200 / 200 |
+| Invoice payment, invoice print as A4 statement | 200 / 200 |
+| Settings save, staff creation, monitor scan | 200 / 201 / 200 |
+| Licence: generate → validate → activate → revoke | all 200; a forged serial is rejected |
+| Alarm repair (`heal`) | really quarantined an expired batch, wrote the audit line |
+
+What could **not** be tested here: the ten PowerShell scripts (the build machine
+has no Windows/PowerShell to execute them), and printing on a real printer.
+Open `/hms/print` and one prescription before going live, and run
+`10-doctor.ps1` on the Windows machine to confirm the environment.

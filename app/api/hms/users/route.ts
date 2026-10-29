@@ -7,7 +7,7 @@ import { hAll, hAudit, hGet, hNow, hRun, hUid } from "@/lib/hms/db";
 const ROLES: HmsRole[] = ["admin", "doctor", "pharmacist", "lab", "radiology", "nurse", "reception"];
 
 export const GET = route(async () => {
-  await requireHmsApi();
+  await requireHmsApi(["admin"]);
   const users = hAll<Record<string, unknown>>(
     `SELECT id, name, email, role, department, title, phone, avatar_color, active, last_login_at, created_at
      FROM hms_users ORDER BY active DESC, name`

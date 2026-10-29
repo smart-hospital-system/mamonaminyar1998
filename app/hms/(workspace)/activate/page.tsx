@@ -4,6 +4,7 @@ import { requireHmsPage } from "@/lib/hms/auth";
 import { hmsReady } from "@/lib/hms/db";
 import { licenseState, listSerials } from "@/lib/hms/license";
 import { ActivateConsole } from "./console";
+import { RevokeSerial } from "./revoke";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,7 @@ export default async function ActivatePage() {
           <div className="mt-2 overflow-x-auto rounded-lg border" style={{ borderColor: "var(--hms-border)" }}>
             <table className="w-full">
               <thead style={{ background: "var(--hms-surface-2)" }}>
-                <tr><th className="hms-th">Serial</th><th className="hms-th">Plan</th><th className="hms-th">Seats</th><th className="hms-th">Status</th><th className="hms-th">Issued</th></tr>
+                <tr><th className="hms-th">Serial</th><th className="hms-th">Plan</th><th className="hms-th">Seats</th><th className="hms-th">Status</th><th className="hms-th">Issued</th><th className="hms-th text-right">Owner action</th></tr>
               </thead>
               <tbody>
                 {serials.map((s) => (
@@ -40,9 +41,10 @@ export default async function ActivatePage() {
                     <td className="hms-td text-[0.7rem]">{s.seats}</td>
                     <td className="hms-td text-[0.7rem] capitalize">{s.status}</td>
                     <td className="hms-td text-[0.68rem]">{new Date(s.issued_at).toLocaleDateString("en-GB")}</td>
+                    <td className="hms-td text-right"><RevokeSerial serial={s.serial} status={s.status} /></td>
                   </tr>
                 ))}
-                {!serials.length && <tr><td className="hms-td text-[0.7rem]" colSpan={5}>No serials generated yet. Use “Generate serials” below — they belong to you, the licence owner.</td></tr>}
+                {!serials.length && <tr><td className="hms-td text-[0.7rem]" colSpan={6}>No serials generated yet. Use “Generate serials” below — they belong to you, the licence owner.</td></tr>}
               </tbody>
             </table>
           </div>

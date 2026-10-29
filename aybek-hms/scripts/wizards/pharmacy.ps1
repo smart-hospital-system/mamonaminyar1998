@@ -2,7 +2,7 @@
 . (Join-Path (Split-Path -Parent $PSScriptRoot) "install\_common.ps1")
 . "$PSScriptRoot\_wizard.ps1"
 
-Invoke-DepartmentWizard -Name "PHARMACY" -Path "/hms/pharmacy" -Login "zahra@aybek.hospital" -Steps @(
+Invoke-DepartmentWizard -Name "PHARMACY" -Path "/hms/pharmacy" -Login "pharmacy@aybek.hospital" -Steps @(
     "Open the Dispensing tab: every signed prescription is waiting there with the patient's name and diagnosis.",
     "Read the prescription before dispensing - allergies are printed on the sheet in red.",
     "Press Dispense. Stock is reduced automatically and the charge is added to the patient account.",

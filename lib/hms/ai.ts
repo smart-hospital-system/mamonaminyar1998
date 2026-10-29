@@ -310,6 +310,12 @@ const REFERENCE: Record<string, (v: number) => "low" | "normal" | "high" | "crit
   inr: (v) => (v > 4 ? "critical" : v > 1.2 ? "high" : "normal"),
   crp: (v) => (v > 100 ? "critical" : v > 5 ? "high" : "normal"),
   potassium: (v) => (v < 2.5 || v > 6 ? "critical" : v < 3.5 ? "low" : v > 5.1 ? "high" : "normal"),
+  sodium: (v) => (v < 125 || v > 155 ? "critical" : v < 135 ? "low" : v > 145 ? "high" : "normal"),
+  glucose: (v) => (v < 3 || v > 20 ? "critical" : v < 3.9 ? "low" : v > 7.8 ? "high" : "normal"),
+  albumin: (v) => (v < 2.5 ? "critical" : v < 3.5 ? "low" : "normal"),
+  bilirubin: (v) => (v > 5 ? "critical" : v > 1.2 ? "high" : "normal"),
+  amylase: (v) => (v > 300 ? "critical" : v > 100 ? "high" : "normal"),
+  calcium: (v) => (v < 1.8 || v > 3.2 ? "critical" : v < 2.1 ? "low" : v > 2.6 ? "high" : "normal"),
 };
 
 export type ParsedLab = {
@@ -323,18 +329,26 @@ export type ParsedLab = {
 /** Extract numeric analytes from a free-text result and flag them. */
 export function parseLabResult(text: string | null | undefined): ParsedLab[] {
   if (!text) return [];
+  // The analyser prints "WBC: 14.2", "Hb 9.1 g/dL" and "Platelets 88" in the same
+  // worksheet, so every pattern tolerates an optional colon and unit.
   const specs: { key: string; re: RegExp; unit: string; ref: string }[] = [
-    { key: "wbc", re: /WBC\s*([\d.]+)/i, unit: "×10⁹/L", ref: "4.0–11.0" },
-    { key: "hb", re: /\bHb\s*([\d.]+)/i, unit: "g/dL", ref: "12.0–17.5" },
-    { key: "plt", re: /PLT\s*([\d.]+)/i, unit: "×10⁹/L", ref: "150–450" },
-    { key: "creatinine", re: /Creatinine\s*([\d.]+)/i, unit: "mg/dL", ref: "0.6–1.2" },
-    { key: "urea", re: /Urea\s*([\d.]+)/i, unit: "mg/dL", ref: "15–40" },
-    { key: "alt", re: /\bALT\s*([\d.]+)/i, unit: "U/L", ref: "7–45" },
-    { key: "ast", re: /\bAST\s*([\d.]+)/i, unit: "U/L", ref: "8–40" },
-    { key: "hba1c", re: /HbA1c\s*([\d.]+)/i, unit: "%", ref: "4.0–5.6" },
-    { key: "inr", re: /\bINR\s*([\d.]+)/i, unit: "ratio", ref: "0.8–1.2" },
-    { key: "crp", re: /\bCRP\s*([\d.]+)/i, unit: "mg/L", ref: "<5" },
-    { key: "potassium", re: /\bK\s*([\d.]+)/i, unit: "mmol/L", ref: "3.5–5.1" },
+    { key: "wbc", re: /\bWBC\s*:?\s*([\d.]+)/i, unit: "×10⁹/L", ref: "4.0–11.0" },
+    { key: "hb", re: /\b(?:Hb|Hgb|Haemoglobin|Hemoglobin)\s*:?\s*([\d.]+)/i, unit: "g/dL", ref: "12.0–17.5" },
+    { key: "plt", re: /\b(?:PLT|Platelets?)\s*:?\s*([\d.]+)/i, unit: "×10⁹/L", ref: "150–450" },
+    { key: "creatinine", re: /Creatinine\s*:?\s*([\d.]+)/i, unit: "mg/dL", ref: "0.6–1.2" },
+    { key: "urea", re: /\bUrea\s*:?\s*([\d.]+)/i, unit: "mg/dL", ref: "15–40" },
+    { key: "alt", re: /\bALT\s*:?\s*([\d.]+)/i, unit: "U/L", ref: "7–45" },
+    { key: "ast", re: /\bAST\s*:?\s*([\d.]+)/i, unit: "U/L", ref: "8–40" },
+    { key: "hba1c", re: /HbA1c\s*:?\s*([\d.]+)/i, unit: "%", ref: "4.0–5.6" },
+    { key: "inr", re: /\bINR\s*:?\s*([\d.]+)/i, unit: "ratio", ref: "0.8–1.2" },
+    { key: "crp", re: /\bCRP\s*:?\s*([\d.]+)/i, unit: "mg/L", ref: "<5" },
+    { key: "potassium", re: /\b(?:K|Potassium)\s*:?\s*([\d.]+)/i, unit: "mmol/L", ref: "3.5–5.1" },
+    { key: "sodium", re: /\b(?:Na|Sodium)\s*:?\s*([\d.]+)/i, unit: "mmol/L", ref: "135–145" },
+    { key: "glucose", re: /\b(?:Random glucose|Fasting glucose|Glucose|RBS|FBS)\s*:?\s*([\d.]+)/i, unit: "mmol/L", ref: "3.9–7.8" },
+    { key: "albumin", re: /Albumin\s*:?\s*([\d.]+)/i, unit: "g/dL", ref: "3.5–5.0" },
+    { key: "bilirubin", re: /\b(?:Total bilirubin|Bilirubin)\s*:?\s*([\d.]+)/i, unit: "mg/dL", ref: "<1.2" },
+    { key: "amylase", re: /Amylase\s*:?\s*([\d.]+)/i, unit: "U/L", ref: "30–100" },
+    { key: "calcium", re: /Calcium\s*:?\s*([\d.]+)/i, unit: "mmol/L", ref: "2.1–2.6" },
   ];
   const out: ParsedLab[] = [];
   for (const s of specs) {

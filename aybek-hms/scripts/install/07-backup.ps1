@@ -10,17 +10,41 @@
 .EXAMPLE
   .\scripts\install\07-backup.ps1
   .\scripts\install\07-backup.ps1 -Keep 30
+  .\scripts\install\07-backup.ps1 -Schedule -At 20:00
+
+.NOTES
+  -Schedule registers a Windows scheduled task called AybekHMS-Backup that runs
+  this script every night at the time you choose. Remove it again with:
+      schtasks /Delete /TN AybekHMS-Backup /F
 #>
 
 param(
     [string]$Path,
     [int]$Keep = 14,
-    [string]$Destination
+    [string]$Destination,
+    [switch]$Schedule,
+    [string]$At = "20:00"
 )
+
+Import-Module ScheduledTasks -ErrorAction SilentlyContinue
 
 . "$PSScriptRoot\_common.ps1"
 
 Write-Banner "AYBEK HOSPITAL - BACKUP"
+
+if ($Schedule) {
+    $scriptPath = Join-Path $PSScriptRoot "07-backup.ps1"
+    $taskName = "AybekHMS-Backup"
+    $action = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`" -Keep $Keep"
+    schtasks /Create /TN $taskName /TR $action /SC DAILY /ST $At /F | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Nightly backup scheduled at $At (task: $taskName)."
+        Write-Info "Check it with:  schtasks /Query /TN $taskName"
+        Write-Info "Remove it with: schtasks /Delete /TN $taskName /F"
+    } else {
+        Write-Warn "Could not create the scheduled task. Run this window as Administrator, or create it by hand in Task Scheduler."
+    }
+}
 
 $root = Get-HmsRoot -Override $Path
 Set-Location -LiteralPath $root

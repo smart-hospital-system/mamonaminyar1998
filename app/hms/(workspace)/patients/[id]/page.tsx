@@ -1,237 +1,186 @@
-import {
-  Activity, AlertTriangle, ArrowLeft, BedDouble, CalendarClock, FileText, FlaskConical, Pill as PillIcon,
-  Printer, Receipt, ScanLine, Scissors, Stethoscope,
-} from "lucide-react";
+import { Activity, ArrowLeft, CalendarDays, FlaskConical, Pill, Receipt, ScanLine, Scissors, Stethoscope } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Empty, Panel, Person, SectionTitle, Status } from "@/components/hms/ui";
-import { age, dateShort, money, relTime } from "@/lib/hms/format";
+import { Panel, Pill as Tag, SectionTitle, Stat } from "@/components/hms/ui";
 import { requireHmsPage } from "@/lib/hms/auth";
-import { hmsReady } from "@/lib/hms/db";
+import { age, dateShort, money, relTime } from "@/lib/hms/format";
 import { patientChart } from "@/lib/hms/queries";
 
 export const dynamic = "force-dynamic";
 
-type Row = Record<string, unknown>;
-const s = (v: unknown, fallback = "—") => (v === null || v === undefined || v === "" ? fallback : String(v));
+type Enc = { id: string; created_at: string; doctor_name: string | null; complaint: string | null; diagnosis: string | null; icd10: string | null; plan: string | null; vitals: string | null; notes: string | null };
+type Rx = { id: string; rx_no: string; created_at: string; doctor_name: string | null; diagnosis: string | null; status: string };
+type Lab = { id: string; order_no: string; test_name: string; status: string; created_at: string; result_value: string | null };
+type Img = { id: string; order_no: string; modality: string; body_part: string; status: string; created_at: string };
+type Adm = { id: string; admitted_at: string; discharged_at: string | null; bed_label: string | null; ward: string | null; diagnosis: string | null; admission_type: string | null; status: string };
+type Inv = { id: string; invoice_no: string; total: number; paid: number; status: string; created_at: string };
+type Surg = { id: string; procedure_name: string; scheduled_at: string; status: string; theatre: string | null };
 
-export default async function PatientChartPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireHmsPage();
-  await hmsReady();
+export default async function PatientPage({ params }: { params: Promise<{ id: string }> }) {
+  const me = await requireHmsPage();
   const { id } = await params;
   const chart = patientChart(id);
   const p = chart.patient;
   if (!p) notFound();
 
-  const encounters = chart.encounters as Row[];
-  const rx = chart.prescriptions as Row[];
-  const labs = chart.labs as Row[];
-  const imaging = chart.imaging as Row[];
-  const admissions = chart.admissions as Row[];
-  const invoices = chart.invoices as Row[];
-  const surgeries = chart.surgeries as Row[];
-  const outstanding = invoices.reduce((a, i) => a + (Number(i.total) - Number(i.paid)), 0);
+  const encounters = chart.encounters as Enc[];
+  const prescriptions = chart.prescriptions as Rx[];
+  const labs = chart.labs as Lab[];
+  const imaging = chart.imaging as Img[];
+  const admissions = chart.admissions as Adm[];
+  const invoices = chart.invoices as Inv[];
+  const surgeries = chart.surgeries as Surg[];
+  const outstanding = invoices.reduce((a, i) => a + (i.total - i.paid), 0);
 
   return (
     <div className="space-y-3.5">
-      <Panel className="!p-0">
-        <div className="flex flex-col gap-3 p-3.5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3">
-            <Person name={p.name} size={46} sub={p.mrn} />
-            <div>
-              <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em]">{p.name}</h2>
-              <p className="mt-0.5 text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>
-                {p.gender} · {age(p.dob)} ({dateShort(p.dob)}) · {s(p.phone)} · {s(p.insurance, "Self-pay")}
-              </p>
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {p.blood_group && <span className="hms-pill" style={{ background: "color-mix(in srgb,#ef4444 12%, transparent)", color: "#a51c1c" }}>{p.blood_group}</span>}
-                {p.allergies && p.allergies !== "None" ? (
-                  <span className="hms-pill" style={{ background: "#fee2e2", color: "#991b1b" }}><AlertTriangle size={10} /> Allergy: {p.allergies}</span>
-                ) : (
-                  <span className="hms-pill" style={{ background: "var(--hms-surface-3)", color: "var(--hms-muted)" }}>No known allergies</span>
-                )}
-                {p.chronic && <span className="hms-pill" style={{ background: "var(--hms-brand-soft)", color: "var(--hms-brand-ink)" }}>{p.chronic}</span>}
-                {admissions.some((a) => a.status === "admitted") && <span className="hms-pill" style={{ background: "color-mix(in srgb,#3b82f6 14%, transparent)", color: "#1d4ed8" }}><BedDouble size={10} /> Currently admitted</span>}
-              </div>
+      <Link href="/hms/patients" className="inline-flex items-center gap-1 text-[0.7rem] font-medium" style={{ color: "var(--hms-muted)" }}>
+        <ArrowLeft size={12} /> All patients
+      </Link>
+
+      <Panel>
+        <div className="flex flex-wrap items-start gap-3">
+          <div
+            className="grid h-12 w-12 shrink-0 place-items-center rounded-xl text-[0.9rem] font-bold text-white"
+            style={{ background: "var(--hms-brand)" }}
+          >
+            {p.name.split(" ").filter((w) => !/^(dr|mr|mrs|ms)\.?$/i.test(w)).slice(0, 2).map((w) => w[0]).join("")}
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-[1.05rem] font-semibold leading-tight">{p.name}</h1>
+            <p className="mt-0.5 text-[0.7rem]" style={{ color: "var(--hms-muted)" }}>
+              {p.mrn} · {p.gender} · {age(p.dob)} · {p.phone ?? "no phone"}
+            </p>
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              <Tag tone="brand">{p.blood_group ?? "blood group n/a"}</Tag>
+              {p.allergies ? <Tag tone="bad">allergy: {p.allergies}</Tag> : <Tag tone="good">no known allergy</Tag>}
+              {p.chronic && <Tag tone="warn">chronic: {p.chronic}</Tag>}
+              {p.insurance && <Tag tone="neutral">{p.insurance}</Tag>}
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <Link href="/hms/patients" className="hms-btn hms-btn-sm"><ArrowLeft size={11} /> Register</Link>
-            <Link href={`/hms/opd`} className="hms-btn hms-btn-sm hms-btn-primary"><Stethoscope size={11} /> New consult</Link>
+          <div className="flex gap-1.5">
+            <Link href={`/hms/opd?patient=${p.id}`} className="hms-btn hms-btn-primary hms-btn-sm"><Stethoscope size={11} /> New encounter</Link>
+            <Link href="/hms/prescriptions" className="hms-btn hms-btn-sm"><Pill size={11} /> Prescriptions</Link>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-px border-t sm:grid-cols-5" style={{ background: "var(--hms-border)", borderColor: "var(--hms-border)" }}>
-          {[
-            { k: "Encounters", v: encounters.length },
-            { k: "Prescriptions", v: rx.length },
-            { k: "Lab orders", v: labs.length },
-            { k: "Imaging", v: imaging.length },
-            { k: "Balance", v: money(outstanding) },
-          ].map((m) => (
-            <div key={m.k} className="px-3 py-2" style={{ background: "var(--hms-surface)" }}>
-              <p className="text-[0.56rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{m.k}</p>
-              <p className="text-[0.86rem] font-semibold">{m.v}</p>
-            </div>
-          ))}
+
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Stat label="Encounters" value={encounters.length} icon={<Stethoscope size={12} />} />
+          <Stat label="Prescriptions" value={prescriptions.length} icon={<Pill size={12} />} />
+          <Stat label="Admissions" value={admissions.length} icon={<CalendarDays size={12} />} />
+          <Stat label="Balance" value={money(outstanding)} icon={<Receipt size={12} />} tone={outstanding > 0 ? "warn" : "good"} />
         </div>
+
+        <div className="mt-3 grid gap-2 text-[0.68rem] sm:grid-cols-3" style={{ color: "var(--hms-muted)" }}>
+          <p><span className="font-semibold" style={{ color: "var(--hms-text)" }}>Address</span><br />{p.address ?? "—"}</p>
+          <p><span className="font-semibold" style={{ color: "var(--hms-text)" }}>Emergency contact</span><br />{p.emergency_contact ?? "—"}</p>
+          <p><span className="font-semibold" style={{ color: "var(--hms-text)" }}>Registered</span><br />{dateShort(p.created_at)} · {relTime(p.created_at)}</p>
+        </div>
+        {p.notes && <p className="mt-2 rounded-lg p-2 text-[0.7rem]" style={{ background: "var(--hms-surface-2)" }}>{p.notes}</p>}
       </Panel>
 
-      <div className="grid gap-3.5 xl:grid-cols-[1.3fr_1fr]">
-        <div className="space-y-3.5">
-          <Panel>
-            <SectionTitle title="Clinical timeline" subtitle="Consults, diagnoses and vitals in reverse order" icon={<Activity size={14} />} />
-            <div className="mt-2 space-y-2">
-              {encounters.map((e) => {
-                let vitals: Record<string, unknown> = {};
-                try { vitals = JSON.parse(s(e.vitals, "{}")); } catch { vitals = {}; }
-                return (
-                  <div key={s(e.id)} className="relative border-l-2 pl-3" style={{ borderColor: "var(--hms-brand)" }}>
-                    <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full" style={{ background: "var(--hms-brand)" }} />
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <p className="text-[0.76rem] font-semibold">{s(e.diagnosis, "Undocumented consult")}</p>
-                      {e.icd10 ? <span className="hms-pill" style={{ background: "var(--hms-surface-3)", color: "var(--hms-muted)" }}>{s(e.icd10)}</span> : null}
-                      <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{dateShort(s(e.created_at))} · {s(e.doctor_name)} · {s(e.department)}</span>
-                    </div>
-                    {e.summary ? <p className="mt-0.5 whitespace-pre-line text-[0.68rem] leading-relaxed" style={{ color: "var(--hms-muted)" }}>{s(e.summary)}</p> : null}
-                    {Object.keys(vitals).length > 0 && (
-                      <p className="mt-0.5 flex flex-wrap gap-1.5 text-[0.6rem]">
-                        {Object.entries(vitals).filter(([k]) => k !== "triage").map(([k, v]) => (
-                          <span key={k} className="rounded px-1 py-0.5" style={{ background: "var(--hms-surface-2)" }}>{k}: <b>{String(v)}</b></span>
-                        ))}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-              {!encounters.length && <Empty title="No consults yet" hint="The first consult will appear here with its diagnosis and vitals." icon={<FileText size={15} />} />}
-            </div>
-          </Panel>
-
-          <Panel>
-            <SectionTitle title="Prescriptions" subtitle="Tap a row to open the print sheet" icon={<PillIcon size={14} />} />
-            <div className="mt-2 divide-y" style={{ borderColor: "var(--hms-border)" }}>
-              {rx.map((r) => (
-                <div key={s(r.id)} className="flex items-center gap-2 py-1.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.72rem] font-medium">{s(r.diagnosis, "No diagnosis")}</p>
-                    <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{s(r.rx_no)} · {s(r.doctor_name)} · {dateShort(s(r.created_at))}</p>
-                  </div>
-                  <Status value={s(r.status)} />
-                  <Link href={`/hms/rx/${s(r.id)}?template=${s(r.template, "1")}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-ghost"><Printer size={11} /></Link>
-                </div>
-              ))}
-              {!rx.length && <p className="py-3 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>No prescriptions recorded.</p>}
-            </div>
-          </Panel>
-
-          <Panel>
-            <SectionTitle title="Laboratory & imaging" subtitle="Results released by the laboratory and radiology" icon={<FlaskConical size={14} />} />
-            <div className="mt-2 grid gap-2.5 sm:grid-cols-2">
-              <div>
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Laboratory</p>
-                <div className="mt-1 space-y-1">
-                  {labs.map((l) => (
-                    <div key={s(l.id)} className="rounded-md border px-2 py-1" style={{ borderColor: "var(--hms-border)" }}>
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="truncate text-[0.68rem] font-medium">{s(l.test_name)}</p>
-                        <Status value={s(l.status)} />
-                      </div>
-                      {l.result ? <p className="truncate text-[0.62rem]" style={{ color: "var(--hms-muted)" }}>{s(l.result)}</p> : null}
-                    </div>
-                  ))}
-                  {!labs.length && <p className="text-[0.66rem]" style={{ color: "var(--hms-faint)" }}>None.</p>}
-                </div>
+      <div className="grid gap-3.5 lg:grid-cols-[1.5fr_1fr]">
+        <Panel>
+          <SectionTitle title="Clinical timeline" subtitle="Every encounter, newest first" icon={<Activity size={14} />} />
+          <div className="mt-2 space-y-2">
+            {encounters.map((e) => (
+              <div key={e.id} className="relative border-l pl-3" style={{ borderColor: "var(--hms-border)" }}>
+                <span className="absolute -left-[3px] top-1.5 h-1.5 w-1.5 rounded-full" style={{ background: "var(--hms-brand)" }} />
+                <p className="text-[0.7rem] font-semibold">{e.diagnosis ?? "Clinical review"} {e.icd10 && <span className="font-normal" style={{ color: "var(--hms-faint)" }}>· {e.icd10}</span>}</p>
+                <p className="text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>{dateShort(e.created_at)} · {e.doctor_name ?? "—"}</p>
+                {e.complaint && <p className="mt-0.5 text-[0.67rem]"><span className="font-medium">Complaint:</span> {e.complaint}</p>}
+                {e.plan && <p className="text-[0.67rem]"><span className="font-medium">Plan:</span> {e.plan}</p>}
+                {e.vitals && <p className="text-[0.62rem]" style={{ color: "var(--hms-muted)" }}>Vitals · {e.vitals}</p>}
               </div>
-              <div>
-                <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Imaging</p>
-                <div className="mt-1 space-y-1">
-                  {imaging.map((i) => (
-                    <div key={s(i.id)} className="rounded-md border px-2 py-1" style={{ borderColor: "var(--hms-border)" }}>
-                      <div className="flex items-center justify-between gap-1">
-                        <p className="truncate text-[0.68rem] font-medium">{s(i.modality)} — {s(i.body_part)}</p>
-                        <Status value={s(i.status)} />
-                      </div>
-                      {i.impression ? <p className="truncate text-[0.62rem]" style={{ color: "var(--hms-muted)" }}>{s(i.impression)}</p> : null}
-                    </div>
-                  ))}
-                  {!imaging.length && <p className="text-[0.66rem]" style={{ color: "var(--hms-faint)" }}>None.</p>}
-                </div>
-              </div>
-            </div>
-          </Panel>
-        </div>
+            ))}
+            {!encounters.length && <p className="py-4 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>No encounters recorded.</p>}
+          </div>
+        </Panel>
 
         <div className="space-y-3.5">
           <Panel>
-            <SectionTitle title="Admissions" subtitle="Ward stays and bed history" icon={<BedDouble size={14} />} />
-            <div className="mt-2 space-y-1">
-              {admissions.map((a) => (
-                <div key={s(a.id)} className="flex items-center gap-2 rounded-md border px-2 py-1.5" style={{ borderColor: "var(--hms-border)" }}>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[0.7rem] font-medium">{s(a.bed_label, "Bed released")} · {s(a.ward)}</p>
-                    <p className="truncate text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{s(a.diagnosis)} · {dateShort(s(a.admitted_at))} → {a.discharged_at ? dateShort(s(a.discharged_at)) : "current"}</p>
-                  </div>
-                  <Status value={s(a.status)} />
-                </div>
+            <SectionTitle title="Prescriptions" subtitle="Print or re-sign" icon={<Pill size={14} />} />
+            <div className="mt-1.5 space-y-1">
+              {prescriptions.map((r) => (
+                <Link key={r.id} href={`/hms/rx/${r.id}`} className="flex items-center gap-2 border-b py-1.5 text-[0.68rem] last:border-0" style={{ borderColor: "var(--hms-border)" }}>
+                  <span className="flex-1 truncate">{r.rx_no} · {r.diagnosis ?? "—"}</span>
+                  <Tag tone={r.status === "dispensed" ? "good" : r.status === "signed" ? "brand" : "warn"}>{r.status}</Tag>
+                </Link>
               ))}
-              {!admissions.length && <p className="py-2 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>Never admitted.</p>}
+              {!prescriptions.length && <p className="py-2 text-[0.68rem]" style={{ color: "var(--hms-faint)" }}>None yet.</p>}
             </div>
           </Panel>
 
           <Panel>
-            <SectionTitle title="Theatre" subtitle="Operations booked or performed" icon={<Scissors size={14} />} />
-            <div className="mt-2 space-y-1">
-              {surgeries.map((x) => (
-                <div key={s(x.id)} className="flex items-center gap-2 border-b py-1.5 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.7rem] font-medium">{s(x.procedure_name)}</p>
-                    <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{s(x.theatre)} · {dateShort(s(x.scheduled_at))}</p>
-                  </div>
-                  <Status value={s(x.status)} />
+            <SectionTitle title="Investigations" subtitle="Laboratory and imaging" icon={<FlaskConical size={14} />} />
+            <div className="mt-1.5 space-y-1 text-[0.68rem]">
+              {labs.map((l) => (
+                <div key={l.id} className="flex items-center gap-2 border-b py-1 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
+                  <FlaskConical size={10} style={{ color: "var(--hms-faint)" }} />
+                  <span className="flex-1 truncate">{l.test_name} <span style={{ color: "var(--hms-faint)" }}>{l.result_value ?? ""}</span></span>
+                  <Tag tone={l.status === "completed" ? "good" : "warn"}>{l.status}</Tag>
                 </div>
               ))}
-              {!surgeries.length && <p className="py-2 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>No procedures.</p>}
+              {imaging.map((i) => (
+                <div key={i.id} className="flex items-center gap-2 border-b py-1 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
+                  <ScanLine size={10} style={{ color: "var(--hms-faint)" }} />
+                  <span className="flex-1 truncate">{i.modality} · {i.body_part}</span>
+                  <Tag tone={i.status === "reported" ? "good" : "warn"}>{i.status}</Tag>
+                </div>
+              ))}
+              {!labs.length && !imaging.length && <p className="py-2" style={{ color: "var(--hms-faint)" }}>No investigations on file.</p>}
             </div>
-          </Panel>
-
-          <Panel>
-            <SectionTitle title="Billing" subtitle="Invoices, payments and balance" icon={<Receipt size={14} />} />
-            <div className="mt-2 space-y-1">
-              {invoices.map((i) => (
-                <div key={s(i.id)} className="flex items-center gap-2 py-1.5">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[0.7rem] font-medium">{s(i.invoice_no)}</p>
-                    <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{relTime(s(i.created_at))}</p>
-                  </div>
-                  <span className="text-[0.72rem] font-semibold">{money(Number(i.total))}</span>
-                  <Status value={s(i.status)} />
-                </div>
-              ))}
-              {!invoices.length && <p className="py-2 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>No invoices.</p>}
-            </div>
-          </Panel>
-
-          <Panel>
-            <SectionTitle title="Contact & administration" icon={<CalendarClock size={14} />} />
-            <dl className="mt-2 grid grid-cols-2 gap-2 text-[0.7rem]">
-              {[
-                ["Phone", s(p.phone)],
-                ["Email", s(p.email)],
-                ["Emergency contact", s(p.emergency_contact)],
-                ["Insurance", s(p.insurance, "Self-pay")],
-                ["Address", s(p.address)],
-                ["Registered", dateShort(p.created_at)],
-              ].map(([k, v]) => (
-                <div key={k}>
-                  <dt className="text-[0.56rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{k}</dt>
-                  <dd className="truncate font-medium">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            {p.notes ? <p className="mt-2 rounded-md p-2 text-[0.68rem]" style={{ background: "var(--hms-surface-2)", color: "var(--hms-muted)" }}>{p.notes}</p> : null}
           </Panel>
         </div>
       </div>
+
+      <div className="grid gap-3.5 lg:grid-cols-3">
+        <Panel>
+          <SectionTitle title="Admissions" subtitle="Ward stays and beds" icon={<CalendarDays size={14} />} />
+          <div className="mt-1.5 space-y-1.5 text-[0.68rem]">
+            {admissions.map((a) => (
+              <div key={a.id} className="rounded-lg border p-2" style={{ borderColor: "var(--hms-border)" }}>
+                <p className="font-medium">{a.ward ?? "Ward"} · {a.bed_label ?? "—"}</p>
+                <p style={{ color: "var(--hms-muted)" }}>{dateShort(a.admitted_at)} → {a.discharged_at ? dateShort(a.discharged_at) : "still admitted"}</p>
+                <p className="mt-0.5">{a.diagnosis}</p>
+              </div>
+            ))}
+            {!admissions.length && <p style={{ color: "var(--hms-faint)" }}>Never admitted.</p>}
+          </div>
+        </Panel>
+
+        <Panel>
+          <SectionTitle title="Surgery" subtitle="Theatre list" icon={<Scissors size={14} />} />
+          <div className="mt-1.5 space-y-1 text-[0.68rem]">
+            {surgeries.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 border-b py-1 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
+                <span className="flex-1 truncate">{s.procedure_name}</span>
+                <span style={{ color: "var(--hms-faint)" }}>{dateShort(s.scheduled_at)}</span>
+                <Tag tone={s.status === "completed" ? "good" : "warn"}>{s.status}</Tag>
+              </div>
+            ))}
+            {!surgeries.length && <p style={{ color: "var(--hms-faint)" }}>No operations.</p>}
+          </div>
+        </Panel>
+
+        <Panel>
+          <SectionTitle title="Billing" subtitle="Invoices and receipts" icon={<Receipt size={14} />} />
+          <div className="mt-1.5 space-y-1 text-[0.68rem]">
+            {invoices.map((i) => (
+              <Link key={i.id} href={`/hms/receipt/${i.id}`} className="flex items-center gap-2 border-b py-1 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
+                <span className="flex-1 truncate">{i.invoice_no}</span>
+                <span>{money(i.total)}</span>
+                <Tag tone={i.status === "paid" ? "good" : i.status === "partial" ? "warn" : "bad"}>{i.status}</Tag>
+              </Link>
+            ))}
+            {!invoices.length && <p style={{ color: "var(--hms-faint)" }}>No invoices.</p>}
+          </div>
+        </Panel>
+      </div>
+
+      <p className="pb-2 text-center text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>
+        Viewed by {me.name} · every access to this chart is recorded in the audit trail.
+      </p>
     </div>
   );
 }

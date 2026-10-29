@@ -8,7 +8,7 @@ import { TeamConsole } from "./console";
 export const dynamic = "force-dynamic";
 
 export default async function TeamPage() {
-  const me = await requireHmsPage();
+  const me = await requireHmsPage(["admin"]);
   await hmsReady();
   const users = hAll<{
     id: string; name: string; email: string; role: string; department: string | null; title: string | null;

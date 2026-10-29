@@ -4,7 +4,7 @@ import { requireHmsPage } from "@/lib/hms/auth";
 import { getSection, hmsReady } from "@/lib/hms/db";
 import { getPrescription } from "@/lib/hms/queries";
 import { RX_TEMPLATES, templateById } from "@/lib/hms/templates";
-import { PrintBar } from "./print-bar";
+import { PrintBar } from "@/components/hms/print-bar";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +29,7 @@ export default async function RxPrintPage({
 
   return (
     <div style={{ background: embed ? "#eef2f6" : "#e9edf2", minHeight: "100vh", padding: embed ? 0 : "18px 0 40px" }}>
-      {!embed && <PrintBar rxNo={rx.rx_no} patient={rx.patient_name} template={tpl.id} templates={RX_TEMPLATES.map((t) => ({ id: t.id, name: t.name }))} />}
+      {!embed && <PrintBar no={rx.rx_no} subtitle={rx.patient_name} template={tpl.id} templates={RX_TEMPLATES.map((t) => ({ id: t.id, name: t.name }))} />}
       <div style={{ display: "flex", justifyContent: "center", padding: embed ? 0 : 0 }}>
         <RxSheet
           template={tpl}

@@ -1,6 +1,6 @@
 <#
   Shared engine for the department wizards.
-  Each wizard calls:  Invoke-DepartmentWizard -Name "Pharmacy" -Path "/hms/pharmacy" -Steps @( ... ) -Login "zahra@aybek.hospital"
+  Each wizard calls:  Invoke-DepartmentWizard -Name "Pharmacy" -Path "/hms/pharmacy" -Steps @( ... ) -Login "pharmacy@aybek.hospital"
 #>
 
 function Invoke-DepartmentWizard {

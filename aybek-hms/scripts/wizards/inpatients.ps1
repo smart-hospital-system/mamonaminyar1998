@@ -2,7 +2,7 @@
 . (Join-Path (Split-Path -Parent $PSScriptRoot) "install\_common.ps1")
 . "$PSScriptRoot\_wizard.ps1"
 
-Invoke-DepartmentWizard -Name "INPATIENTS / WARD" -Path "/hms/inpatients" -Login "nadia@aybek.hospital" -Steps @(
+Invoke-DepartmentWizard -Name "INPATIENTS / WARD" -Path "/hms/inpatients" -Login "nurse@aybek.hospital" -Steps @(
     "Open the bed board at the start of every shift: green beds are ready, red are occupied, amber are being cleaned.",
     "To admit: tap a green bed, choose the patient, write the working diagnosis and the admission type.",
     "To move a patient: tap the occupied bed and choose the destination - the old bed goes to cleaning automatically.",

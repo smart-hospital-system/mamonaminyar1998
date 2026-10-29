@@ -238,6 +238,10 @@ export const DOC_TEMPLATES: DocTemplate[] = [
   { id: 4, slug: "statement-ledger", name: "Ledger Statement", purpose: "Invoices, receipts, insurance statements", accent: "#1d4ed8", layout: "statement" },
 ];
 
+export function docTemplateById(id: number): DocTemplate {
+  return DOC_TEMPLATES.find((t) => t.id === id) ?? DOC_TEMPLATES[0];
+}
+
 /* ------------------------------------------------------------------- themes */
 
 export type AppTheme = {

@@ -1,6 +1,6 @@
 import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
-import { hAudit, hNow, hRun, hGet, hAll, hUid } from "@/lib/hms/db";
+import { getSection, hAudit, hNow, hRun, hGet, hAll, hUid } from "@/lib/hms/db";
 import { getPrescription } from "@/lib/hms/queries";
 
 export const GET = route<{ id: string }>(async (_req, { params }) => {
@@ -27,6 +27,17 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
 
   if (action === "dispense") {
     const user = await requireHmsApi(["admin", "pharmacist"]);
+    // A prescription is a legal instruction from a physician: nothing leaves the
+    // pharmacy counter until it carries a signature (Settings -> Clinical rules).
+    const clinical = getSection<Record<string, unknown>>("clinical");
+    const flag = clinical.require_signature;
+    const mustSign = flag === undefined ? true : ![false, 0, "0", "false", "no"].includes(flag as never);
+    if (mustSign && rx.status !== "signed") {
+      return json(
+        { error: "This prescription is still unsigned — ask the prescribing physician to sign it before dispensing." },
+        409
+      );
+    }
     const items = rx.items as { drug: string; qty: number; unit_price: number }[];
     let total = 0;
     for (const it of items) {

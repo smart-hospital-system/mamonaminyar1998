@@ -144,6 +144,14 @@ What the monitor checks every 30 minutes:
 * `/hms/print` — the studio: all ten papers and four document layouts rendered
   with real data, plus a link to a genuine prescription.
 
+Money documents follow the same rule: on `/hms/billing` press **Print** on an
+invoice and the A4 ledger statement at `/hms/receipt/<invoice>` opens on the
+hospital letterhead — no pop-up window, no cut-off lines.
+
+A prescription cannot be dispensed until the physician has signed it. If the
+pharmacy sees *"still unsigned"*, ask the prescriber to open `/hms/prescriptions`
+and press **Sign**; the screen updates the moment they do.
+
 Print settings: A4, margins **none**, background graphics **on**, scale 100 %.
 Choose *Save as PDF* to email the document instead of printing it.
 
@@ -174,6 +182,14 @@ inpatients, surgery, settings, licence, alarms. Each has FAQs and a link to the
 screen it describes.
 
 ---
+
+## 6b. Team and passwords (`/hms/team`)
+
+Administrators only. Add a member of staff (name, email, role, department,
+initial password), change a role, suspend or restore access, reset somebody's
+password, and change your own password. Suspending a person signs them out
+everywhere; the last active administrator cannot be suspended or demoted.
+Everything on this page lands in the access history underneath it.
 
 ## 7. Roles — who can do what
 

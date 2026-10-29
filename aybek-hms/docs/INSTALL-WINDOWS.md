@@ -157,6 +157,27 @@ settings export and the uploads folder, then prunes anything older than the last
 14 copies. Copy that folder to a second disk or a USB stick weekly — a backup on
 the same disk does not survive a disk failure.
 
+**Let Windows do it for you** (recommended). Right-click PowerShell → *Run as
+administrator*, then:
+
+```powershell
+.\aybek-hms\scripts\install\07-backup.ps1 -Schedule -At 20:00
+```
+
+That registers a scheduled task called `AybekHMS-Backup` which runs every night
+at 20:00 — even if nobody is signed in to the hospital app. Check it with
+`schtasks /Query /TN AybekHMS-Backup`; remove it with
+`schtasks /Delete /TN AybekHMS-Backup /F`.
+
+**Restore** a backup with `08-restore.ps1`:
+
+```powershell
+.\aybek-hms\scripts\install\08-restore.ps1 -Backup "backups\2026-10-30_1900"
+```
+
+Stop the server first (`Ctrl+C` in the other window); the script takes its own
+safety copy of the current database before overwriting anything.
+
 ---
 
 ## Installing on a second computer

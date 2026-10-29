@@ -15,6 +15,9 @@ export function DocumentSheet({
   signature = "Dr. Mamon Aminyar",
   role = "Medical Director · General Surgeon",
   amount,
+  lines,
+  docNo,
+  status,
 }: {
   template: DocTemplate;
   identity: { name: string; address: string; city: string; country: string; phone: string; email: string; license_no: string };
@@ -25,6 +28,9 @@ export function DocumentSheet({
   signature?: string;
   role?: string;
   amount?: { total: number; paid: number };
+  lines?: { label: string; qty: number; price: number }[];
+  docNo?: string;
+  status?: string;
 }) {
   const a = template.accent;
 
@@ -41,11 +47,12 @@ export function DocumentSheet({
           <div style={{ textAlign: "right" }}>
             <p style={{ margin: 0, fontSize: 11, fontWeight: 700, letterSpacing: 1.4, textTransform: "uppercase", color: a }}>Statement</p>
             <p style={{ margin: "2px 0 0", fontSize: 9, color: "#64748b" }}>{dateShort(new Date().toISOString())}</p>
+            {status && <p style={{ margin: "2px 0 0", fontSize: 8, letterSpacing: 1, textTransform: "uppercase", color: "#64748b" }}>{status}</p>}
           </div>
         </div>
         <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", fontSize: 10 }}>
           <div><b>{patient}</b><br /><span style={{ color: "#64748b" }}>{mrn}</span></div>
-          <div style={{ textAlign: "right" }}><b>AYB-2026-3124</b><br /><span style={{ color: "#64748b" }}>Due on receipt</span></div>
+          <div style={{ textAlign: "right" }}><b>{docNo ?? "AYB-2026-3124"}</b><br /><span style={{ color: "#64748b" }}>Due on receipt</span></div>
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 14, fontSize: 10 }}>
           <thead>
@@ -56,12 +63,12 @@ export function DocumentSheet({
             </tr>
           </thead>
           <tbody>
-            {[["Surgical consultation", 1, 25], ["Laparoscopic appendicectomy", 1, 180], ["Bed charge — 1 night", 1, 45]].map((r) => (
-              <tr key={String(r[0])}>
-                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>{r[0]}</td>
-                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>{r[1]}</td>
-                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>${r[2]}</td>
-                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>${Number(r[1]) * Number(r[2])}</td>
+            {(lines ?? [{ label: "Surgical consultation", qty: 1, price: 25 }, { label: "Laparoscopic appendicectomy", qty: 1, price: 180 }, { label: "Bed charge — 1 night", qty: 1, price: 45 }]).map((r, i) => (
+              <tr key={`${r.label}-${i}`}>
+                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>{r.label}</td>
+                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>{r.qty}</td>
+                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>${r.price}</td>
+                <td style={{ padding: "6px 8px", borderBottom: "1px solid #e2e8f0" }}>${r.qty * r.price}</td>
               </tr>
             ))}
           </tbody>

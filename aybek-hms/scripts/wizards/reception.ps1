@@ -2,7 +2,7 @@
 . (Join-Path (Split-Path -Parent $PSScriptRoot) "install\_common.ps1")
 . "$PSScriptRoot\_wizard.ps1"
 
-Invoke-DepartmentWizard -Name "RECEPTION / BILLING" -Path "/hms/patients" -Login "reza@aybek.hospital" -Steps @(
+Invoke-DepartmentWizard -Name "RECEPTION / BILLING" -Path "/hms/patients" -Login "reception@aybek.hospital" -Steps @(
     "Register every new patient with the full name, sex, date of birth and phone. The MRN is issued automatically.",
     "Ask about allergies and type them - the prescription screen checks every drug against them.",
     "Book the appointment in OPD, then send the patient to the waiting area.",
