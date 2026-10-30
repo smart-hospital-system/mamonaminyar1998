@@ -190,6 +190,7 @@ export const DEFAULT_SETTINGS: HmsSettings = {
     currency: "USD",
     logo_mark: "cross",
     footer_note: "This document is computer generated and valid without a wet stamp when signed electronically.",
+    language: "en",
   },
   clinical: {
     default_template: 1,
