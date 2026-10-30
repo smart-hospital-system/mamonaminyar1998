@@ -8,7 +8,7 @@
       . "$PSScriptRoot\_common.ps1"
 
   It resolves the project root (default E:\Mamonaminyar-HMS-Print-Design-v4 or
-  the folder that contains this scripts\ folder), and provides logging helpers
+  the folder that contains this scripts\ folder, or C:\AybekHMS, or $env:AYBEK_HMS_ROOT),
   that work the same in Windows PowerShell 5.1 and PowerShell 7.
 #>
 
@@ -29,7 +29,7 @@ function Get-HmsRoot {
     $candidate = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
     if (Test-Path -LiteralPath (Join-Path $candidate "package.json")) { return $candidate }
 
-    $preferred = "E:\Mamonaminyar-HMS-Print-Design-v4"
+    $preferred = "C:\AybekHMS"
     if (Test-Path -LiteralPath (Join-Path $preferred "package.json")) { return $preferred }
 
     throw "Cannot find the project folder. Run the script with -Path `"D:\your\aybek-folder`" or set `$env:AYBEK_HMS_ROOT."

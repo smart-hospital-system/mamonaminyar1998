@@ -4,7 +4,7 @@ title Aybek Ten-Bed Specialy Surgical Hospital - install from disc
 cd /d "%~dp0"
 
 echo ==============================================================
-echo   Aybek Ten-Bed Specialy Surgical Hospital   -   version 4
+echo   Aybek Ten-Bed Specialy Surgical Hospital   -   version 6
 echo   Installing from this disc onto the local disk
 echo ==============================================================
 echo.
@@ -75,8 +75,8 @@ if exist "%TARGET%\data\slotly.db" (
 
 echo.
 echo [5/5] Starting the server - keep this window open while you work.
+echo       The browser opens by itself as soon as the hospital is ready.
 echo.
-start "" http://localhost:3000
 powershell -NoProfile -ExecutionPolicy Bypass -File "%TARGET%\aybek-hms\scripts\install\04-start.ps1"
 goto done
 
