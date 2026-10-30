@@ -4,7 +4,7 @@ title Aybek Ten-Bed Specialy Surgical Hospital - install from disc
 cd /d "%~dp0"
 
 echo ==============================================================
-echo   Aybek Ten-Bed Specialy Surgical Hospital   -   version 6
+echo   Aybek Ten-Bed Specialy Surgical Hospital   -   version 7
 echo   Installing from this disc onto the local disk
 echo ==============================================================
 echo.
