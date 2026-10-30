@@ -35,6 +35,9 @@ type Pair = [en: string, fa: string];
 const D: Record<string, Pair> = {
   /* ---------------------------------------------------------- shell & nav */
   "nav.command": ["Command", "مرکز"],
+  "nav.ask": ["Ask Aybek", "از ایبک بپرسید"],
+  "nav.intelligence": ["Clinical toolkit", "جعبه‌ابزار کلینیکی"],
+  "nav.audit": ["Audit trail", "ثبت وقایع"],
   "nav.clinical": ["Clinical", "کلینیکی"],
   "nav.operations": ["Operations", "عملیات"],
   "nav.system": ["System", "سیستم"],
@@ -89,6 +92,12 @@ const D: Record<string, Pair> = {
   "shell.palettePlaceholder": ["Patient name, MRN, medicine or page…", "نام مریض، MRN، دوا یا صفحه…"],
 
   /* --------------------------------------------------------------- titles */
+  "title.audit": ["Audit trail", "ثبت وقایع"],
+  "title.audit.sub": ["Every change, who made it, and when", "هر تغییر، چه کسی و چه وقت"],
+  "title.intelligence": ["Clinical toolkit", "جعبه‌ابزار کلینیکی"],
+  "title.intelligence.sub": ["Early warning, interactions, dosing and laboratory interpretation — all offline", "هشدار زودهنگام، تداخل دوا، دوز و تفسیر لابراتوار — همه آفلاین"],
+  "title.ask": ["Ask Aybek", "از ایبک بپرسید"],
+  "title.ask.sub": ["Questions answered from this hospital's own records — offline", "جواب سوال‌ها از سوابق خود این شفاخانه — آفلاین"],
   "title.dashboard": ["Command centre", "مرکز فرمان"],
   "title.dashboard.sub": ["Every department, one screen", "همهٔ دیپارتمنت‌ها، یک صفحه"],
   "title.opd": ["OPD & consults", "معاینات"],

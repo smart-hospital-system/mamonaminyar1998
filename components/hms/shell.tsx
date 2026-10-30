@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   Activity, Bell, Beaker, BookOpen, ChevronsLeft, CreditCard, Cross, FlaskConical, HeartPulse, KeyRound,
   LayoutDashboard, LogOut, Menu, Pill, Printer, ScanLine, Scissors, Search, Settings, ShieldCheck,
-  Stethoscope, UserCog, Users, X,
+  Brain, History, Sparkles, Stethoscope, UserCog, Users, X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LangSwitch } from "./lang-switch";
 import { useLang } from "./lang-provider";
 import { Ring, Spinner } from "./ui";
+import { CommandPalette } from "./palette";
 
 export type HmsNavUser = {
   id: string;
@@ -31,6 +32,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
     title: "nav.command",
     items: [
       { href: "/hms", label: "nav.dashboard", icon: LayoutDashboard },
+      { href: "/hms/ask", label: "nav.ask", icon: Sparkles },
       { href: "/hms/opd", label: "nav.opd", icon: Stethoscope, roles: ["admin", "doctor", "nurse", "reception"] },
       { href: "/hms/patients", label: "nav.patients", icon: Users },
     ],
@@ -38,6 +40,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
   {
     title: "nav.clinical",
     items: [
+      { href: "/hms/intelligence", label: "nav.intelligence", icon: Brain, roles: ["admin", "doctor", "nurse", "pharmacist", "lab", "radiology"] },
       { href: "/hms/prescriptions", label: "nav.prescriptions", icon: Pill, roles: ["admin", "doctor", "pharmacist", "nurse"], badge: "rx" },
       { href: "/hms/lab", label: "nav.lab", icon: FlaskConical, roles: ["admin", "lab", "doctor"], badge: "lab" },
       { href: "/hms/radiology", label: "nav.radiology", icon: ScanLine, roles: ["admin", "radiology", "doctor"] },
@@ -57,6 +60,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
     title: "nav.system",
     items: [
       { href: "/hms/alerts", label: "nav.alerts", icon: ShieldCheck, badge: "alerts" },
+      { href: "/hms/audit", label: "nav.audit", icon: History, roles: ["admin", "doctor"] },
       { href: "/hms/print", label: "nav.print", icon: Printer },
       { href: "/hms/settings", label: "nav.settings", icon: Settings, roles: ["admin"] },
       { href: "/hms/team", label: "nav.team", icon: UserCog, roles: ["admin"] },
@@ -68,6 +72,9 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
 
 const TITLES: Record<string, [string, string]> = {
   "/hms": ["title.dashboard", "title.dashboard.sub"],
+  "/hms/ask": ["title.ask", "title.ask.sub"],
+  "/hms/intelligence": ["title.intelligence", "title.intelligence.sub"],
+  "/hms/audit": ["title.audit", "title.audit.sub"],
   "/hms/opd": ["title.opd", "title.opd.sub"],
   "/hms/patients": ["title.patients", "title.patients.sub"],
   "/hms/prescriptions": ["title.prescriptions", "title.prescriptions.sub"],
@@ -462,127 +469,6 @@ export function HmsShell({
       </div>
 
       {palette && <CommandPalette onClose={() => setPalette(false)} />}
-    </div>
-  );
-}
-
-function CommandPalette({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
-  const { t } = useLang();
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<{ patients: { id: string; name: string; mrn: string }[]; drugs: { id: string; name: string }[] }>({
-    patients: [],
-    drugs: [],
-  });
-  const inputRef = useRef<HTMLInputElement>(null);
-  useEffect(() => inputRef.current?.focus(), []);
-
-  useEffect(() => {
-    if (q.length < 2) {
-      setResults({ patients: [], drugs: [] });
-      return;
-    }
-    const t = setTimeout(async () => {
-      try {
-        const [p, m] = await Promise.all([
-          fetch(`/api/hms/patients?q=${encodeURIComponent(q)}&limit=5`).then((r) => r.json()),
-          fetch(`/api/hms/medicines?q=${encodeURIComponent(q)}&limit=5`).then((r) => r.json()),
-        ]);
-        setResults({ patients: p.items ?? [], drugs: m.items ?? [] });
-      } catch {
-        /* ignore */
-      }
-    }, 180);
-    return () => clearTimeout(t);
-  }, [q]);
-
-  const pages = NAV.flatMap((s) => s.items)
-    .map((i) => ({ ...i, text: t(i.label) }))
-    .filter((i) => i.text.toLowerCase().includes(q.toLowerCase()))
-    .slice(0, 5);
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/40 px-4 pt-[12vh]" onClick={onClose}>
-      <div
-        className="w-full max-w-lg overflow-hidden rounded-xl border shadow-2xl"
-        style={{ background: "var(--hms-surface)", borderColor: "var(--hms-border)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--hms-border)" }}>
-          <Search size={15} style={{ color: "var(--hms-faint)" }} />
-          <input
-            ref={inputRef}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("shell.palettePlaceholder")}
-            className="w-full bg-transparent text-[0.82rem] outline-none"
-          />
-          <kbd className="rounded border px-1 text-[0.6rem]" style={{ borderColor: "var(--hms-border)", color: "var(--hms-faint)" }}>esc</kbd>
-        </div>
-        <div className="max-h-[55vh] overflow-y-auto p-1.5">
-          {pages.length > 0 && (
-            <>
-              <p className="px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.palettePages")}</p>
-              {pages.map((p) => (
-                <button
-                  key={p.href}
-                  onClick={() => {
-                    router.push(p.href);
-                    onClose();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] hover:bg-[var(--hms-surface-2)]"
-                >
-                  <p.icon size={13} style={{ color: "var(--hms-brand)" }} /> {p.text}
-                </button>
-              ))}
-            </>
-          )}
-          {results.patients.length > 0 && (
-            <>
-              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.palettePatients")}</p>
-              {results.patients.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    router.push(`/hms/patients/${p.id}`);
-                    onClose();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] hover:bg-[var(--hms-surface-2)]"
-                >
-                  <Users size={13} style={{ color: "var(--hms-brand)" }} />
-                  <span className="flex-1 truncate">{p.name}</span>
-                  <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{p.mrn}</span>
-                </button>
-              ))}
-            </>
-          )}
-          {results.drugs.length > 0 && (
-            <>
-              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.paletteMedicines")}</p>
-              {results.drugs.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => {
-                    router.push(`/hms/pharmacy?q=${encodeURIComponent(m.name)}`);
-                    onClose();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] hover:bg-[var(--hms-surface-2)]"
-                >
-                  <Pill size={13} style={{ color: "var(--hms-brand)" }} /> {m.name}
-                </button>
-              ))}
-            </>
-          )}
-          {q.length >= 2 && !results.patients.length && !results.drugs.length && !pages.length && (
-            <p className="px-2 py-6 text-center text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>{t("shell.nothingMatched", { q })}</p>
-          )}
-          {q.length < 2 && (
-            <p className="px-2 py-6 text-center text-[0.7rem]" style={{ color: "var(--hms-muted)" }}>
-              {t("shell.typeTwo")}
-            </p>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

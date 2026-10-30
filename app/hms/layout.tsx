@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LangProvider } from "@/components/hms/lang-provider";
+import { ToastProvider } from "@/components/hms/toast";
 import { hmsReady, getSection } from "@/lib/hms/db";
 import { dirOf } from "@/lib/hms/i18n";
 import { getLang } from "@/lib/hms/lang-server";
@@ -37,7 +38,7 @@ export default async function HmsRootLayout({ children }: { children: React.Reac
 
   // The hospital carries its own palette: every colour is injected here, so the
   // workspace never inherits the salon theme (which would override a dark theme).
-  const isDark = ["midnight", "highcontrast"].includes(t.id);
+  const isDark = ["midnight", "highcontrast", "obsidian"].includes(t.id);
 
   return (
     <div
@@ -48,7 +49,9 @@ export default async function HmsRootLayout({ children }: { children: React.Reac
       dir={dirOf(lang)}
       lang={lang === "fa" ? "fa-AF" : "en"}
     >
-      <LangProvider lang={lang}>{children}</LangProvider>
+      <LangProvider lang={lang}>
+        <ToastProvider>{children}</ToastProvider>
+      </LangProvider>
     </div>
   );
 }

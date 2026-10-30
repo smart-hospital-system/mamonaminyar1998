@@ -5,6 +5,7 @@ import { getSection, hmsReady } from "@/lib/hms/db";
 import { getPrescription } from "@/lib/hms/queries";
 import { RX_TEMPLATES, templateById } from "@/lib/hms/templates";
 import { PrintBar } from "@/components/hms/print-bar";
+import { getLang } from "@/lib/hms/lang-server";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function RxPrintPage({
 }) {
   await requireHmsPage();
   await hmsReady();
+  const lang = await getLang();
   const { id } = await params;
   const sp = await searchParams;
   const rx = getPrescription(id);
@@ -32,6 +34,7 @@ export default async function RxPrintPage({
       {!embed && <PrintBar no={rx.rx_no} subtitle={rx.patient_name} template={tpl.id} templates={RX_TEMPLATES.map((t) => ({ id: t.id, name: t.name }))} />}
       <div style={{ display: "flex", justifyContent: "center", padding: embed ? 0 : 0 }}>
         <RxSheet
+          lang={lang}
           template={tpl}
           identity={{
             name: String(identity.name),

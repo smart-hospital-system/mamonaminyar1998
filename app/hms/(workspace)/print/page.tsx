@@ -92,7 +92,7 @@ export default async function PrintStudio({ searchParams }: { searchParams: Prom
 
             <div className="mt-2 overflow-hidden rounded-md border" style={{ borderColor: "var(--hms-border)", height: 300 }}>
               <div style={{ width: 793, height: 1122, transform: "scale(0.34)", transformOrigin: "top left" }}>
-                <RxSheet template={t} identity={ident} doc={doc} patient={patient} items={SAMPLE_ITEMS} />
+                <RxSheet lang={lang} template={t} identity={ident} doc={doc} patient={patient} items={SAMPLE_ITEMS} />
               </div>
             </div>
 

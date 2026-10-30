@@ -2,6 +2,7 @@ import { Activity, ArrowLeft, CalendarDays, FlaskConical, Pill, Receipt, ScanLin
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Panel, Pill as Tag, SectionTitle, Stat } from "@/components/hms/ui";
+import { PatientTimeline, SafetyStrip, type TimelineEvent } from "@/components/hms/timeline";
 import { requireHmsPage } from "@/lib/hms/auth";
 import { age, dateShort, digitsOf, money, relTime } from "@/lib/hms/format";
 import { statusText, tx } from "@/lib/hms/i18n";
@@ -35,6 +36,28 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
   const invoices = chart.invoices as Inv[];
   const surgeries = chart.surgeries as Surg[];
   const outstanding = invoices.reduce((a, i) => a + (i.total - i.paid), 0);
+
+  /* A single chronological spine for the whole chart. */
+  const events: TimelineEvent[] = [
+    ...encounters.map((e) => ({ id: e.id, kind: "encounter" as const, at: e.created_at, title: e.diagnosis ?? tr("Clinical review", "بازبینی کلینیکی"), detail: [e.complaint, e.plan].filter(Boolean).join(" · ") || undefined, status: e.icd10 ?? undefined, href: `/hms/opd?patient=${p.id}` })),
+    ...prescriptions.map((r) => ({ id: r.id, kind: "rx" as const, at: r.created_at, title: r.rx_no, detail: r.diagnosis ?? undefined, status: r.status, href: `/hms/rx/${r.id}` })),
+    ...labs.map((l) => ({ id: l.id, kind: "lab" as const, at: l.created_at, title: l.test_name, detail: l.result_value ?? undefined, status: l.status, href: "/hms/lab" })),
+    ...imaging.map((i) => ({ id: i.id, kind: "imaging" as const, at: i.created_at, title: `${i.modality} · ${i.body_part}`, status: i.status, href: "/hms/radiology" })),
+    ...admissions.map((a) => ({ id: a.id, kind: "admission" as const, at: a.admitted_at, title: `${a.ward ?? tr("Ward", "وارڈ")} · ${a.bed_label ?? "—"}`, detail: a.diagnosis ?? undefined, status: a.status, href: "/hms/inpatients" })),
+    ...surgeries.map((x) => ({ id: x.id, kind: "surgery" as const, at: x.scheduled_at, title: x.procedure_name, detail: x.theatre ?? undefined, status: x.status, href: "/hms/surgery" })),
+    ...invoices.map((i) => ({ id: i.id, kind: "invoice" as const, at: i.created_at, title: `${i.invoice_no} · ${money(i.total, lang)}`, detail: tr(`Paid ${money(i.paid, lang)}`, `پرداخت ${money(i.paid, lang)}`), status: i.status, href: `/hms/receipt/${i.id}` })),
+  ];
+
+  /* The four things a clinician checks before the next decision. */
+  const safety: { tone: "good" | "warn" | "bad"; label: string }[] = [];
+  if (outstanding > 0) safety.push({ tone: "warn", label: tr(`${money(outstanding, lang)} unpaid`, `${money(outstanding, lang)} پرداخت‌نشده`) });
+  const unsigned = prescriptions.filter((r) => r.status === "pending").length;
+  if (unsigned) safety.push({ tone: "warn", label: tr(`${unsigned} prescription(s) unsigned`, `${unsigned} نسخهٔ بدون امضا`) });
+  const overdueLab = labs.filter((l) => l.status !== "verified").length;
+  if (overdueLab) safety.push({ tone: "warn", label: tr(`${overdueLab} investigation(s) open`, `${overdueLab} بررسی باز`) });
+  const activeAdmission = admissions.find((a) => !a.discharged_at);
+  if (activeAdmission) safety.push({ tone: "good", label: tr(`In ${activeAdmission.ward ?? "ward"} · ${activeAdmission.bed_label ?? "—"}`, `در ${activeAdmission.ward ?? "وارڈ"} · ${activeAdmission.bed_label ?? "—"}`) });
+  if (p.allergies && !/^none$|^—$|^nil$/i.test(String(p.allergies))) safety.push({ tone: "bad", label: tr(`Allergy: ${p.allergies}`, `حساسیت: ${p.allergies}`) });
 
   return (
     <div className="space-y-3.5">
@@ -83,9 +106,12 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
         {p.notes && <p className="mt-2 rounded-lg p-2 text-[0.7rem]" style={{ background: "var(--hms-surface-2)" }}>{p.notes}</p>}
       </Panel>
 
+      <SafetyStrip items={safety} />
+      <PatientTimeline events={events} />
+
       <div className="grid gap-3.5 lg:grid-cols-[1.5fr_1fr]">
         <Panel>
-          <SectionTitle title={tr("Clinical timeline", "خط زمانی کلینیکی")} subtitle={tr("Every encounter, newest first", "همهٔ معاینات، جدیدترین اول")} icon={<Activity size={14} />} />
+          <SectionTitle title={tr("Clinical notes", "یادداشت‌های کلینیکی")} subtitle={tr("Every encounter, newest first", "همهٔ معاینات، جدیدترین اول")} icon={<Activity size={14} />} />
           <div className="mt-2 space-y-2">
             {encounters.map((e) => (
               <div key={e.id} className="relative border-l pl-3" style={{ borderColor: "var(--hms-border)" }}>

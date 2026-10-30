@@ -669,3 +669,240 @@ html[dir="rtl"] body {
 [dir="rtl"] .rx-sheet table {
   direction: rtl;
 }
+
+/* =====================================================================
+   Aybek HMS — v7 "precision" design layer
+   A calm, expensive surface for a ten-bed hospital: hairline borders,
+   two-layer shadows, tabular numerals, and motion that never jitters.
+   Everything here is additive — older class names keep working.
+   ===================================================================== */
+.hms-root {
+  --hms-ring: color-mix(in srgb, var(--hms-brand) 38%, transparent);
+  --hms-elev-1: 0 1px 1px rgba(15, 23, 42, 0.04), 0 2px 6px -3px rgba(15, 23, 42, 0.10);
+  --hms-elev-2: 0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 24px -14px rgba(15, 23, 42, 0.30);
+  --hms-elev-3: 0 2px 4px rgba(15, 23, 42, 0.06), 0 26px 60px -32px rgba(15, 23, 42, 0.45);
+  --hms-hairline: color-mix(in srgb, var(--hms-border) 78%, transparent);
+  --hms-sheen: linear-gradient(180deg, color-mix(in srgb, #fff 55%, transparent), transparent 42%);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* numbers align in every table, KPI and money column */
+.hms-root table,
+.hms-root .hms-num,
+.hms-root [data-num] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* ------------------------------------------------------------ surfaces */
+.hms-card {
+  border-color: var(--hms-hairline);
+  box-shadow: var(--hms-elev-1);
+  transition: box-shadow 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+.hms-card-lift:hover {
+  box-shadow: var(--hms-elev-2);
+  border-color: color-mix(in srgb, var(--hms-brand) 18%, var(--hms-border));
+  transform: translateY(-1px);
+}
+.hms-glass {
+  background: color-mix(in srgb, var(--hms-surface) 72%, transparent);
+  backdrop-filter: saturate(150%) blur(14px);
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+}
+.hms-hairline-t { border-top: 1px solid var(--hms-hairline); }
+.hms-hairline-b { border-bottom: 1px solid var(--hms-hairline); }
+
+/* A restrained mesh gradient used once per page, never behind text. */
+.hms-hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(58rem 20rem at 8% -30%, color-mix(in srgb, var(--hms-brand) 20%, transparent), transparent 62%),
+    radial-gradient(42rem 16rem at 96% -10%, color-mix(in srgb, var(--hms-brand) 10%, transparent), transparent 60%),
+    var(--hms-surface);
+  border: 1px solid var(--hms-hairline);
+  border-radius: 1rem;
+  box-shadow: var(--hms-elev-2);
+}
+.hms-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(color-mix(in srgb, var(--hms-ink) 5%, transparent) 0.5px, transparent 0.5px);
+  background-size: 14px 14px;
+  opacity: 0.5;
+  z-index: -1;
+}
+.hms-hero-title {
+  font-size: 1.32rem;
+  line-height: 1.25;
+  font-weight: 680;
+  letter-spacing: -0.026em;
+}
+.hms-eyebrow {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hms-faint);
+}
+
+/* ------------------------------------------------------------ controls */
+.hms-btn {
+  box-shadow: var(--hms-elev-1);
+  transition: background 150ms ease, border-color 150ms ease, transform 90ms ease, box-shadow 150ms ease;
+}
+.hms-btn:hover { box-shadow: var(--hms-elev-1), 0 0 0 1px color-mix(in srgb, var(--hms-brand) 12%, transparent); }
+.hms-btn:focus-visible { outline: 2px solid var(--hms-ring); outline-offset: 2px; }
+.hms-btn-primary {
+  background-image: linear-gradient(180deg, color-mix(in srgb, #fff 14%, transparent), transparent 58%);
+  background-color: var(--hms-brand);
+  box-shadow: 0 1px 0 color-mix(in srgb, #fff 18%, transparent) inset, 0 10px 22px -14px var(--hms-brand);
+}
+.hms-btn-primary:hover {
+  background-color: var(--hms-brand-hover);
+  box-shadow: 0 1px 0 color-mix(in srgb, #fff 22%, transparent) inset, 0 14px 26px -14px var(--hms-brand);
+}
+.hms-input:focus,
+.hms-input:focus-visible {
+  border-color: color-mix(in srgb, var(--hms-brand) 60%, var(--hms-border));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hms-brand) 12%, transparent);
+}
+.hms-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.28rem;
+  border-radius: 0.3rem;
+  border: 1px solid var(--hms-border);
+  border-bottom-width: 2px;
+  background: var(--hms-surface-2);
+  font-size: 0.58rem;
+  font-weight: 650;
+  color: var(--hms-muted);
+}
+
+/* ------------------------------------------------------------ navigation */
+.hms-root aside {
+  background-image: linear-gradient(180deg, var(--hms-surface), color-mix(in srgb, var(--hms-surface) 88%, var(--hms-surface-2)));
+}
+.hms-nav { position: relative; }
+.hms-nav[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.42rem;
+  bottom: 0.42rem;
+  width: 2.5px;
+  border-radius: 999px;
+  background: var(--hms-brand);
+}
+.hms-nav[data-active="true"] {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--hms-brand) 14%, transparent), transparent 78%);
+}
+[dir="rtl"] .hms-nav[data-active="true"] {
+  background-image: linear-gradient(270deg, color-mix(in srgb, var(--hms-brand) 14%, transparent), transparent 78%);
+}
+
+/* ------------------------------------------------------------ tables */
+.hms-th { position: sticky; top: 0; z-index: 1; background: var(--hms-surface-2); }
+.hms-root table { border-collapse: separate; border-spacing: 0; }
+.hms-row { transition: background 120ms ease; }
+.hms-row:hover .hms-td { background: color-mix(in srgb, var(--hms-brand) 4%, var(--hms-surface-2)); }
+
+/* ------------------------------------------------------------ motion */
+@keyframes hmsRise { from { opacity: 0; transform: translateY(8px); } }
+@keyframes hmsGlow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--hms-brand) 26%, transparent); } 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--hms-brand) 0%, transparent); } }
+.anim-rise { animation: hmsRise 360ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-stagger > * { animation: hmsRise 380ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.anim-stagger > *:nth-child(2) { animation-delay: 35ms; }
+.anim-stagger > *:nth-child(3) { animation-delay: 70ms; }
+.anim-stagger > *:nth-child(4) { animation-delay: 105ms; }
+.anim-stagger > *:nth-child(5) { animation-delay: 140ms; }
+.anim-stagger > *:nth-child(6) { animation-delay: 175ms; }
+.anim-stagger > *:nth-child(7) { animation-delay: 210ms; }
+.anim-stagger > *:nth-child(8) { animation-delay: 245ms; }
+.anim-pulse-ring { animation: hmsGlow 2.4s ease-in-out infinite; }
+
+/* ------------------------------------------------------------ toasts */
+.hms-toaster {
+  position: fixed;
+  z-index: 90;
+  bottom: 1rem;
+  inset-inline-end: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(22rem, calc(100vw - 2rem));
+  pointer-events: none;
+}
+.hms-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border-radius: 0.7rem;
+  border: 1px solid var(--hms-hairline);
+  background: var(--hms-surface);
+  box-shadow: var(--hms-elev-3);
+  animation: hmsRise 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.hms-toast[data-tone="good"] { border-inline-start: 3px solid #10b981; }
+.hms-toast[data-tone="bad"] { border-inline-start: 3px solid #ef4444; }
+.hms-toast[data-tone="warn"] { border-inline-start: 3px solid #f59e0b; }
+.hms-toast[data-tone="info"] { border-inline-start: 3px solid var(--hms-brand); }
+
+/* ------------------------------------------------------------ tabs */
+.hms-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 2rem;
+  padding: 0 0.7rem;
+  border-radius: 0.5rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--hms-muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+.hms-tab:hover { background: var(--hms-surface-3); color: var(--hms-ink); }
+.hms-tab[data-active="true"] {
+  background: var(--hms-surface);
+  color: var(--hms-brand-ink);
+  box-shadow: var(--hms-elev-1);
+}
+.hms-tabbar {
+  display: inline-flex;
+  gap: 0.15rem;
+  padding: 0.18rem;
+  border-radius: 0.62rem;
+  background: var(--hms-surface-2);
+  border: 1px solid var(--hms-hairline);
+}
+
+/* ------------------------------------------------------------ empty + skeleton */
+.hms-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 2.2rem 1rem;
+  text-align: center;
+  color: var(--hms-muted);
+}
+
+/* ------------------------------------------------------------ print refinement */
+@media print {
+  .hms-root { background: #fff; }
+  .hms-card { box-shadow: none !important; border-color: #ddd !important; }
+  .print-area table { page-break-inside: auto; }
+  .print-area tr { page-break-inside: avoid; }
+}

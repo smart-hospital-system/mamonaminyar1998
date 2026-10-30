@@ -341,6 +341,24 @@ export const APP_THEMES: AppTheme[] = [
   },
 ];
 
+/** v7 additions: two signature palettes for the owner's private wing. */
+APP_THEMES.push(
+  {
+    id: "obsidian", name: "Obsidian Gold", note: "Executive evening palette — black glass with a restrained gold accent.",
+    bg: "#0b0b0f", surface: "#131318", surface2: "#181820", surface3: "#22222c", border: "#2d2d3a",
+    text: "#f5f2ea", muted: "#a8a294", faint: "#7d7869", brand: "#c8a24a", brandHover: "#d8b158",
+    brandSoft: "#2a2418", brandInk: "#f0dba4", success: "#4ade80", warn: "#fbbf24", danger: "#f87171",
+    chart: ["#c8a24a", "#e5c76b", "#94a3b8", "#4ade80", "#f472b6", "#38bdf8"], preview: "linear-gradient(135deg,#0b0b0f,#c8a24a)",
+  },
+  {
+    id: "ivory", name: "Ivory Atelier", note: "Gallery-white with graphite ink — the quietest, most paper-like theme.",
+    bg: "#fbfaf7", surface: "#ffffff", surface2: "#f7f5f0", surface3: "#efece5", border: "#e3ded3",
+    text: "#1c1a17", muted: "#5f5a51", faint: "#938d81", brand: "#3f3f46", brandHover: "#27272a",
+    brandSoft: "#eceae4", brandInk: "#27272a", success: "#15803d", warn: "#b45309", danger: "#b91c1c",
+    chart: ["#3f3f46", "#a16207", "#0e7490", "#4d7c0f", "#9f1239", "#6d28d9"], preview: "linear-gradient(135deg,#fbfaf7,#9ca3af)",
+  },
+);
+
 export function themeById(id: string): AppTheme {
   return APP_THEMES.find((t) => t.id === id) ?? APP_THEMES[0];
 }
