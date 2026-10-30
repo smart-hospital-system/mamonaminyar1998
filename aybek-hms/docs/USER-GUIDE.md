@@ -232,3 +232,16 @@ a hidden button is not a permission.
    disk weekly.
 6. **Do not share the owner password.** Give each person their own account so
    the audit trail names the right human.
+
+---
+
+## Language / ژبه — English and Dari
+
+The whole interface is bilingual. The **EN / دری** switch sits in the header of every screen
+and on the login form; picking Dari mirrors the layout right-to-left, uses Persian digits and
+the Solar Hijri calendar, and keeps every label in Dari. The choice is per browser (cookie
+`aybek_lang`), so a Dari-speaking pharmacist and an English-speaking surgeon can work on the
+same machine at the same time. The hospital-wide default lives in **Settings → Hospital
+identity → Default language for new sessions**. Printed papers (prescriptions, receipts,
+discharge summaries) print in English with the local hospital name, so they can be read
+anywhere.

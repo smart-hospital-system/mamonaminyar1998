@@ -202,3 +202,18 @@ of where the server runs.
   without OAuth credentials; the session handling is the same as a real provider flow.
 - The workspace reseeds itself only when the database is empty, so your changes persist across
   restarts. Use Settings → Data → Reset demo to start fresh.
+
+## Bilingual by design — English / دری
+
+The interface is fully bilingual. The `EN / دری` control sits in the header of every screen and on
+the login form: choosing Dari mirrors the whole layout right-to-left, switches every label to Dari,
+uses Persian digits and the Solar Hijri calendar. The choice is stored per browser (`aybek_lang`
+cookie), so two people can work side by side in different languages on the same server. The
+hospital-wide default is **Settings → Hospital identity → Default language for new sessions**
+(`en` or `fa`). Printed papers stay in English with the local hospital name so they can be read
+anywhere.
+
+Implementation: `lib/hms/i18n.ts` (dictionary + `t()` / `tx()` + `statusText()`),
+`lib/hms/lang-server.ts` (cookie → settings → English), `components/hms/lang-provider.tsx`
+(client context: `useTr()`, `useTx()`, `useLang()`), `components/hms/lang-switch.tsx`
+(the two switchers), `lib/hms/format.ts` (language-aware money, dates, times, ages).
