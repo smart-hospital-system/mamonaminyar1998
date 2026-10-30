@@ -133,7 +133,7 @@ Optional: set `SLOTLY_DB_PATH` to store the database somewhere else (see `.env.e
 - Deterministic seed: 6 staff, 14 services, 62 customers, ~2,300 bookings, ~1,500 payments,
   ~900 reviews, coupons, campaigns, referrals, waitlist, time-off, notifications and audit logs
 - Full CRUD API for every resource, validated and permission-checked
-- JSON **backup export** and one-click demo reset from Settings
+- JSON **backup download** (Settings → Data & backup, `GET /api/hms/backup`) and a guarded demo reset (`POST /api/hms/backup`, needs the word `RESET`)
 - Every mutation writes to `activity_logs` with actor, entity and timestamp
 
 ---
@@ -192,6 +192,8 @@ of where the server runs.
 | `GET` | `/api/ai/forecast` · `/api/ai/insights` · `/api/ai/followups` | premium intelligence |
 | `GET/POST` | `/api/public/booking` | public availability + booking creation |
 | `GET` | `/api/demo/backup` | JSON export of every table |
+| `GET` | `/api/hms/backup` | Admin-only JSON backup of all 19 hospital tables + settings + licence |
+| `POST` | `/api/hms/backup` | `{ action: "reset-demo", confirm: "RESET" }` rebuilds the demo hospital |
 
 ---
 

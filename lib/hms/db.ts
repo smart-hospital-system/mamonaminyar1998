@@ -167,6 +167,41 @@ export function hmsReady() {
   return db;
 }
 
+/* -------------------------------------------------------------- backup & reset */
+
+/** Every hms_* table, row by row. Used by the JSON backup the owner downloads
+ *  from Settings → Data, and by anyone who wants to inspect the hospital file. */
+export function dumpHms(): { table: string; rows: Record<string, unknown>[] }[] {
+  const db = hmsDb();
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'hms_%' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+    .all() as { name: string }[];
+  return tables.map((t) => ({
+    table: t.name,
+    rows: db.prepare(`SELECT * FROM "${t.name}"`).all() as Record<string, unknown>[],
+  }));
+}
+
+/**
+ * Return the demo hospital to the state it shipped in: drop the hms_* tables,
+ * rebuild the schema and re-seed. The booking tables are left untouched so the
+ * two halves of the repository stay independent.
+ *
+ * Destructive by design — the caller must be the administrator and must confirm.
+ */
+export function resetHmsData() {
+  const db = hmsDb();
+  const tables = db
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'hms_%' AND name NOT LIKE 'sqlite_%'")
+    .all() as { name: string }[];
+  db.exec("PRAGMA foreign_keys = OFF;");
+  for (const t of tables) db.exec(`DROP TABLE IF EXISTS "${t.name}"`);
+  db.exec(SCHEMA);
+  seedHms(db);
+  db.exec("PRAGMA foreign_keys = ON;");
+  return tables.length;
+}
+
 /* ------------------------------------------------------------------ settings */
 
 export type HmsSettings = Record<string, Record<string, unknown>>;
