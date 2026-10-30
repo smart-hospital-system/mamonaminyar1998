@@ -4,6 +4,8 @@ import { Check, Loader2, Sparkles, Wrench, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { relTime } from "@/lib/hms/format";
+import { statusText } from "@/lib/hms/i18n";
+import { useLang, useTr } from "./lang-provider";
 import { Pill } from "./ui";
 
 type Alert = {
@@ -24,6 +26,8 @@ type Alert = {
 
 export function AlertList({ alerts, compact }: { alerts: Alert[]; compact?: boolean }) {
   const router = useRouter();
+  const t = useTr();
+  const { lang } = useLang();
   const [busy, setBusy] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [note, setNote] = useState<{ tone: "ok" | "bad"; text: string } | null>(null);
@@ -37,10 +41,10 @@ export function AlertList({ alerts, compact }: { alerts: Alert[]; compact?: bool
         body: JSON.stringify({ action, id, note: "Resolved from the command centre" }),
       });
       const data = await res.json();
-      setNote({ tone: res.ok ? "ok" : "bad", text: data.message ?? (res.ok ? "Alarm updated." : data.error ?? "Could not update the alarm.") });
+      setNote({ tone: res.ok ? "ok" : "bad", text: data.message ?? (res.ok ? t("al.updated") : data.error ?? t("al.couldNot")) });
       startTransition(() => router.refresh());
     } catch {
-      setNote({ tone: "bad", text: "Network error — the monitor did not respond." });
+      setNote({ tone: "bad", text: t("al.network") });
     } finally {
       setBusy(null);
     }
@@ -52,9 +56,9 @@ export function AlertList({ alerts, compact }: { alerts: Alert[]; compact?: bool
         <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb,#10b981 16%, transparent)", color: "#0b7a58" }}>
           <Check size={15} />
         </span>
-        <p className="text-[0.76rem] font-semibold">No open alarms</p>
+        <p className="text-[0.76rem] font-semibold">{t("al.none")}</p>
         <p className="text-[0.66rem]" style={{ color: "var(--hms-muted)" }}>
-          The 30-minute scan found nothing that needs you.
+          {t("al.noneHint")}
         </p>
       </div>
     );
@@ -86,8 +90,8 @@ export function AlertList({ alerts, compact }: { alerts: Alert[]; compact?: bool
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Pill tone={tone as "bad"} dot>{a.severity}</Pill>
-                  <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{a.category} · {relTime(a.last_seen ?? a.first_seen)}</span>
+                  <Pill tone={tone as "bad"} dot>{statusText(lang, a.severity)}</Pill>
+                  <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{a.category} · {relTime(a.last_seen ?? a.first_seen, lang)}</span>
                   {a.occurrences > 1 && <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>×{a.occurrences}</span>}
                 </div>
                 <p className="mt-1 text-[0.76rem] font-semibold leading-tight">{a.title}</p>
@@ -98,18 +102,18 @@ export function AlertList({ alerts, compact }: { alerts: Alert[]; compact?: bool
               {a.auto_fixable ? (
                 <button className="hms-btn hms-btn-sm hms-btn-primary" onClick={() => act(a.id, "heal")} disabled={!!busy}>
                   {busy === a.id + "heal" ? <Loader2 size={10} className="animate-spin" /> : <Wrench size={10} />}
-                  Auto-fix now
+                  {t("al.autoFix")}
                 </button>
               ) : null}
               <button className="hms-btn hms-btn-sm" onClick={() => act(a.id, "acknowledge")} disabled={!!busy}>
-                <Sparkles size={10} /> Acknowledge
+                <Sparkles size={10} /> {t("al.ack")}
               </button>
               <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={() => act(a.id, "resolve")} disabled={!!busy}>
-                <Check size={10} /> Resolve
+                <Check size={10} /> {t("al.resolve")}
               </button>
               {a.link && (
                 <a href={a.link} className="ml-auto text-[0.64rem] font-semibold" style={{ color: "var(--hms-brand)" }}>
-                  Go to department →
+                  {t("al.goTo")}
                 </a>
               )}
             </div>

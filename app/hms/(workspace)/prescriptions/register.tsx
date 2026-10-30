@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Empty, Person, SectionTitle, Status } from "@/components/hms/ui";
-import { dateShort, money } from "@/lib/hms/format";
+import { dateShort, digitsOf, money } from "@/lib/hms/format";
+import { statusText } from "@/lib/hms/i18n";
+import { useLang, useTx } from "@/components/hms/lang-provider";
 import type { RxRow } from "@/lib/hms/queries";
 
 type Tpl = { id: number; name: string; slug: string; preview: string; paper: string };
@@ -24,6 +26,8 @@ export function PrescriptionRegister({
   role: string;
 }) {
   const router = useRouter();
+  const tx = useTx();
+  const { lang } = useLang();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [busy, setBusy] = useState<string | null>(null);
@@ -52,19 +56,19 @@ export function PrescriptionRegister({
         body: JSON.stringify({ action }),
       });
       const data = await res.json();
-      if (!res.ok) setMsg(data.error ?? "The action could not be completed.");
+      if (!res.ok) setMsg(data.error ?? tx("The action could not be completed.", "اقدام انجام نشد."));
       else {
         setMsg(
           action === "dispense"
-            ? `Dispensed successfully. Stock updated, payment total ${money(data.total ?? 0)}.`
+            ? tx("Dispensed successfully. Stock updated, payment total {amount}.", "با موفقیت تحویل شد. موجودی به‌روز و مبلغ پرداخت {amount}.", { amount: money(data.total ?? 0, lang) })
             : action === "sign"
-              ? "Signed — the prescription can now be printed or dispensed."
-              : "Prescription voided and kept on the audit trail."
+              ? tx("Signed — the prescription can now be printed or dispensed.", "امضا شد — نسخه اکنون قابل چاپ یا تحویل است.")
+              : tx("Prescription voided and kept on the audit trail.", "نسخه باطل شد و در سابقهٔ حسابرسی باقی ماند.")
         );
         router.refresh();
       }
     } catch {
-      setMsg("Network error — please retry.");
+      setMsg(tx("Network error — please retry.", "خطای شبکه — دوباره تلاش کنید."));
     } finally {
       setBusy(null);
     }
@@ -82,7 +86,7 @@ export function PrescriptionRegister({
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[15rem] flex-1">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--hms-faint)" }} />
-          <input className="hms-input pl-7" placeholder="Search patient, Rx number or diagnosis…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="hms-input pl-7" placeholder={tx("Search patient, Rx number or diagnosis…", "جستجوی مریض، شمارهٔ نسخه یا تشخیص…")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-1">
           {(["all", "pending", "signed", "dispensed"] as const).map((s) => (
@@ -92,8 +96,8 @@ export function PrescriptionRegister({
               className="hms-btn hms-btn-sm"
               style={status === s ? { background: "var(--hms-brand-soft)", borderColor: "transparent", color: "var(--hms-brand-ink)" } : undefined}
             >
-              <span className="capitalize">{s}</span>
-              <span className="rounded-full px-1 text-[0.58rem]" style={{ background: "var(--hms-surface-3)" }}>{counts[s]}</span>
+              <span className="capitalize">{s === "all" ? tx("all", "همه") : statusText(lang, s)}</span>
+              <span className="rounded-full px-1 text-[0.58rem]" style={{ background: "var(--hms-surface-3)" }}>{digitsOf(lang, counts[s])}</span>
             </button>
           ))}
         </div>
@@ -110,14 +114,14 @@ export function PrescriptionRegister({
         <table className="w-full min-w-[52rem]">
           <thead style={{ background: "var(--hms-surface-2)" }}>
             <tr>
-              <th className="hms-th">Patient</th>
-              <th className="hms-th">Rx</th>
-              <th className="hms-th">Diagnosis</th>
-              <th className="hms-th">Items</th>
-              <th className="hms-th">Physician</th>
-              <th className="hms-th">Issued</th>
-              <th className="hms-th">Status</th>
-              <th className="hms-th text-right">Actions</th>
+              <th className="hms-th">{tx("Patient", "مریض")}</th>
+              <th className="hms-th">{tx("Rx", "نسخه")}</th>
+              <th className="hms-th">{tx("Diagnosis", "تشخیص")}</th>
+              <th className="hms-th">{tx("Items", "اقلام")}</th>
+              <th className="hms-th">{tx("Physician", "داکتر")}</th>
+              <th className="hms-th">{tx("Issued", "صادرشده")}</th>
+              <th className="hms-th">{tx("Status", "وضعیت")}</th>
+              <th className="hms-th text-right">{tx("Actions", "اقدام‌ها")}</th>
             </tr>
           </thead>
           <tbody>
@@ -128,26 +132,26 @@ export function PrescriptionRegister({
                 <td className="hms-td max-w-[13rem] truncate">{r.diagnosis ?? "—"}</td>
                 <td className="hms-td">
                   <button className="font-semibold" style={{ color: "var(--hms-brand)" }} onClick={() => setDetail({ id: r.id, rx_no: r.rx_no, patient: r.patient_name, items: r.items, total: r.items })}>
-                    {r.items}
+                    {digitsOf(lang, r.items)}
                   </button>
                 </td>
                 <td className="hms-td max-w-[10rem] truncate">{r.doctor_name}</td>
-                <td className="hms-td whitespace-nowrap">{dateShort(r.created_at)}</td>
+                <td className="hms-td whitespace-nowrap">{dateShort(r.created_at, lang)}</td>
                 <td className="hms-td"><Status value={r.status} /></td>
                 <td className="hms-td">
                   <div className="flex items-center justify-end gap-1">
                     {canSign && r.status === "pending" && (
                       <button className="hms-btn hms-btn-sm hms-btn-primary" onClick={() => act(r.id, "sign")} disabled={!!busy}>
-                        {busy === r.id + "sign" ? <Loader2 size={10} className="animate-spin" /> : <Signature size={10} />} Sign
+                        {busy === r.id + "sign" ? <Loader2 size={10} className="animate-spin" /> : <Signature size={10} />} {tx("Sign", "امضا")}
                       </button>
                     )}
                     {["admin", "pharmacist"].includes(role) && ["signed", "pending"].includes(r.status) && (
                       <button className="hms-btn hms-btn-sm" onClick={() => act(r.id, "dispense")} disabled={!!busy}>
-                        {busy === r.id + "dispense" ? <Loader2 size={10} className="animate-spin" /> : <PillIcon size={10} />} Dispense
+                        {busy === r.id + "dispense" ? <Loader2 size={10} className="animate-spin" /> : <PillIcon size={10} />} {tx("Dispense", "تحویل")}
                       </button>
                     )}
                     <Link href={`/hms/rx/${r.id}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-ghost">
-                      <Printer size={10} /> Print
+                      <Printer size={10} /> {tx("Print", "چاپ")}
                     </Link>
                   </div>
                 </td>
@@ -155,11 +159,11 @@ export function PrescriptionRegister({
             ))}
           </tbody>
         </table>
-        {!filtered.length && <Empty title="No prescriptions match" hint="Clear the search or choose another status." icon={<ShieldAlert size={16} />} />}
+        {!filtered.length && <Empty title={tx("No prescriptions match", "نسخه‌ای مطابقت ندارد")} hint={tx("Clear the search or choose another status.", "جستجو را پاک کنید یا وضعیت دیگری انتخاب کنید.")} icon={<ShieldAlert size={16} />} />}
       </div>
 
       <div className="mt-3 rounded-lg border p-3" style={{ borderColor: "var(--hms-border)" }}>
-        <SectionTitle title="Print designs" subtitle={`Active default: template ${activeTemplate} · each prescription can print on any of the ten papers`} />
+        <SectionTitle title={tx("Print designs", "طرح‌های چاپ")} subtitle={tx("Active default: template {n} · each prescription can print on any of the ten papers", "پیش‌فرض فعال: طرح {n} · هر نسخه روی هر یک از ده کاغذ چاپ می‌شود", { n: digitsOf(lang, activeTemplate) })} />
         <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {templates.map((t) => (
             <Link key={t.id} href={`/hms/print?template=${t.id}`} className="group rounded-lg border p-2 transition hover:-translate-y-px hover:shadow-sm" style={{ borderColor: "var(--hms-border)" }}>
@@ -177,6 +181,7 @@ export function PrescriptionRegister({
 }
 
 function SheetModal({ id, rxNo, patient, onClose }: { id: string; rxNo: string; patient: string; onClose: () => void }) {
+  const tx = useTx();
   return (
     <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4" onClick={onClose}>
       <div className="my-6 w-full max-w-3xl rounded-xl border bg-[var(--hms-surface)] shadow-2xl" style={{ borderColor: "var(--hms-border)" }} onClick={(e) => e.stopPropagation()}>
@@ -186,7 +191,7 @@ function SheetModal({ id, rxNo, patient, onClose }: { id: string; rxNo: string; 
             <p className="text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>{patient}</p>
           </div>
           <div className="flex gap-1">
-            <Link href={`/hms/rx/${id}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-primary"><Download size={11} /> Open print sheet</Link>
+            <Link href={`/hms/rx/${id}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-primary"><Download size={11} /> {tx("Open print sheet", "باز کردن برگهٔ چاپ")}</Link>
             <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={onClose}><X size={13} /></button>
           </div>
         </div>

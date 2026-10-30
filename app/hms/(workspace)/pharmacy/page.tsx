@@ -1,9 +1,12 @@
 import { Beaker } from "lucide-react";
 import { Panel, SectionTitle, Stat } from "@/components/hms/ui";
 import { requireHmsPage } from "@/lib/hms/auth";
+import { tx } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
+
 import { hmsReady } from "@/lib/hms/db";
 import { listMedicines, listPrescriptions } from "@/lib/hms/queries";
-import { money } from "@/lib/hms/format";
+import { digitsOf, money } from "@/lib/hms/format";
 import { PharmacyBoard } from "./board";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +14,8 @@ export const dynamic = "force-dynamic";
 export default async function PharmacyPage({ searchParams }: { searchParams: Promise<{ tab?: string; q?: string }> }) {
   const user = await requireHmsPage(["admin", "pharmacist", "nurse"]);
   await hmsReady();
+  const lang = await getLang();
+  const tr = (en: string, fa: string, vars?: Record<string, string | number>) => tx(lang, en, fa, vars);
   const sp = await searchParams;
   const meds = listMedicines({});
   const rx = listPrescriptions({ limit: 100 });
@@ -21,15 +26,15 @@ export default async function PharmacyPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-3.5">
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <Stat label="Dispensing queue" value={rx.filter((r) => ["signed", "pending"].includes(r.status)).length} hint="Signed prescriptions" tone="warn" icon={<Beaker size={14} />} />
-        <Stat label="Below reorder level" value={low.length} hint={low.slice(0, 2).map((l) => l.name).join(", ") || "All healthy"} tone={low.length ? "bad" : "good"} />
-        <Stat label="Expiring ≤ 60 days" value={expiring.length} hint="Rotate stock now" tone={expiring.length ? "warn" : "good"} />
-        <Stat label="Stock value" value={money(stockValue)} hint={`${meds.length} lines`} tone="brand" />
+        <Stat label={tr("Dispensing queue", "صف تحویل دوا")} value={digitsOf(lang, rx.filter((r) => ["signed", "pending"].includes(r.status)).length)} hint={tr("Signed prescriptions", "نسخه‌های امضاشده")} tone="warn" icon={<Beaker size={14} />} />
+        <Stat label={tr("Below reorder level", "کمتر از حد سفارش")} value={digitsOf(lang, low.length)} hint={low.slice(0, 2).map((l) => l.name).join(", ") || tr("All healthy", "همه کافی است")} tone={low.length ? "bad" : "good"} />
+        <Stat label={tr("Expiring ≤ 60 days", "انقضا در ۶۰ روز")} value={digitsOf(lang, expiring.length)} hint={tr("Rotate stock now", "موجودی را همین حالا بچرخانید")} tone={expiring.length ? "warn" : "good"} />
+        <Stat label={tr("Stock value", "ارزش موجودی")} value={money(stockValue, lang)} hint={tr("{n} lines", "{n} قلم", { n: digitsOf(lang, meds.length) })} tone="brand" />
       </div>
       <Panel>
         <SectionTitle
-          title="Pharmacy counter"
-          subtitle="Dispense against a prescription (stock is decremented automatically) or manage inventory and expiry."
+          title={tr("Pharmacy counter", "کانتر دواخانه")}
+          subtitle={tr("Dispense against a prescription (stock is decremented automatically) or manage inventory and expiry.", "دوا را مطابق نسخه تحویل دهید (موجودی خودکار کم می‌شود) یا موجودی و انقضا را مدیریت کنید.")}
           icon={<Beaker size={14} />}
         />
         <PharmacyBoard

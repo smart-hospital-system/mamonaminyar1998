@@ -1,8 +1,12 @@
 import { Users } from "lucide-react";
 import { Panel, SectionTitle } from "@/components/hms/ui";
 import { requireHmsPage } from "@/lib/hms/auth";
+import { tx } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
+
 import { hAll, hGet, hmsReady } from "@/lib/hms/db";
 import { listAudit } from "@/lib/hms/queries";
+import { dateShort, timeShort } from "@/lib/hms/format";
 import { TeamConsole } from "./console";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +14,8 @@ export const dynamic = "force-dynamic";
 export default async function TeamPage() {
   const me = await requireHmsPage(["admin"]);
   await hmsReady();
+  const lang = await getLang();
+  const tr = (en: string, fa: string, vars?: Record<string, string | number>) => tx(lang, en, fa, vars);
   const users = hAll<{
     id: string; name: string; email: string; role: string; department: string | null; title: string | null;
     phone: string | null; active: number; last_login_at: string | null; created_at: string;
@@ -26,26 +32,26 @@ export default async function TeamPage() {
     <div className="space-y-3.5">
       <Panel>
         <SectionTitle
-          title="Team & access"
-          subtitle="Who works here, what they may do, and what they did. Suspending a person keeps every record they ever wrote."
+          title={tr("Team & access", "تیم و دسترسی")}
+          subtitle={tr("Who works here, what they may do, and what they did. Suspending a person keeps every record they ever wrote.", "چه کسی اینجا کار می‌کند، چه اجازه‌ای دارد و چه کرده است. تعلیق یک شخص همهٔ سوابق او را نگه می‌دارد.")}
           icon={<Users size={14} />}
         />
         <TeamConsole users={users} meId={me.id} isAdmin={me.role === "admin"} />
       </Panel>
 
       <Panel>
-        <SectionTitle title="Access history" subtitle="Role changes, password resets and licence events" />
+        <SectionTitle title={tr("Access history", "سابقهٔ دسترسی")} subtitle={tr("Role changes, password resets and licence events", "تغییر نقش، بازنشانی رمز و رویدادهای لایسنس")} />
         <div className="mt-2 space-y-1">
           {audit.map((a) => (
             <div key={a.id} className="flex items-start gap-2 border-b py-1.5 last:border-0" style={{ borderColor: "var(--hms-border)" }}>
               <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: "var(--hms-brand)" }} />
               <p className="min-w-0 flex-1 text-[0.7rem]">{a.detail}</p>
               <span className="shrink-0 text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>
-                {a.user_name} · {new Date(a.created_at).toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                {a.user_name} · {dateShort(a.created_at, lang)} · {timeShort(a.created_at, lang)}
               </span>
             </div>
           ))}
-          {!audit.length && <p className="py-3 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>No access events yet.</p>}
+          {!audit.length && <p className="py-3 text-center text-[0.7rem]" style={{ color: "var(--hms-faint)" }}>{tr("No access events yet.", "هنوز رویداد دسترسی ثبت نشده.")}</p>}
         </div>
       </Panel>
     </div>

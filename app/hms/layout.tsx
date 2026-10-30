@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { LangProvider } from "@/components/hms/lang-provider";
 import { hmsReady, getSection } from "@/lib/hms/db";
+import { dirOf } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
 import { themeById } from "@/lib/hms/templates";
 
 export const metadata: Metadata = {
@@ -9,8 +12,9 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function HmsRootLayout({ children }: { children: React.ReactNode }) {
+export default async function HmsRootLayout({ children }: { children: React.ReactNode }) {
   hmsReady();
+  const lang = await getLang();
   const theme = getSection<Record<string, unknown>>("theme");
   const identity = getSection<Record<string, unknown>>("identity");
   const t = themeById(String(theme.active ?? "clinical"));
@@ -36,8 +40,15 @@ export default function HmsRootLayout({ children }: { children: React.ReactNode 
   const isDark = ["midnight", "highcontrast"].includes(t.id);
 
   return (
-    <div style={vars as React.CSSProperties} data-hms-theme={t.id} data-dark={isDark}>
-      {children}
+    <div
+      style={vars as React.CSSProperties}
+      data-hms-theme={t.id}
+      data-dark={isDark}
+      data-lang={lang}
+      dir={dirOf(lang)}
+      lang={lang === "fa" ? "fa-AF" : "en"}
+    >
+      <LangProvider lang={lang}>{children}</LangProvider>
     </div>
   );
 }

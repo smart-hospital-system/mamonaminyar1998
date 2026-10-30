@@ -1,7 +1,9 @@
-import { Cross, ShieldCheck, Stethoscope, HeartPulse, Scissors, Pill } from "lucide-react";
+import { Cross, HeartPulse, Pill, Scissors, ShieldCheck, Stethoscope } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getHmsUser } from "@/lib/hms/auth";
 import { getSection, hmsReady } from "@/lib/hms/db";
+import { t } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
 import { licenseState } from "@/lib/hms/license";
 import { LoginForm } from "./login-form";
 
@@ -11,6 +13,7 @@ export default async function HmsLoginPage() {
   const existing = await getHmsUser();
   if (existing) redirect("/hms");
   hmsReady();
+  const lang = await getLang();
   const identity = getSection<Record<string, unknown>>("identity");
   const lic = licenseState();
 
@@ -44,21 +47,20 @@ export default async function HmsLoginPage() {
           </div>
 
           <h1 className="mt-14 max-w-md text-[2.1rem] font-semibold leading-[1.12] tracking-[-0.03em]">
-            Every bed, every result, every signature — in one calm workspace.
+            {t(lang, "login.panelTitle")}
           </h1>
           <p className="mt-3 max-w-md text-[0.85rem] leading-relaxed opacity-80">{tagline}</p>
 
           <div className="mt-9 grid max-w-md grid-cols-2 gap-2.5">
             {[
-              { icon: Stethoscope, t: "OPD & consults", d: "Triage, vitals, e-prescribing" },
-              { icon: Pill, t: "Pharmacy", d: "Stock, expiry, dispensing" },
-              { icon: HeartPulse, t: "Inpatients", d: "Live ten-bed board" },
-              { icon: Scissors, t: "Theatre", d: "Lists, notes, recovery" },
+              { icon: Stethoscope, k: "login.panelPoint1" },
+              { icon: Pill, k: "login.panelPoint2" },
+              { icon: HeartPulse, k: "login.panelPoint3" },
+              { icon: Scissors, k: "login.panelPoint4" },
             ].map((f) => (
-              <div key={f.t} className="rounded-xl bg-white/8 p-3 ring-1 ring-white/15 backdrop-blur-sm">
+              <div key={f.k} className="rounded-xl bg-white/8 p-3 ring-1 ring-white/15 backdrop-blur-sm">
                 <f.icon size={15} className="opacity-90" />
-                <p className="mt-1.5 text-[0.76rem] font-semibold">{f.t}</p>
-                <p className="text-[0.66rem] opacity-70">{f.d}</p>
+                <p className="mt-1.5 text-[0.74rem] font-medium leading-relaxed">{t(lang, f.k)}</p>
               </div>
             ))}
           </div>
@@ -66,13 +68,13 @@ export default async function HmsLoginPage() {
 
         <div className="relative flex items-center gap-2 text-[0.68rem] opacity-70">
           <ShieldCheck size={13} />
-          Works fully offline · licence {lic.status} · data stays on this machine
+          {t(lang, "login.secure")}
         </div>
       </div>
 
       {/* form side */}
       <div className="flex items-center justify-center px-5 py-10" style={{ background: "var(--surface-2)" }}>
-        <LoginForm hospital={name} local={local} plan={lic.plan} status={lic.status} daysLeft={lic.daysLeft} />
+        <LoginForm hospital={name} local={local} plan={lic.plan} status={lic.status} daysLeft={lic.daysLeft} lang={lang} />
       </div>
     </div>
   );

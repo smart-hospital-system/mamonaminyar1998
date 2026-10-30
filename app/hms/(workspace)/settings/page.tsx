@@ -1,6 +1,9 @@
 import { Settings } from "lucide-react";
 import { Panel, SectionTitle } from "@/components/hms/ui";
 import { requireHmsPage } from "@/lib/hms/auth";
+import { tx } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
+
 import { getSettings, hmsReady } from "@/lib/hms/db";
 import { APP_THEMES, RX_TEMPLATES } from "@/lib/hms/templates";
 import { GUIDE } from "@/lib/hms/guide";
@@ -11,6 +14,8 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<{ section?: string }> }) {
   await requireHmsPage(["admin"]);
   await hmsReady();
+  const lang = await getLang();
+  const tr = (en: string, fa: string, vars?: Record<string, string | number>) => tx(lang, en, fa, vars);
   const sp = await searchParams;
   const settings = getSettings();
 
@@ -18,8 +23,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     <Panel className="!p-0">
       <div className="p-3.5">
         <SectionTitle
-          title="Smart settings"
-          subtitle="Every number, word and colour in the hospital can be changed here — and each section ships with its own step-by-step guidance."
+          title={tr("Smart settings", "تنظیمات هوشمند")}
+          subtitle={tr("Every number, word and colour in the hospital can be changed here — and each section ships with its own step-by-step guidance.", "هر عدد، واژه و رنگ در شفاخانه از همین‌جا تغییر می‌کند — و هر بخش راهنمای گام‌به‌گام خودش را دارد.")}
           icon={<Settings size={14} />}
         />
       </div>

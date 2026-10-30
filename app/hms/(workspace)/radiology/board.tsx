@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Empty, Field, Person, Status } from "@/components/hms/ui";
 import { relTime } from "@/lib/hms/format";
+import { useLang, useTx } from "@/components/hms/lang-provider";
 import type { ImagingRow } from "@/lib/hms/queries";
 
 const TEMPLATES: Record<string, { findings: string; impression: string }> = {
@@ -24,6 +25,8 @@ const TEMPLATES: Record<string, { findings: string; impression: string }> = {
 
 export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string }) {
   const router = useRouter();
+  const tx = useTx();
+  const { lang } = useLang();
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [report, setReport] = useState<ImagingRow | null>(null);
@@ -38,9 +41,9 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
     const res = await fetch(`/api/hms/imaging/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, ...payload }) });
     const data = await res.json();
     setBusy(null);
-    if (!res.ok) setMsg(data.error ?? "Action failed.");
+    if (!res.ok) setMsg(data.error ?? tx("Action failed.", "اقدام انجام نشد."));
     else {
-      setMsg(action === "report" ? "Report released to the requesting physician." : "Request accepted — acquisition can start.");
+      setMsg(action === "report" ? tx("Report released to the requesting physician.", "گزارش برای داکتر درخواست‌کننده آزاد شد.") : tx("Request accepted — acquisition can start.", "درخواست پذیرفته شد — تصویربرداری می‌تواند آغاز شود."));
       router.refresh();
       if (action === "report") setReport(null);
     }
@@ -51,7 +54,7 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[13rem] flex-1">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--hms-faint)" }} />
-          <input className="hms-input pl-7" placeholder="Patient, modality or body part…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="hms-input pl-7" placeholder={tx("Patient, modality or body part…", "مریض، نوع تصویر یا عضو…")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
       </div>
 
@@ -63,7 +66,7 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
             <div className="flex items-start justify-between gap-1">
               <div className="min-w-0">
                 <p className="truncate text-[0.76rem] font-semibold">{r.modality}</p>
-                <p className="truncate text-[0.64rem]" style={{ color: "var(--hms-faint)" }}>{r.body_part} · {relTime(r.created_at)}</p>
+                <p className="truncate text-[0.64rem]" style={{ color: "var(--hms-faint)" }}>{r.body_part} · {relTime(r.created_at, lang)}</p>
               </div>
               <Status value={r.status} />
             </div>
@@ -72,7 +75,7 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
             <div className="mt-2 flex gap-1">
               {r.status === "requested" && (
                 <button className="hms-btn hms-btn-sm" onClick={() => act(r.id, "accept")} disabled={!!busy}>
-                  {busy === r.id + "accept" ? <Loader2 size={10} className="animate-spin" /> : <ScanLine size={10} />} Accept
+                  {busy === r.id + "accept" ? <Loader2 size={10} className="animate-spin" /> : <ScanLine size={10} />} {tx("Accept", "پذیرش")}
                 </button>
               )}
               {["requested", "in_progress"].includes(r.status) && ["admin", "radiology", "doctor"].includes(role) && (
@@ -85,15 +88,15 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
                     setImpression(r.impression ?? tpl?.impression ?? "");
                   }}
                 >
-                  <PenLine size={10} /> Report
+                  <PenLine size={10} /> {tx("Report", "گزارش")}
                 </button>
               )}
-              {r.status === "reported" && <span className="text-[0.64rem]" style={{ color: "var(--hms-faint)" }}>Released by {r.radiologist}</span>}
+              {r.status === "reported" && <span className="text-[0.64rem]" style={{ color: "var(--hms-faint)" }}>{tx("Released by", "آزادشده توسط")} {r.radiologist}</span>}
             </div>
           </div>
         ))}
       </div>
-      {!filtered.length && <Empty title="No imaging requests" hint="Requests appear here as soon as a physician orders them." icon={<ScanLine size={16} />} />}
+      {!filtered.length && <Empty title={tx("No imaging requests", "درخواست تصویربرداری نیست")} hint={tx("Requests appear here as soon as a physician orders them.", "به‌محض اینکه داکتر درخواست کند، اینجا دیده می‌شود.")} icon={<ScanLine size={16} />} />}
 
       {report && (
         <div className="fixed inset-0 z-[70] flex items-start justify-center overflow-y-auto bg-black/45 p-4" onClick={() => setReport(null)}>
@@ -106,12 +109,12 @@ export function ImagingBoard({ rows, role }: { rows: ImagingRow[]; role: string 
               <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={() => setReport(null)}><X size={13} /></button>
             </div>
             <div className="mt-2 space-y-2">
-              <Field label="Findings"><textarea className="hms-input" rows={5} value={findings} onChange={(e) => setFindings(e.target.value)} /></Field>
-              <Field label="Impression" hint="One or two sentences — this is what the surgeon reads first."><textarea className="hms-input" rows={2} value={impression} onChange={(e) => setImpression(e.target.value)} /></Field>
+              <Field label={tx("Findings", "یافته‌ها")}><textarea className="hms-input" rows={5} value={findings} onChange={(e) => setFindings(e.target.value)} /></Field>
+              <Field label={tx("Impression", "نتیجه‌گیری")} hint={tx("One or two sentences — this is what the surgeon reads first.", "یک یا دو جمله — این را جراح اول می‌خواند.")}><textarea className="hms-input" rows={2} value={impression} onChange={(e) => setImpression(e.target.value)} /></Field>
             </div>
             <div className="mt-3 flex justify-end gap-1.5">
-              <button className="hms-btn" onClick={() => setReport(null)}>Cancel</button>
-              <button className="hms-btn hms-btn-primary" onClick={() => act(report.id, "report", { findings, impression })} disabled={!findings.trim()}>Sign &amp; release</button>
+              <button className="hms-btn" onClick={() => setReport(null)}>{tx("Cancel", "لغو")}</button>
+              <button className="hms-btn hms-btn-primary" onClick={() => act(report.id, "report", { findings, impression })} disabled={!findings.trim()}>{tx("Sign & release", "امضا و آزادسازی")}</button>
             </div>
           </div>
         </div>

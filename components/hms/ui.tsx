@@ -2,6 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { initials } from "@/lib/hms/format";
+import { statusText } from "@/lib/hms/i18n";
+import { useLang } from "./lang-provider";
 import type { ReactNode } from "react";
 
 /* --------------------------------------------------------------- surfaces */
@@ -144,10 +146,11 @@ const STATUS_TONE: Record<string, Tone> = {
 };
 
 export function Status({ value, className }: { value: string; className?: string }) {
+  const { lang } = useLang();
   const tone = STATUS_TONE[value] ?? "neutral";
   return (
     <Pill tone={tone} dot className={cn("capitalize", className)}>
-      {value.replace(/_/g, " ")}
+      {statusText(lang, value)}
     </Pill>
   );
 }

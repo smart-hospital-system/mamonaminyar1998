@@ -4,6 +4,8 @@ import { DocumentSheet } from "@/components/hms/doc-sheet";
 import { RxSheet } from "@/components/hms/rx-sheet";
 import { Panel, SectionTitle } from "@/components/hms/ui";
 import { requireHmsPage } from "@/lib/hms/auth";
+import { tx } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
 import { getSection, hmsReady } from "@/lib/hms/db";
 import { listPrescriptions } from "@/lib/hms/queries";
 import { DOC_TEMPLATES, RX_TEMPLATES } from "@/lib/hms/templates";
@@ -19,6 +21,8 @@ const SAMPLE_ITEMS = [
 export default async function PrintStudio({ searchParams }: { searchParams: Promise<{ template?: string }> }) {
   await requireHmsPage();
   await hmsReady();
+  const lang = await getLang();
+  const tr = (en: string, fa: string) => tx(lang, en, fa);
   const sp = await searchParams;
   const identity = getSection<Record<string, unknown>>("identity");
   const theme = getSection<Record<string, unknown>>("theme");
@@ -60,14 +64,14 @@ export default async function PrintStudio({ searchParams }: { searchParams: Prom
     <div className="space-y-3.5">
       <Panel>
         <SectionTitle
-          title="Print studio"
-          subtitle="Ten prescription papers and four patient-document layouts. Everything below is the real renderer used when you press print."
+          title={tr("Print studio", "استودیو چاپ")}
+          subtitle={tr("Ten prescription papers and four patient-document layouts. Everything below is the real renderer used when you press print.", "ده کاغذ نسخه و چهار طرح سند مریض. هر چه در پایین می‌بینید همان رندر واقعی هنگام چاپ است.")}
           icon={<Printer size={14} />}
-          action={rx ? <Link href={`/hms/rx/${rx.id}?template=${activeTemplate}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-primary"><ExternalLink size={11} /> Open a real prescription</Link> : undefined}
+          action={rx ? <Link href={`/hms/rx/${rx.id}?template=${activeTemplate}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-primary"><ExternalLink size={11} /> {tr("Open a real prescription", "باز کردن یک نسخهٔ واقعی")}</Link> : undefined}
         />
         <p className="mt-2 flex items-center gap-1.5 text-[0.66rem]" style={{ color: "var(--hms-muted)" }}>
           <Sparkles size={11} style={{ color: "var(--hms-brand)" }} />
-          A prescription can be printed on any paper, independent of the interface theme — choose the design per document in the consult room, or set the default in Settings → Look &amp; print.
+          {tr("A prescription can be printed on any paper, independent of the interface theme — choose the design per document in the consult room, or set the default in Settings → Look & print.", "نسخه روی هر کاغذی چاپ می‌شود، مستقل از تم سیستم — طرح را در اتاق معاینه برای هر سند انتخاب کنید یا پیش‌فرض را در تنظیمات → ظاهر و چاپ تعیین کنید.")}
         </p>
       </Panel>
 
@@ -96,7 +100,7 @@ export default async function PrintStudio({ searchParams }: { searchParams: Prom
               <p className="line-clamp-1 text-[0.6rem]" style={{ color: "var(--hms-muted)" }}>{t.description}</p>
               {rx && (
                 <Link href={`/hms/rx/${rx.id}?template=${t.id}`} target="_blank" className="hms-btn hms-btn-sm hms-btn-ghost shrink-0">
-                  <ExternalLink size={10} /> Full
+                  <ExternalLink size={10} /> {tr("Full", "کامل")}
                 </Link>
               )}
             </div>
@@ -106,8 +110,8 @@ export default async function PrintStudio({ searchParams }: { searchParams: Prom
 
       <Panel>
         <SectionTitle
-          title="Patient documents"
-          subtitle="Referral letters, charts, discharge summaries and statements — designed to be unmistakably different from a prescription."
+          title={tr("Patient documents", "اسناد مریض")}
+          subtitle={tr("Referral letters, charts, discharge summaries and statements — designed to be unmistakably different from a prescription.", "مکتوب معرفی، چارت، خلاصهٔ مرخصی و صورت‌حساب — طوری طراحی شده که با نسخه اشتباه نشود.")}
           icon={<FileText size={14} />}
         />
         <div className="mt-2.5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

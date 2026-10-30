@@ -6,7 +6,9 @@ import {
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Btn, Field, Pill, Status } from "@/components/hms/ui";
-import { age } from "@/lib/hms/format";
+import { age, digitsOf } from "@/lib/hms/format";
+import { statusText } from "@/lib/hms/i18n";
+import { useLang, useTx } from "@/components/hms/lang-provider";
 
 type Patient = { id: string; name: string; mrn: string; dob: string | null; gender: string | null; allergies: string | null };
 type Appt = { id: string; patient_id: string; patient_name: string; start_at: string; reason: string | null };
@@ -41,6 +43,8 @@ export function ConsultConsole({
   canPrescribe: boolean;
 }) {
   const router = useRouter();
+  const tx = useTx();
+  const { lang } = useLang();
   const [patientId, setPatientId] = useState(appointments[0]?.patient_id ?? patients[0]?.id ?? "");
   const [apptId, setApptId] = useState(appointments[0]?.id ?? "");
   const [q, setQ] = useState("");
@@ -96,7 +100,7 @@ export function ConsultConsole({
   }, [lines, patient, runScreen]);
 
   async function suggest() {
-    if (!diagnosis.trim()) return setMsg({ tone: "bad", text: "Type a working diagnosis first — the assistant needs it to draft the note." });
+    if (!diagnosis.trim()) return setMsg({ tone: "bad", text: tx("Type a working diagnosis first — the assistant needs it to draft the note.", "اول تشخیص اولیه را بنویسید — دستیار برای نوشتن یادداشت به آن نیاز دارد.") });
     setBusy("note");
     const [note, tpl, doses] = await Promise.all([
       fetch("/api/hms/ai", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "note", diagnosis, vitals: numbered }) }).then((r) => r.json()),
@@ -116,13 +120,13 @@ export function ConsultConsole({
       });
     }
     setBusy(null);
-    setMsg({ tone: "ok", text: `Drafted from the diagnosis. Suggested print design: ${templates.find((t) => t.id === tpl.suggested)?.name ?? `template ${tpl.suggested}`}.` });
+    setMsg({ tone: "ok", text: tx("Drafted from the diagnosis. Suggested print design: {tpl}.", "از روی تشخیص نوشته شد. طرح چاپ پیشنهادی: {tpl}.", { tpl: templates.find((t) => t.id === tpl.suggested)?.name ?? `${tx("template", "طرح")} ${digitsOf(lang, tpl.suggested)}` }) });
   }
 
   async function save(sign: boolean) {
-    if (!patientId) return setMsg({ tone: "bad", text: "Choose a patient first." });
+    if (!patientId) return setMsg({ tone: "bad", text: tx("Choose a patient first.", "اول یک مریض انتخاب کنید.") });
     const valid = lines.filter((l) => l.drug.trim());
-    if (!valid.length) return setMsg({ tone: "bad", text: "Add at least one medicine before finishing the consult." });
+    if (!valid.length) return setMsg({ tone: "bad", text: tx("Add at least one medicine before finishing the consult.", "پیش از پایان معاینه حداقل یک دوا اضافه کنید.") });
     setBusy(sign ? "sign" : "draft");
     setMsg(null);
     try {
@@ -157,15 +161,15 @@ export function ConsultConsole({
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsg({ tone: "bad", text: data.error ?? "The consult could not be saved." });
+        setMsg({ tone: "bad", text: data.error ?? tx("The consult could not be saved.", "معاینه ذخیره نشد.") });
         if (data.safety) setSafety(data.safety);
       } else {
-        setMsg({ tone: "ok", text: sign ? `Signed ${data.rx_no}. Open the print sheet to hand it to the patient.` : `Draft ${data.rx_no} saved — sign it when you are ready.` });
+        setMsg({ tone: "ok", text: sign ? tx("Signed {no}. Open the print sheet to hand it to the patient.", "{no} امضا شد. برای دادن به مریض، برگهٔ چاپ را باز کنید.", { no: data.rx_no }) : tx("Draft {no} saved — sign it when you are ready.", "پیش‌نویس {no} ذخیره شد — هر وقت آماده بودید امضا کنید.", { no: data.rx_no }) });
         setRxId(data.id);
         router.refresh();
       }
     } catch {
-      setMsg({ tone: "bad", text: "Network error while saving." });
+      setMsg({ tone: "bad", text: tx("Network error while saving.", "خطای شبکه هنگام ذخیره.") });
     } finally {
       setBusy(null);
     }
@@ -178,8 +182,8 @@ export function ConsultConsole({
       {/* patient picker */}
       <div className="grid gap-2 sm:grid-cols-[1.4fr_1fr]">
         <div>
-          <span className="hms-label">Patient</span>
-          <input className="hms-input" placeholder="Search name or MRN…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <span className="hms-label">{tx("Patient", "مریض")}</span>
+          <input className="hms-input" placeholder={tx("Search name or MRN…", "جستجوی نام یا شمارهٔ پرونده…")} value={q} onChange={(e) => setQ(e.target.value)} />
           <div className="mt-1 max-h-32 overflow-y-auto rounded-lg border" style={{ borderColor: "var(--hms-border)" }}>
             {filtered.map((p) => (
               <button
@@ -199,18 +203,18 @@ export function ConsultConsole({
           </div>
         </div>
         <div>
-          <span className="hms-label">Linked appointment</span>
+          <span className="hms-label">{tx("Linked appointment", "وقت مرتبط")}</span>
           <select className="hms-input" value={apptId} onChange={(e) => { setApptId(e.target.value); const a = appointments.find((x) => x.id === e.target.value); if (a) setPatientId(a.patient_id); }}>
-            <option value="">Walk-in (no appointment)</option>
+            <option value="">{tx("Walk-in (no appointment)", "بدون وقت (مراجعهٔ مستقیم)")}</option>
             {appointments.filter((a) => a.patient_id === patientId || !patientId).map((a) => (
               <option key={a.id} value={a.id}>{a.patient_name} · {new Date(a.start_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</option>
             ))}
           </select>
           {patient && (
             <div className="mt-1.5 rounded-lg px-2 py-1.5 text-[0.66rem]" style={{ background: "var(--hms-surface-2)" }}>
-              <b>{patient.name}</b> · {patient.mrn} · {patient.gender ?? "—"} · {age(patient.dob)}
+              <b>{patient.name}</b> · {patient.mrn} · {patient.gender ? statusText(lang, patient.gender) : "—"} · {age(patient.dob, lang)}
               {patient.allergies && patient.allergies !== "None" && (
-                <span className="ml-1 font-semibold" style={{ color: "#b91c1c" }}>· allergy: {patient.allergies}</span>
+                <span className="ml-1 font-semibold" style={{ color: "#b91c1c" }}>· {tx("allergy", "حساسیت")}: {patient.allergies}</span>
               )}
             </div>
           )}
@@ -220,18 +224,18 @@ export function ConsultConsole({
       {/* vitals */}
       <div className="rounded-lg border p-2.5" style={{ borderColor: "var(--hms-border)" }}>
         <div className="flex items-center justify-between">
-          <span className="text-[0.62rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Vitals & triage</span>
+          <span className="text-[0.62rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tx("Vitals & triage", "علایم حیاتی و تریاژ")}</span>
           {triage && (
             <span className="flex items-center gap-1 text-[0.64rem] font-semibold">
               <Status value={triage.level === "critical" ? "critical" : triage.level === "urgent" ? "warning" : "active"} />
-              NEWS {triage.score}
+              NEWS {digitsOf(lang, triage.score)}
             </span>
           )}
         </div>
         <div className="mt-1.5 grid grid-cols-3 gap-1.5 sm:grid-cols-6">
           {VITALS.map((v) => (
             <label key={v.key} className="block">
-              <span className="text-[0.56rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{v.label} <span className="normal-case">({v.unit})</span></span>
+              <span className="text-[0.56rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{v.key === "systolic" ? tx("Systolic", "سیستولیک") : v.key === "diastolic" ? tx("Diastolic", "دیاستولیک") : v.key === "pulse" ? tx("Pulse", "نبض") : v.key === "temp" ? tx("Temp", "حرارت") : v.key === "spo2" ? "SpO₂" : tx("Resp", "تنفس")} <span className="normal-case">({v.unit})</span></span>
               <input
                 className="hms-input mt-0.5 !h-8 !text-[0.72rem]"
                 inputMode="decimal"
@@ -252,42 +256,42 @@ export function ConsultConsole({
 
       {/* diagnosis */}
       <div className="grid gap-2 sm:grid-cols-[1.6fr_0.7fr_auto]">
-        <Field label="Working diagnosis">
-          <input className="hms-input" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="e.g. Acute appendicitis" />
+        <Field label={tx("Working diagnosis", "تشخیص اولیه")}>
+          <input className="hms-input" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder={tx("e.g. Acute appendicitis", "مثلاً آپندیسایت حاد")} />
         </Field>
         <Field label="ICD-10">
           <input className="hms-input" value={icd10} onChange={(e) => setIcd10(e.target.value)} placeholder="K35.8" />
         </Field>
         <div className="flex items-end">
-          <Btn variant="soft" onClick={suggest} loading={busy === "note"} icon={<Wand2 size={12} />}>AI draft</Btn>
+          <Btn variant="soft" onClick={suggest} loading={busy === "note"} icon={<Wand2 size={12} />}>{tx("AI draft", "پیش‌نویس هوشمند")}</Btn>
         </div>
       </div>
 
-      <Field label="Clinical note & plan">
-        <textarea className="hms-input" rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="History, examination, plan. Use the AI draft button to start from the diagnosis." />
+      <Field label={tx("Clinical note & plan", "یادداشت کلینیکی و پلان")}>
+        <textarea className="hms-input" rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder={tx("History, examination, plan. Use the AI draft button to start from the diagnosis.", "تاریخچه، معاینه، پلان. با دکمهٔ پیش‌نویس هوشمند از روی تشخیص شروع کنید.")} />
       </Field>
 
       {/* medicines */}
       <div>
         <div className="flex items-center justify-between">
-          <span className="hms-label !mb-0">Medicines ({lines.filter((l) => l.drug).length})</span>
+          <span className="hms-label !mb-0">{tx("Medicines", "دواها")} ({digitsOf(lang, lines.filter((l) => l.drug).length)})</span>
           <div className="flex gap-1">
             {QUICK.slice(0, 3).map((d) => (
               <button key={d} className="hms-btn hms-btn-sm" onClick={() => setLines((ls) => [...ls, { ...EMPTY, drug: d }])}>
                 <Plus size={10} /> {d.split(" ")[0]}
               </button>
             ))}
-            <button className="hms-btn hms-btn-sm hms-btn-soft" onClick={() => setLines((ls) => [...ls, { ...EMPTY }])}><Plus size={10} /> Add line</button>
+            <button className="hms-btn hms-btn-sm hms-btn-soft" onClick={() => setLines((ls) => [...ls, { ...EMPTY }])}><Plus size={10} /> {tx("Add line", "افزودن سطر")}</button>
           </div>
         </div>
         <div className="mt-1.5 space-y-1.5">
           {lines.map((l, i) => (
             <div key={i} className="grid items-center gap-1 rounded-lg border p-1.5" style={{ borderColor: "var(--hms-border)", gridTemplateColumns: "1.5fr 0.7fr 0.8fr 1fr 0.8fr 0.55fr auto" }}>
-              <input className="hms-input !h-8 !text-[0.7rem]" list="drug-list" placeholder="Medicine" value={l.drug} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, drug: e.target.value } : x)))} />
-              <input className="hms-input !h-8 !text-[0.7rem]" placeholder="500 mg" value={l.strength} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, strength: e.target.value } : x)))} />
-              <input className="hms-input !h-8 !text-[0.7rem]" placeholder="1 tab" value={l.dosage} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, dosage: e.target.value } : x)))} />
-              <input className="hms-input !h-8 !text-[0.7rem]" placeholder="TDS" value={l.frequency} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} />
-              <input className="hms-input !h-8 !text-[0.7rem]" placeholder="5 days" value={l.duration} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, duration: e.target.value } : x)))} />
+              <input className="hms-input !h-8 !text-[0.7rem]" list="drug-list" placeholder={tx("Medicine", "دوا")} value={l.drug} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, drug: e.target.value } : x)))} />
+              <input className="hms-input !h-8 !text-[0.7rem]" placeholder={tx("500 mg", "۵۰۰ ملی‌گرم")} value={l.strength} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, strength: e.target.value } : x)))} />
+              <input className="hms-input !h-8 !text-[0.7rem]" placeholder={tx("1 tab", "۱ قرص")} value={l.dosage} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, dosage: e.target.value } : x)))} />
+              <input className="hms-input !h-8 !text-[0.7rem]" placeholder={tx("TDS", "سه بار در روز")} value={l.frequency} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, frequency: e.target.value } : x)))} />
+              <input className="hms-input !h-8 !text-[0.7rem]" placeholder={tx("5 days", "۵ روز")} value={l.duration} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, duration: e.target.value } : x)))} />
               <input className="hms-input !h-8 !text-[0.7rem]" type="number" min={1} value={l.qty} onChange={(e) => setLines((ls) => ls.map((x, j) => (j === i ? { ...x, qty: Number(e.target.value) } : x)))} />
               <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={() => setLines((ls) => (ls.length === 1 ? [{ ...EMPTY }] : ls.filter((_, j) => j !== i)))}>
                 <Trash2 size={11} />
@@ -311,15 +315,15 @@ export function ConsultConsole({
         >
           <div className="flex items-center gap-1.5">
             {safety.verdict === "clear" ? <CheckCircle2 size={13} style={{ color: "#0b7a58" }} /> : <AlertTriangle size={13} style={{ color: safety.verdict === "stop" ? "#b91c1c" : "#b45309" }} />}
-            <p className="text-[0.72rem] font-semibold">Safety screen · {safety.score}/100 · <span className="capitalize">{safety.verdict}</span></p>
-            <Pill tone={verdictTone as "good"}>{safety.interactions.length} flag(s)</Pill>
+            <p className="text-[0.72rem] font-semibold">{tx("Safety screen", "بررسی ایمنی")} · {digitsOf(lang, safety.score)}/100 · <span className="capitalize">{safety.verdict === "clear" ? tx("clear", "پاک") : safety.verdict === "caution" ? tx("caution", "احتیاط") : tx("stop", "توقف")}</span></p>
+            <Pill tone={verdictTone as "good"}>{tx("{n} flag(s)", "{n} علامت", { n: digitsOf(lang, safety.interactions.length) })}</Pill>
           </div>
           <p className="mt-1 text-[0.68rem] leading-relaxed" style={{ color: "var(--hms-muted)" }}>{safety.summary}</p>
           {safety.interactions.length > 0 && (
             <ul className="mt-1 space-y-0.5">
               {safety.interactions.map((it, i) => (
                 <li key={i} className="text-[0.66rem] leading-snug">
-                  <b className="capitalize">{it.severity}</b> — {it.detail}
+                  <b className="capitalize">{statusText(lang, it.severity)}</b> — {it.detail}
                 </li>
               ))}
             </ul>
@@ -328,25 +332,25 @@ export function ConsultConsole({
       )}
 
       <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto]">
-        <Field label="Follow-up">
-          <input className="hms-input" value={followUp} onChange={(e) => setFollowUp(e.target.value)} placeholder="Review in 7 days" />
+        <Field label={tx("Follow-up", "پیگیری")}>
+          <input className="hms-input" value={followUp} onChange={(e) => setFollowUp(e.target.value)} placeholder={tx("Review in 7 days", "مراجعهٔ مجدد پس از ۷ روز")} />
         </Field>
-        <Field label="Print design">
+        <Field label={tx("Print design", "طرح چاپ")}>
           <select className="hms-input" value={template} onChange={(e) => setTemplate(Number(e.target.value))}>
             {templates.map((t) => <option key={t.id} value={t.id}>{t.id}. {t.name}</option>)}
           </select>
         </Field>
         <div className="flex items-end">
-          <Btn onClick={() => save(false)} loading={busy === "draft"} icon={<ClipboardPlus size={12} />} disabled={!canPrescribe}>Save draft</Btn>
+          <Btn onClick={() => save(false)} loading={busy === "draft"} icon={<ClipboardPlus size={12} />} disabled={!canPrescribe}>{tx("Save draft", "ذخیرهٔ پیش‌نویس")}</Btn>
         </div>
         <div className="flex items-end">
-          <Btn variant="primary" onClick={() => save(true)} loading={busy === "sign"} icon={<Stethoscope size={12} />} disabled={!canPrescribe}>Sign & issue</Btn>
+          <Btn variant="primary" onClick={() => save(true)} loading={busy === "sign"} icon={<Stethoscope size={12} />} disabled={!canPrescribe}>{tx("Sign & issue", "امضا و صدور")}</Btn>
         </div>
       </div>
 
       {!canPrescribe && (
         <p className="text-[0.66rem]" style={{ color: "var(--hms-faint)" }}>
-          Your role can open the consult room but only physicians can sign prescriptions.
+          {tx("Your role can open the consult room but only physicians can sign prescriptions.", "نقش شما می‌تواند اتاق معاینه را باز کند، اما تنها داکتران می‌توانند نسخه امضا کنند.")}
         </p>
       )}
 
@@ -358,12 +362,12 @@ export function ConsultConsole({
 
       {rxId && (
         <a href={`/hms/rx/${rxId}?template=${template}`} target="_blank" rel="noreferrer" className="hms-btn hms-btn-soft inline-flex">
-          <Printer size={12} /> Open print sheet
+          <Printer size={12} /> {tx("Open print sheet", "باز کردن برگهٔ چاپ")}
         </a>
       )}
 
       <p className="flex items-center gap-1 text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>
-        <Sparkles size={10} /> The assistant reads only this consult — nothing leaves this machine.
+        <Sparkles size={10} /> {tx("The assistant reads only this consult — nothing leaves this machine.", "دستیار فقط همین معاینه را می‌خواند — هیچ چیزی از این دستگاه بیرون نمی‌رود.")}
       </p>
     </div>
   );

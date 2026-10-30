@@ -3,11 +3,13 @@
 import { Check, ChevronRight, Clock, ExternalLink, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Pill } from "@/components/hms/ui";
+import { useTx } from "@/components/hms/lang-provider";
 
 type Step = { n: number; title: string; where: string; action: string; tip?: string; href?: string };
 type Chapter = { id: string; title: string; audience: string; summary: string; minutes: number; steps: Step[]; faq: { q: string; a: string }[] };
 
 export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initial: string }) {
+  const tx = useTx();
   const [active, setActive] = useState(initial);
   const [done, setDone] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
@@ -39,7 +41,7 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
       <div>
         <div className="relative">
           <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2" style={{ color: "var(--hms-faint)" }} />
-          <input className="hms-input !h-8 !text-[0.72rem] pl-6" placeholder="Search the guide…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input className="hms-input !h-8 !text-[0.72rem] pl-6" placeholder={tx("Search the guide…", "جستجو در راهنما…")} value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="mt-1.5 space-y-0.5">
           {matches.map((c) => (
@@ -50,7 +52,7 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
           ))}
         </div>
         <div className="mt-2 rounded-lg border p-2" style={{ borderColor: "var(--hms-border)" }}>
-          <div className="flex justify-between text-[0.6rem]"><span>Chapter progress</span><span className="font-semibold">{progress}%</span></div>
+          <div className="flex justify-between text-[0.6rem]"><span>{tx("Chapter progress", "پیشرفت فصل")}</span><span className="font-semibold">{progress}%</span></div>
           <div className="mt-1 h-1.5 overflow-hidden rounded-full" style={{ background: "var(--hms-surface-3)" }}>
             <div className="h-full rounded-full" style={{ width: `${progress}%`, background: "var(--hms-brand)" }} />
           </div>
@@ -60,7 +62,7 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
       <div>
         <div className="flex flex-wrap items-center gap-1.5">
           <Pill tone="brand">{chapter.audience}</Pill>
-          <Pill tone="neutral"><Clock size={10} /> {chapter.minutes} min</Pill>
+          <Pill tone="neutral"><Clock size={10} /> {chapter.minutes} {tx("min", "دقیقه")}</Pill>
         </div>
         <h3 className="mt-1.5 text-[0.95rem] font-semibold tracking-[-0.01em]">{chapter.title}</h3>
         <p className="mt-0.5 text-[0.72rem] leading-relaxed" style={{ color: "var(--hms-muted)" }}>{chapter.summary}</p>
@@ -75,7 +77,7 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
                   onClick={() => toggle(key)}
                   className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[0.6rem] font-bold"
                   style={{ borderColor: isDone ? "#10b981" : "var(--hms-border)", background: isDone ? "#10b981" : "transparent", color: isDone ? "#fff" : "var(--hms-muted)" }}
-                  title={isDone ? "Mark as not done" : "Mark as done"}
+                  title={isDone ? tx("Mark as not done", "علامت‌زدن به‌عنوان انجام‌نشده") : tx("Mark as done", "علامت‌زدن به‌عنوان انجام‌شده")}
                 >
                   {isDone ? <Check size={11} /> : s.n}
                 </button>
@@ -84,10 +86,10 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
                   <p className="mt-0.5 text-[0.66rem] leading-relaxed" style={{ color: "var(--hms-muted)" }}>
                     <b style={{ color: "var(--hms-ink, var(--hms-ink))" }}>{s.where}</b> — {s.action}
                   </p>
-                  {s.tip && <p className="mt-0.5 rounded px-1.5 py-1 text-[0.63rem] leading-relaxed" style={{ background: "var(--hms-surface-2)", color: "var(--hms-muted)" }}>Tip · {s.tip}</p>}
+                  {s.tip && <p className="mt-0.5 rounded px-1.5 py-1 text-[0.63rem] leading-relaxed" style={{ background: "var(--hms-surface-2)", color: "var(--hms-muted)" }}>{tx("Tip", "نکته")} · {s.tip}</p>}
                   {s.href && (
                     <a href={s.href} className="mt-1 inline-flex items-center gap-0.5 text-[0.64rem] font-semibold" style={{ color: "var(--hms-brand)" }}>
-                      Open this screen <ExternalLink size={10} />
+                      {tx("Open this screen", "باز کردن این صفحه")} <ExternalLink size={10} />
                     </a>
                   )}
                 </div>
@@ -98,7 +100,7 @@ export function GuideBrowser({ chapters, initial }: { chapters: Chapter[]; initi
 
         {chapter.faq.length > 0 && (
           <div className="mt-3">
-            <p className="hms-label">Questions from the ward</p>
+            <p className="hms-label">{tx("Questions from the ward", "سوال‌های وارڈ")}</p>
             <div className="space-y-1">
               {chapter.faq.map((f) => (
                 <details key={f.q} className="rounded-lg border px-2 py-1.5" style={{ borderColor: "var(--hms-border)" }}>

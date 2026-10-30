@@ -603,3 +603,69 @@ select.hms-input {
     display: none !important;
   }
 }
+
+/* =====================================================================
+   Bilingual layer — English (LTR) and Dari/Persian (RTL)
+   The language is a cookie, not an installation: two people on the same
+   server can work in different languages at the same time.
+   ===================================================================== */
+
+[dir="rtl"] .hms-root,
+html[dir="rtl"] body {
+  font-family: "Vazirmatn", "IRANSansX", "IRANSans", "Sahel", "Segoe UI", Tahoma, "Noto Naskh Arabic", sans-serif;
+}
+[dir="rtl"] .hms-root .font-mono,
+[dir="rtl"] .hms-root code,
+[dir="rtl"] .hms-root kbd,
+[dir="rtl"] .hms-root pre {
+  font-family: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* Persian needs a little more air between lines than Latin text. */
+[dir="rtl"] .hms-root p,
+[dir="rtl"] .hms-root td,
+[dir="rtl"] .hms-root li,
+[dir="rtl"] .hms-root label {
+  line-height: 1.85;
+}
+
+/* The sidebar is pinned to the reading side of the page. */
+.hms-root[data-lang="fa"] aside {
+  left: auto;
+  right: 0;
+  border-right-width: 0;
+  border-left: 1px solid var(--hms-border);
+}
+.hms-root[data-lang="fa"] aside.-translate-x-full {
+  transform: translateX(100%);
+}
+@media (min-width: 1024px) {
+  .hms-root[data-lang="fa"] aside {
+    transform: none;
+  }
+}
+
+/* Numerals inside tables line up better when the column is anchored, not left. */
+[dir="rtl"] .hms-root .hms-th,
+[dir="rtl"] .hms-root .hms-td {
+  text-align: right;
+}
+[dir="rtl"] .hms-root .text-right {
+  text-align: left;
+}
+
+/* Icons that carry a direction must be mirrored. */
+[dir="rtl"] .hms-root .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Printed documents follow the same rule. */
+[dir="rtl"] .rx-sheet {
+  direction: rtl;
+  font-family: "Vazirmatn", "IRANSans", "Segoe UI", Tahoma, sans-serif;
+}
+[dir="rtl"] .rx-sheet table {
+  direction: rtl;
+}

@@ -4,7 +4,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { AlertList, ScanButton } from "@/components/hms/alert-list";
-import { money, relTime, timeShort } from "@/lib/hms/format";
+import { dateLong, digitsOf, money, relTime, timeShort } from "@/lib/hms/format";
+import { statusText, t } from "@/lib/hms/i18n";
+import { getLang } from "@/lib/hms/lang-server";
 import { AreaLine, Bars, Donut, LoadBar } from "@/components/hms/charts";
 import { Btn, Empty, Meter, Panel, Person, Pill as PillTag, SectionTitle, Stat, Status } from "@/components/hms/ui";
 import { getHmsUser } from "@/lib/hms/auth";
@@ -21,6 +23,8 @@ export const dynamic = "force-dynamic";
 
 export default async function CommandCentre() {
   await hmsReady();
+  const lang = await getLang();
+  const tr = (key: string, vars?: Record<string, string | number>) => t(lang, key, vars);
   const user = await getHmsUser();
   const identity = getSection<Record<string, unknown>>("identity");
   const kpis = hmsKpis();
@@ -46,7 +50,7 @@ export default async function CommandCentre() {
   const lic = licenseState();
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const greetingKey = hour < 12 ? "dash.greeting" : hour < 17 ? "dash.greetingPM" : "dash.greetingEve";
   const firstName = (user?.name ?? "Doctor").split(" ").slice(0, 2).join(" ");
   const upcoming = appointments.filter((a) => ["waiting", "confirmed", "scheduled"].includes(a.status));
   const theatreToday = surgeries.filter((s) => String(s.scheduled_at ?? "").slice(0, 10) === today);
@@ -66,62 +70,66 @@ export default async function CommandCentre() {
           <div>
             <div className="flex flex-wrap items-center gap-1.5">
               <PillTag tone="brand" dot>
-                {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                {dateLong(new Date().toISOString(), lang)}
               </PillTag>
               <PillTag tone={health.score >= 85 ? "good" : health.score >= 65 ? "warn" : "bad"}>
-                System health {health.score}%
+                {tr("dash.healthPill", { score: digitsOf(lang, health.score) })}
               </PillTag>
               <PillTag tone={lic.status === "active" ? "good" : lic.daysLeft > 0 ? "warn" : "bad"}>
-                {lic.status === "active" ? "Licensed" : lic.daysLeft > 0 ? `Trial · ${lic.daysLeft}d` : "Trial expired"}
+                {lic.status === "active" ? tr("dash.licensed") : lic.daysLeft > 0 ? tr("dash.trial", { days: digitsOf(lang, lic.daysLeft) }) : tr("dash.expired")}
               </PillTag>
             </div>
             <h2 className="mt-2 text-[1.22rem] font-semibold tracking-[-0.025em]">
-              {greeting}, {firstName}
+              {tr(greetingKey, { name: firstName })}
             </h2>
             <p className="mt-0.5 max-w-xl text-[0.75rem] leading-relaxed" style={{ color: "var(--hms-muted)" }}>
-              {String(identity.tagline ?? "Ten beds. One standard.")} — {upcoming.length} patient{upcoming.length === 1 ? "" : "s"} still to be seen,
-              {" "}{pendingReview.length} result{pendingReview.length === 1 ? "" : "s"} awaiting review and {alerts.length} monitor alarm{alerts.length === 1 ? "" : "s"} open.
+              {tr("dash.summary", {
+                tagline: String(identity.tagline ?? "Ten beds. One standard."),
+                waiting: digitsOf(lang, upcoming.length),
+                results: digitsOf(lang, pendingReview.length),
+                alarms: digitsOf(lang, alerts.length),
+              })}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-1.5">
-            <Link href="/hms/opd"><Btn variant="primary" icon={<Stethoscope size={13} />}>Start a consult</Btn></Link>
-            <Link href="/hms/patients?new=1"><Btn icon={<Users size={13} />}>Register patient</Btn></Link>
-            <Link href="/hms/print"><Btn icon={<Printer size={13} />}>Print studio</Btn></Link>
+            <Link href="/hms/opd"><Btn variant="primary" icon={<Stethoscope size={13} />}>{tr("dash.startConsult")}</Btn></Link>
+            <Link href="/hms/patients?new=1"><Btn icon={<Users size={13} />}>{tr("dash.register")}</Btn></Link>
+            <Link href="/hms/print"><Btn icon={<Printer size={13} />}>{tr("dash.printStudio")}</Btn></Link>
           </div>
         </div>
       </Panel>
 
       {/* ------------------------------------------------------------ kpis */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-6">
-        <Link href="/hms/patients"><Stat label="Patients on file" value={kpis.patients} hint={`${kpis.newPatients} new this month`} icon={<Users size={15} />} tone="brand" /></Link>
-        <Link href="/hms/opd"><Stat label="Clinic today" value={kpis.todayAppts} hint={`${upcoming.length} waiting or booked`} icon={<CalendarClock size={15} />} tone="info" /></Link>
-        <Link href="/hms/prescriptions"><Stat label="Rx to sign / dispense" value={kpis.pendingRx} hint="Safety-screened first" icon={<Pill size={15} />} tone="warn" /></Link>
-        <Link href="/hms/lab"><Stat label="Lab & imaging open" value={kpis.labOpen + kpis.imgOpen} hint={`${kpis.criticalLabs} critical flag(s)`} icon={<FlaskConical size={15} />} tone={kpis.criticalLabs ? "bad" : "info"} /></Link>
-        <Link href="/hms/inpatients"><Stat label="Beds occupied" value={`${kpis.bedOccupied}/${kpis.bedTotal}`} hint={`${kpis.occupancy}% occupancy`} icon={<BedDouble size={15} />} tone={kpis.occupancy >= 80 ? "bad" : "good"} /></Link>
-        <Link href="/hms/billing"><Stat label="Collected today" value={money(kpis.revenueToday)} hint={`${money(kpis.outstanding)} outstanding`} icon={<Wallet size={15} />} tone="good" /></Link>
+        <Link href="/hms/patients"><Stat label={tr("dash.kpiPatients")} value={digitsOf(lang, kpis.patients)} hint={tr("dash.kpiPatientsHint", { n: digitsOf(lang, kpis.newPatients) })} icon={<Users size={15} />} tone="brand" /></Link>
+        <Link href="/hms/opd"><Stat label={tr("dash.kpiClinic")} value={digitsOf(lang, kpis.todayAppts)} hint={tr("dash.kpiClinicHint", { n: digitsOf(lang, upcoming.length) })} icon={<CalendarClock size={15} />} tone="info" /></Link>
+        <Link href="/hms/prescriptions"><Stat label={tr("dash.kpiRx")} value={digitsOf(lang, kpis.pendingRx)} hint={tr("dash.kpiRxHint")} icon={<Pill size={15} />} tone="warn" /></Link>
+        <Link href="/hms/lab"><Stat label={tr("dash.kpiLab")} value={digitsOf(lang, kpis.labOpen + kpis.imgOpen)} hint={tr("dash.kpiLabHint", { n: digitsOf(lang, kpis.criticalLabs) })} icon={<FlaskConical size={15} />} tone={kpis.criticalLabs ? "bad" : "info"} /></Link>
+        <Link href="/hms/inpatients"><Stat label={tr("dash.kpiBeds")} value={`${digitsOf(lang, kpis.bedOccupied)}/${digitsOf(lang, kpis.bedTotal)}`} hint={tr("dash.kpiBedsHint", { pct: digitsOf(lang, kpis.occupancy) })} icon={<BedDouble size={15} />} tone={kpis.occupancy >= 80 ? "bad" : "good"} /></Link>
+        <Link href="/hms/billing"><Stat label={tr("dash.kpiMoney")} value={money(kpis.revenueToday, lang)} hint={tr("dash.kpiMoneyHint", { amount: money(kpis.outstanding, lang) })} icon={<Wallet size={15} />} tone="good" /></Link>
       </div>
 
       {/* ------------------------------------------------- revenue + clinic */}
       <div className="grid gap-3.5 xl:grid-cols-[1.55fr_1fr]">
         <Panel>
           <SectionTitle
-            title="Collections & demand"
-            subtitle="Paid invoices per day, last fortnight · hover a column for the day's mix"
+            title={tr("dash.collections")}
+            subtitle={tr("dash.collectionsSub")}
             icon={<TrendingUp size={14} />}
-            action={<PillTag tone="good">{money(revenue.reduce((a, b) => a + b.revenue, 0))} in 14 days</PillTag>}
+            action={<PillTag tone="good">{tr("dash.in14", { amount: money(revenue.reduce((a, b) => a + b.revenue, 0), lang) })}</PillTag>}
           />
           <div className="mt-3">
             <AreaLine data={revenue.map((r) => ({ label: r.label.split(" ")[0], value: r.revenue }))} format="money" />
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-[1.2fr_1fr]">
             <div className="hms-panel p-2.5">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Invoices per day</p>
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tr("dash.invoicesPerDay")}</p>
               <div className="mt-1.5">
                 <Bars data={revenue.slice(-10).map((r) => ({ label: r.label.split(" ")[0], value: r.invoices }))} height={86} />
               </div>
             </div>
             <div className="hms-panel p-2.5">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Where patients come from</p>
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tr("dash.whereFrom")}</p>
               <div className="mt-2 space-y-1.5">
                 {mix.slice(0, 4).map((m) => (
                   <div key={m.department}>
@@ -139,17 +147,17 @@ export default async function CommandCentre() {
 
         <Panel className="flex flex-col">
           <SectionTitle
-            title="Today's clinic"
-            subtitle={`${appointments.length} appointments · ${appointments.filter((a) => a.status === "completed").length} completed`}
+            title={tr("dash.todayClinic")}
+            subtitle={tr("dash.clinicSub", { n: digitsOf(lang, appointments.length), done: digitsOf(lang, appointments.filter((a) => a.status === "completed").length) })}
             icon={<Stethoscope size={14} />}
-            action={<Link href="/hms/opd" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>Open OPD →</Link>}
+            action={<Link href="/hms/opd" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>{tr("dash.openOpd")}</Link>}
           />
           <div className="mt-2.5 max-h-[19rem] flex-1 space-y-1 overflow-y-auto pr-0.5">
-            {appointments.length === 0 && <Empty title="No clinic today" hint="Book an appointment from the OPD screen to fill this list." icon={<CalendarClock size={16} />} />}
+            {appointments.length === 0 && <Empty title={tr("dash.noClinic")} hint={tr("dash.noClinicHint")} icon={<CalendarClock size={16} />} />}
             {appointments.slice(0, 12).map((a) => (
               <div key={a.id} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--hms-surface-2)]">
                 <div className="w-11 shrink-0 text-center">
-                  <p className="text-[0.66rem] font-semibold leading-none">{timeShort(a.start_at)}</p>
+                  <p className="text-[0.66rem] font-semibold leading-none">{timeShort(a.start_at, lang)}</p>
                   <p className="mt-0.5 text-[0.55rem] uppercase" style={{ color: "var(--hms-faint)" }}>{a.department}</p>
                 </div>
                 <Person name={a.patient_name ?? "Patient"} sub={a.reason ?? a.mrn ?? undefined} size={26} />
@@ -164,26 +172,26 @@ export default async function CommandCentre() {
       <div className="grid gap-3.5 xl:grid-cols-3">
         <Panel>
           <SectionTitle
-            title="Health monitor"
-            subtitle="30-minute scans · 48-hour auto-repair"
+            title={tr("dash.monitorTitle")}
+            subtitle={tr("dash.monitorSub")}
             icon={<Wrench size={14} />}
             action={<ScanButton />}
           />
           <div className="mt-2 flex items-center gap-3 rounded-lg p-2" style={{ background: "var(--hms-surface-2)" }}>
             <div className="text-center">
               <p className="text-[1.3rem] font-semibold leading-none" style={{ color: health.score >= 85 ? "#0b7a58" : health.score >= 65 ? "#b45309" : "#b91c1c" }}>
-                {health.score}
+                {digitsOf(lang, health.score)}
               </p>
-              <p className="text-[0.55rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>score</p>
+              <p className="text-[0.55rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{tr("dash.score")}</p>
             </div>
             <div className="grid flex-1 grid-cols-3 gap-1.5 text-center">
               {[
-                { k: "Critical", v: health.critical, c: "#b91c1c" },
-                { k: "Warning", v: health.warning, c: "#b45309" },
-                { k: "Open", v: health.open, c: "var(--hms-brand)" },
+                { k: tr("status.critical"), v: health.critical, c: "#b91c1c" },
+                { k: tr("status.warning"), v: health.warning, c: "#b45309" },
+                { k: tr("status.open"), v: health.open, c: "var(--hms-brand)" },
               ].map((s) => (
                 <div key={s.k}>
-                  <p className="text-[0.86rem] font-semibold leading-none" style={{ color: s.c }}>{s.v}</p>
+                  <p className="text-[0.86rem] font-semibold leading-none" style={{ color: s.c }}>{digitsOf(lang, s.v)}</p>
                   <p className="text-[0.54rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{s.k}</p>
                 </div>
               ))}
@@ -193,12 +201,12 @@ export default async function CommandCentre() {
             <AlertList alerts={criticalAlerts.length ? criticalAlerts.slice(0, 2) : alerts.slice(0, 2)} compact />
           </div>
           <Link href="/hms/alerts" className="mt-2 block text-center text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>
-            All {alerts.length} alarm(s) & repair log →
+            {tr("dash.allAlarms", { n: digitsOf(lang, alerts.length) })}
           </Link>
         </Panel>
 
         <Panel>
-          <SectionTitle title="Department load" subtitle="Live backlog and next-seven-day bookings" icon={<Activity size={14} />} />
+          <SectionTitle title={tr("dash.deptLoad")} subtitle={tr("dash.deptLoadSub")} icon={<Activity size={14} />} />
           <div className="mt-3 space-y-2">
             {load.slice(0, 6).map((d) => (
               <LoadBar
@@ -206,15 +214,15 @@ export default async function CommandCentre() {
                 label={d.department}
                 value={d.backlog}
                 max={Math.max(12, ...load.map((x) => x.backlog))}
-                hint={`${d.label} · ${d.today} today · ${d.week} this week`}
+                hint={`${d.department === "OPD" ? tr("nav.opd") : d.department} · ${digitsOf(lang, d.today)} ${tr("c.today2")} · ${digitsOf(lang, d.week)}`}
               />
             ))}
           </div>
           <div className="mt-3 rounded-lg p-2.5" style={{ background: "var(--hms-surface-2)" }}>
-            <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Forecast · next 14 days</p>
+            <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tr("dash.forecast")}</p>
             <p className="mt-1 text-[0.72rem] leading-relaxed">
-              Expect <b>{forecast.avg}</b> visits per clinic day — busiest on <b>{forecast.busiest}</b>.
-              {forecast.trend !== 0 && ` Demand is ${forecast.trend > 0 ? "rising" : "easing"} versus last week.`}
+              {tr("dash.forecastText", { avg: digitsOf(lang, forecast.avg), day: forecast.busiest })}
+              {forecast.trend !== 0 && (forecast.trend > 0 ? tr("dash.forecastRising") : tr("dash.forecastEasing"))}
             </p>
             <div className="mt-2 flex items-end gap-1">
               {forecast.points.map((p) => (
@@ -234,8 +242,8 @@ export default async function CommandCentre() {
 
         <Panel>
           <SectionTitle
-            title="Assistant insights"
-            subtitle="Generated from live hospital data"
+            title={tr("dash.insights")}
+            subtitle={tr("dash.insightsSub")}
             icon={<Sparkles size={14} />}
             action={<PillTag tone="brand">{ideas.length}</PillTag>}
           />
@@ -267,10 +275,14 @@ export default async function CommandCentre() {
       <div className="grid gap-3.5 xl:grid-cols-3">
         <Panel>
           <SectionTitle
-            title="Ten-bed inpatient board"
-            subtitle={`${occupied.length} occupied · ${beds.filter((b) => b.status === "available").length} free · ${beds.filter((b) => b.status === "cleaning").length} cleaning`}
+            title={tr("dash.bedBoard")}
+            subtitle={tr("dash.bedBoardSub", {
+              occ: digitsOf(lang, occupied.length),
+              free: digitsOf(lang, beds.filter((b) => b.status === "available").length),
+              clean: digitsOf(lang, beds.filter((b) => b.status === "cleaning").length),
+            })}
             icon={<HeartPulse size={14} />}
-            action={<Link href="/hms/inpatients" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>Manage →</Link>}
+            action={<Link href="/hms/inpatients" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>{tr("dash.manage")}</Link>}
           />
           <div className="mt-2.5 grid grid-cols-2 gap-1.5">
             {beds.map((b) => (
@@ -287,7 +299,7 @@ export default async function CommandCentre() {
                   <span className="text-[0.54rem] capitalize" style={{ color: "var(--hms-faint)" }}>{b.ward}</span>
                 </div>
                 <p className="mt-0.5 truncate text-[0.64rem]" style={{ color: "var(--hms-muted)" }}>
-                  {b.patient_name ?? (b.status === "cleaning" ? "Housekeeping" : b.status === "blocked" ? "Out of service" : "Ready")}
+                  {b.patient_name ?? (b.status === "cleaning" ? tr("dash.housekeeping") : b.status === "blocked" ? tr("dash.outOfService") : tr("dash.ready"))}
                 </p>
               </div>
             ))}
@@ -296,8 +308,8 @@ export default async function CommandCentre() {
 
         <Panel>
           <SectionTitle
-            title="Theatre & procedures"
-            subtitle={`${theatreToday.length} case(s) listed today · ${surgeries.filter((s) => s.status === "scheduled").length} upcoming`}
+            title={tr("dash.theatre")}
+            subtitle={tr("dash.theatreSub", { n: digitsOf(lang, theatreToday.length), up: digitsOf(lang, surgeries.filter((s) => s.status === "scheduled").length) })}
             icon={<Scissors size={14} />}
             action={<Link href="/hms/surgery" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>Open →</Link>}
           />
@@ -307,20 +319,20 @@ export default async function CommandCentre() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[0.72rem] font-medium">{s.procedure_name}</p>
                   <p className="truncate text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>
-                    {s.patient_name} · {s.theatre} · {timeShort(s.scheduled_at)}
+                    {s.patient_name} · {s.theatre} · {timeShort(s.scheduled_at, lang)}
                   </p>
                 </div>
                 <Status value={s.status} />
               </div>
             ))}
-            {!surgeries.length && <Empty title="Theatre list is clear" hint="Book a procedure to see it here." icon={<Scissors size={16} />} />}
+            {!surgeries.length && <Empty title={tr("dash.theatreClear")} hint={tr("dash.theatreClearHint")} icon={<Scissors size={16} />} />}
           </div>
         </Panel>
 
         <Panel>
           <SectionTitle
-            title="Money & paperwork"
-            subtitle="Latest invoices and unsettled balances"
+            title={tr("dash.money")}
+            subtitle={tr("dash.moneySub")}
             icon={<ClipboardList size={14} />}
             action={<Link href="/hms/billing" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>Billing →</Link>}
           />
@@ -329,9 +341,9 @@ export default async function CommandCentre() {
               <div key={i.id} className="flex items-center gap-2 py-1.5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[0.72rem] font-medium">{i.patient_name}</p>
-                  <p className="truncate text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{i.invoice_no} · {relTime(i.created_at)}</p>
+                  <p className="truncate text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{i.invoice_no} · {relTime(i.created_at, lang)}</p>
                 </div>
-                <span className="text-[0.72rem] font-semibold">{money(i.total)}</span>
+                <span className="text-[0.72rem] font-semibold">{money(i.total, lang)}</span>
                 <Status value={i.status} />
               </div>
             ))}
@@ -343,14 +355,14 @@ export default async function CommandCentre() {
       <div className="grid gap-3.5 xl:grid-cols-3">
         <Panel className="xl:col-span-2">
           <SectionTitle
-            title="Outreach drafts & attendance risk"
-            subtitle="Follow-up messages the hospital can send today, ranked by risk of a missed visit"
+            title={tr("dash.outreach")}
+            subtitle={tr("dash.outreachSub")}
             icon={<Sparkles size={14} />}
-            action={<PillTag tone="brand">{followUps.length + risky.length} suggestions</PillTag>}
+            action={<PillTag tone="brand">{tr("dash.suggestions", { n: digitsOf(lang, followUps.length + risky.length) })}</PillTag>}
           />
           <div className="mt-2.5 grid gap-2.5 md:grid-cols-2">
             <div className="space-y-1.5">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Follow-up messages</p>
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tr("dash.followups")}</p>
               {followUps.map((f) => (
                 <div key={f.id + f.channel} className="rounded-lg border p-2" style={{ borderColor: "var(--hms-border)" }}>
                   <div className="flex items-center gap-1.5">
@@ -361,29 +373,29 @@ export default async function CommandCentre() {
                   <p className="mt-1 line-clamp-2 text-[0.64rem] leading-snug" style={{ color: "var(--hms-muted)" }}>{f.body}</p>
                 </div>
               ))}
-              {!followUps.length && <p className="text-[0.68rem]" style={{ color: "var(--hms-faint)" }}>No follow-ups pending.</p>}
+              {!followUps.length && <p className="text-[0.68rem]" style={{ color: "var(--hms-faint)" }}>{tr("dash.noFollowups")}</p>}
             </div>
             <div className="space-y-1.5">
-              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>Attendance risk</p>
+              <p className="text-[0.6rem] font-bold uppercase tracking-[0.06em]" style={{ color: "var(--hms-faint)" }}>{tr("dash.attendance")}</p>
               {risky.map((r) => (
                 <div key={r.id} className="flex items-center gap-2 rounded-lg border px-2 py-1.5" style={{ borderColor: "var(--hms-border)" }}>
                   <Person name={r.name} size={24} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{timeShort(r.start_at)} · {r.department}</p>
+                    <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{timeShort(r.start_at, lang)} · {r.department}</p>
                   </div>
                   <div className="w-16">
                     <Meter value={r.risk} max={100} tone={r.risk > 60 ? "bad" : r.risk > 35 ? "warn" : "good"} height={4} />
                   </div>
-                  <span className="w-7 text-right text-[0.66rem] font-semibold">{r.risk}%</span>
+                  <span className="w-7 text-right text-[0.66rem] font-semibold">{digitsOf(lang, r.risk)}%</span>
                 </div>
               ))}
-              {!risky.length && <p className="text-[0.68rem]" style={{ color: "var(--hms-faint)" }}>No upcoming appointments to score.</p>}
+              {!risky.length && <p className="text-[0.68rem]" style={{ color: "var(--hms-faint)" }}>{tr("dash.noRisk")}</p>}
             </div>
           </div>
         </Panel>
 
         <Panel>
-          <SectionTitle title="Audit trail" subtitle="Every action is attributable and permanent" icon={<ClipboardList size={14} />} />
+          <SectionTitle title={tr("dash.audit")} subtitle={tr("dash.auditSub")} icon={<ClipboardList size={14} />} />
           <div className="mt-2 max-h-[17rem] space-y-1.5 overflow-y-auto pr-0.5">
             {activity.map((a) => (
               <div key={a.id} className="flex gap-2">
@@ -391,7 +403,7 @@ export default async function CommandCentre() {
                 <div className="min-w-0">
                   <p className="text-[0.68rem] leading-snug">{a.detail}</p>
                   <p className="text-[0.58rem]" style={{ color: "var(--hms-faint)" }}>
-                    {a.user_name} · {a.action} {a.entity} · {relTime(a.created_at)}
+                    {a.user_name} · {a.action} {a.entity} · {relTime(a.created_at, lang)}
                   </p>
                 </div>
               </div>
@@ -403,25 +415,25 @@ export default async function CommandCentre() {
       {/* ------------------------------------------------------ diagnosis mix */}
       <div className="grid gap-3.5 xl:grid-cols-[1fr_1.4fr]">
         <Panel>
-          <SectionTitle title="Most frequent diagnoses" subtitle="Clinical mix across all documented consults" icon={<AlertTriangle size={14} />} />
+          <SectionTitle title={tr("dash.diagnoses")} subtitle={tr("dash.diagnosesSub")} icon={<AlertTriangle size={14} />} />
           <div className="mt-3">
             <Donut
               data={diagnoses.map((d) => ({ label: d.diagnosis, value: d.n }))}
-              center={{ top: String(diagnoses.reduce((a, b) => a + b.n, 0)), bottom: "consults" }}
+              center={{ top: digitsOf(lang, diagnoses.reduce((a, b) => a + b.n, 0)), bottom: tr("dash.consults") }}
             />
           </div>
         </Panel>
         <Panel>
-          <SectionTitle title="Prescriptions waiting for you" subtitle="Safety screen runs before anything is signed" icon={<Pill size={14} />} action={<Link href="/hms/prescriptions" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>All prescriptions →</Link>} />
+          <SectionTitle title={tr("dash.rxWaiting")} subtitle={tr("dash.rxWaitingSub")} icon={<Pill size={14} />} action={<Link href="/hms/prescriptions" className="text-[0.66rem] font-semibold" style={{ color: "var(--hms-brand)" }}>{tr("dash.allRx")}</Link>} />
           <div className="mt-2 overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className="hms-th">Patient</th>
-                  <th className="hms-th">Rx no.</th>
-                  <th className="hms-th">Diagnosis</th>
-                  <th className="hms-th">Items</th>
-                  <th className="hms-th">Status</th>
+                  <th className="hms-th">{tr("c.patient")}</th>
+                  <th className="hms-th">{tr("dash.rxNo")}</th>
+                  <th className="hms-th">{tr("rx.diagnosis")}</th>
+                  <th className="hms-th">{tr("dash.items")}</th>
+                  <th className="hms-th">{tr("c.status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -441,7 +453,7 @@ export default async function CommandCentre() {
       </div>
 
       <p className="pb-1 text-center text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>
-        {String(identity.name)} · {String(identity.license_no ?? "")} · {admissions.length} active admission(s) · data stored locally on this machine
+        {String(identity.name)} · {String(identity.license_no ?? "")} · {tr("dash.footer", { n: digitsOf(lang, admissions.length) })}
       </p>
     </div>
   );

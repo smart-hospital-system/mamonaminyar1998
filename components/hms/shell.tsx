@@ -8,7 +8,10 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { statusText } from "@/lib/hms/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { LangSwitch } from "./lang-switch";
+import { useLang } from "./lang-provider";
 import { Ring, Spinner } from "./ui";
 
 export type HmsNavUser = {
@@ -25,62 +28,62 @@ type AlertLite = { id: string; code: string; severity: string; title: string; ca
 
 const NAV: { title: string; items: { href: string; label: string; icon: typeof LayoutDashboard; roles?: string[]; badge?: "rx" | "alerts" | "lab" }[] }[] = [
   {
-    title: "Command",
+    title: "nav.command",
     items: [
-      { href: "/hms", label: "Command centre", icon: LayoutDashboard },
-      { href: "/hms/opd", label: "OPD & consults", icon: Stethoscope, roles: ["admin", "doctor", "nurse", "reception"] },
-      { href: "/hms/patients", label: "Patients", icon: Users },
+      { href: "/hms", label: "nav.dashboard", icon: LayoutDashboard },
+      { href: "/hms/opd", label: "nav.opd", icon: Stethoscope, roles: ["admin", "doctor", "nurse", "reception"] },
+      { href: "/hms/patients", label: "nav.patients", icon: Users },
     ],
   },
   {
-    title: "Clinical",
+    title: "nav.clinical",
     items: [
-      { href: "/hms/prescriptions", label: "Prescriptions", icon: Pill, roles: ["admin", "doctor", "pharmacist", "nurse"], badge: "rx" },
-      { href: "/hms/lab", label: "Laboratory", icon: FlaskConical, roles: ["admin", "lab", "doctor"], badge: "lab" },
-      { href: "/hms/radiology", label: "Radiology & imaging", icon: ScanLine, roles: ["admin", "radiology", "doctor"] },
-      { href: "/hms/inpatients", label: "Inpatient board", icon: HeartPulse, roles: ["admin", "nurse", "doctor"] },
-      { href: "/hms/surgery", label: "Theatre", icon: Scissors, roles: ["admin", "doctor", "nurse"] },
+      { href: "/hms/prescriptions", label: "nav.prescriptions", icon: Pill, roles: ["admin", "doctor", "pharmacist", "nurse"], badge: "rx" },
+      { href: "/hms/lab", label: "nav.lab", icon: FlaskConical, roles: ["admin", "lab", "doctor"], badge: "lab" },
+      { href: "/hms/radiology", label: "nav.radiology", icon: ScanLine, roles: ["admin", "radiology", "doctor"] },
+      { href: "/hms/inpatients", label: "nav.inpatients", icon: HeartPulse, roles: ["admin", "nurse", "doctor"] },
+      { href: "/hms/surgery", label: "nav.surgery", icon: Scissors, roles: ["admin", "doctor", "nurse"] },
     ],
   },
   {
-    title: "Operations",
+    title: "nav.operations",
     items: [
-      { href: "/hms/pharmacy", label: "Pharmacy & stock", icon: Beaker, roles: ["admin", "pharmacist", "nurse"] },
-      { href: "/hms/billing", label: "Billing & invoices", icon: CreditCard, roles: ["admin", "reception", "nurse"] },
-      { href: "/hms/analytics", label: "Analytics", icon: Activity, roles: ["admin", "doctor"] },
+      { href: "/hms/pharmacy", label: "nav.pharmacy", icon: Beaker, roles: ["admin", "pharmacist", "nurse"] },
+      { href: "/hms/billing", label: "nav.billing", icon: CreditCard, roles: ["admin", "reception", "nurse"] },
+      { href: "/hms/analytics", label: "nav.analytics", icon: Activity, roles: ["admin", "doctor"] },
     ],
   },
   {
-    title: "System",
+    title: "nav.system",
     items: [
-      { href: "/hms/alerts", label: "Health monitor", icon: ShieldCheck, badge: "alerts" },
-      { href: "/hms/print", label: "Print studio", icon: Printer },
-      { href: "/hms/settings", label: "Smart settings", icon: Settings, roles: ["admin"] },
-      { href: "/hms/team", label: "Team & access", icon: UserCog, roles: ["admin"] },
-      { href: "/hms/guide", label: "Step-by-step guide", icon: BookOpen },
-      { href: "/hms/activate", label: "Licence", icon: KeyRound, roles: ["admin"] },
+      { href: "/hms/alerts", label: "nav.alerts", icon: ShieldCheck, badge: "alerts" },
+      { href: "/hms/print", label: "nav.print", icon: Printer },
+      { href: "/hms/settings", label: "nav.settings", icon: Settings, roles: ["admin"] },
+      { href: "/hms/team", label: "nav.team", icon: UserCog, roles: ["admin"] },
+      { href: "/hms/guide", label: "nav.guide", icon: BookOpen },
+      { href: "/hms/activate", label: "nav.activate", icon: KeyRound, roles: ["admin"] },
     ],
   },
 ];
 
 const TITLES: Record<string, [string, string]> = {
-  "/hms": ["Command centre", "Every department, one screen"],
-  "/hms/opd": ["OPD & consults", "Today's clinic, vitals and prescribing"],
-  "/hms/patients": ["Patients", "Records, history and charts"],
-  "/hms/prescriptions": ["Prescriptions", "Sign, dispense and print"],
-  "/hms/lab": ["Laboratory", "Worklist, results and verification"],
-  "/hms/radiology": ["Radiology & imaging", "Requests, findings and reports"],
-  "/hms/inpatients": ["Inpatient board", "Ten beds, live status"],
-  "/hms/surgery": ["Theatre", "Surgical lists and operation notes"],
-  "/hms/pharmacy": ["Pharmacy & stock", "Dispensing queue and inventory"],
-  "/hms/billing": ["Billing & invoices", "Collect, reconcile, print"],
-  "/hms/analytics": ["Analytics", "Demand, revenue and quality"],
-  "/hms/alerts": ["Health monitor", "Automatic integrity scans and repairs"],
-  "/hms/print": ["Print studio", "Ten prescription designs"],
-  "/hms/settings": ["Smart settings", "Identity, themes and alarms"],
-  "/hms/team": ["Team & access", "People, roles and passwords"],
-  "/hms/guide": ["Step-by-step guide", "Exactly what to press, and where"],
-  "/hms/activate": ["Licence & activation", "Serials and edition management"],
+  "/hms": ["title.dashboard", "title.dashboard.sub"],
+  "/hms/opd": ["title.opd", "title.opd.sub"],
+  "/hms/patients": ["title.patients", "title.patients.sub"],
+  "/hms/prescriptions": ["title.prescriptions", "title.prescriptions.sub"],
+  "/hms/lab": ["title.lab", "title.lab.sub"],
+  "/hms/radiology": ["title.radiology", "title.radiology.sub"],
+  "/hms/inpatients": ["title.inpatients", "title.inpatients.sub"],
+  "/hms/surgery": ["title.surgery", "title.surgery.sub"],
+  "/hms/pharmacy": ["title.pharmacy", "title.pharmacy.sub"],
+  "/hms/billing": ["title.billing", "title.billing.sub"],
+  "/hms/analytics": ["title.analytics", "title.analytics.sub"],
+  "/hms/alerts": ["title.alerts", "title.alerts.sub"],
+  "/hms/print": ["title.print", "title.print.sub"],
+  "/hms/settings": ["title.settings", "title.settings.sub"],
+  "/hms/team": ["title.team", "title.team.sub"],
+  "/hms/guide": ["title.guide", "title.guide.sub"],
+  "/hms/activate": ["title.activate", "title.activate.sub"],
 };
 
 export function HmsShell({
@@ -98,6 +101,7 @@ export function HmsShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { lang, t } = useLang();
   const [mobile, setMobile] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
@@ -108,11 +112,13 @@ export function HmsShell({
   const [counts, setCounts] = useState({ rx: 0, lab: 0, alerts: health.open });
   const beeped = useRef<Set<string>>(new Set());
 
-  const [title, subtitle] = useMemo(() => {
+  const [titleKey, subtitleKey] = useMemo(() => {
     if (TITLES[pathname]) return TITLES[pathname];
     const match = Object.keys(TITLES).find((k) => k !== "/hms" && pathname.startsWith(k));
-    return match ? TITLES[match] : ["Aybek Hospital", ""];
+    return match ? TITLES[match] : ["nav.dashboard", ""];
   }, [pathname]);
+  const title = t(titleKey);
+  const subtitle = subtitleKey ? t(subtitleKey) : "";
 
   useEffect(() => setMobile(false), [pathname]);
 
@@ -237,7 +243,7 @@ export function HmsShell({
           {sections.map((section, si) => (
             <div key={section.title} className={cn(si > 0 && "mt-3.5")}>
               <p className={cn("mb-1 px-2 text-[0.56rem] font-bold uppercase tracking-[0.1em]", collapsed && "lg:hidden")} style={{ color: "var(--hms-faint)" }}>
-                {section.title}
+                {t(section.title)}
               </p>
               <div className="space-y-0.5">
                 {section.items.map((item) => {
@@ -249,11 +255,11 @@ export function HmsShell({
                       key={item.href}
                       href={item.href}
                       data-active={active}
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? t(item.label) : undefined}
                       className={cn("hms-nav", collapsed && "lg:justify-center lg:px-0")}
                     >
                       <Icon size={15} className="shrink-0" />
-                      <span className={cn("flex-1 truncate", collapsed && "lg:hidden")}>{item.label}</span>
+                      <span className={cn("flex-1 truncate", collapsed && "lg:hidden")}>{t(item.label)}</span>
                       {count > 0 && (
                         <span
                           className={cn(
@@ -278,11 +284,11 @@ export function HmsShell({
             className={cn("flex items-center gap-2 rounded-lg px-2 py-1.5", collapsed && "lg:justify-center")}
             style={{ background: "var(--hms-surface-2)" }}
           >
-            <Ring value={health.score} size={38} label="health" />
+            <Ring value={health.score} size={38} label={t("shell.health")} />
             <div className={cn("min-w-0", collapsed && "lg:hidden")}>
-              <p className="truncate text-[0.66rem] font-semibold">System {health.score}%</p>
+              <p className="truncate text-[0.66rem] font-semibold">{t("shell.system", { score: health.score })}</p>
               <p className="truncate text-[0.58rem]" style={{ color: "var(--hms-faint)" }}>
-                {health.critical} critical · {health.warning} warnings
+                {t("shell.critical", { critical: health.critical, warning: health.warning })}
               </p>
             </div>
           </div>
@@ -291,7 +297,7 @@ export function HmsShell({
             className={cn("hms-nav mt-1.5 hidden w-full lg:flex", collapsed && "lg:justify-center lg:px-0")}
           >
             <ChevronsLeft size={14} className={cn("transition-transform", collapsed && "rotate-180")} />
-            <span className={cn(collapsed && "lg:hidden")}>Collapse</span>
+            <span className={cn(collapsed && "lg:hidden")}>{t("shell.collapse")}</span>
           </button>
         </div>
       </aside>
@@ -314,9 +320,13 @@ export function HmsShell({
             className="ml-auto hidden items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[0.7rem] sm:flex"
             style={{ borderColor: "var(--hms-border)", color: "var(--hms-muted)", background: "var(--hms-surface-2)" }}
           >
-            <Search size={13} /> Search patients, drugs, pages…
+            <Search size={13} /> {t("shell.search")}
             <kbd className="rounded border px-1 text-[0.58rem]" style={{ borderColor: "var(--hms-border)" }}>⌘K</kbd>
           </button>
+
+          <div className="me-1 hidden sm:block">
+            <LangSwitch />
+          </div>
 
           {licence.status !== "active" && (
             <Link
@@ -325,7 +335,7 @@ export function HmsShell({
               style={{ background: licence.daysLeft > 0 ? "#fef3c7" : "#fee2e2", color: licence.daysLeft > 0 ? "#92400e" : "#991b1b" }}
             >
               <KeyRound size={11} />
-              {licence.daysLeft > 0 ? `Trial · ${licence.daysLeft}d left` : "Trial expired — activate"}
+              {licence.daysLeft > 0 ? t("shell.trial", { days: licence.daysLeft }) : t("shell.expired")}
             </Link>
           )}
 
@@ -336,7 +346,7 @@ export function HmsShell({
                 if (!bellOpen) loadAlerts(false);
               }}
               className="hms-btn hms-btn-ghost hms-btn-sm relative"
-              aria-label="Alerts"
+              aria-label={t("shell.alerts")}
             >
               <Bell size={16} />
               {counts.alerts > 0 && (
@@ -353,28 +363,28 @@ export function HmsShell({
               >
                 <div className="flex items-center justify-between border-b px-3 py-2" style={{ borderColor: "var(--hms-border)" }}>
                   <div>
-                    <p className="text-[0.74rem] font-semibold">Health monitor</p>
+                    <p className="text-[0.74rem] font-semibold">{t("shell.monitor")}</p>
                     <p className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>
-                      Scans every 30 min · 48h escalation
+                      {t("shell.scanNote")}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setSound((s) => !s)}
                       className="hms-btn hms-btn-sm hms-btn-ghost"
-                      title={sound ? "Mute alarm sound" : "Enable alarm sound"}
+                      title={sound ? t("shell.mute") : t("shell.unmute")}
                     >
                       {sound ? "🔔" : "🔕"}
                     </button>
                     <button className="hms-btn hms-btn-sm" onClick={() => loadAlerts(true)} disabled={busy}>
-                      {busy ? <Spinner size={11} /> : <Activity size={11} />} Scan
+                      {busy ? <Spinner size={11} /> : <Activity size={11} />} {t("shell.scan")}
                     </button>
                   </div>
                 </div>
                 <div className="max-h-[22rem] overflow-y-auto">
                   {alerts.length === 0 ? (
                     <p className="px-3 py-6 text-center text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>
-                      No open alarms — the hospital is healthy.
+                      {t("shell.noAlarms")}
                     </p>
                   ) : (
                     alerts.map((a) => (
@@ -393,7 +403,7 @@ export function HmsShell({
                           <p className="min-w-0 flex-1 truncate text-[0.72rem] font-medium">{a.title}</p>
                         </div>
                         <p className="mt-0.5 pl-3 text-[0.6rem] capitalize" style={{ color: "var(--hms-faint)" }}>
-                          {a.category} · {a.severity}
+                          {a.category} · {statusText(lang, a.severity)}
                         </p>
                       </Link>
                     ))
@@ -405,7 +415,7 @@ export function HmsShell({
                   className="block border-t px-3 py-2 text-center text-[0.68rem] font-semibold"
                   style={{ borderColor: "var(--hms-border)", color: "var(--hms-brand)" }}
                 >
-                  Open health monitor
+                  {t("shell.openMonitor")}
                 </Link>
               </div>
             )}
@@ -430,13 +440,14 @@ export function HmsShell({
                 <p className="truncate text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>{user.title ?? user.role}</p>
                 <p className="truncate text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{user.email}</p>
               </div>
-              <Link href="/hms/guide" className="hms-nav h-8 text-[0.7rem]">Guide</Link>
+              <div className="px-1 pb-1 pt-0.5"><LangSwitch compact /></div>
+              <Link href="/hms/guide" className="hms-nav h-8 text-[0.7rem]">{t("shell.guide")}</Link>
               {user.role === "admin" && (
-                <Link href="/hms/settings" className="hms-nav h-8 text-[0.7rem]">Settings</Link>
+                <Link href="/hms/settings" className="hms-nav h-8 text-[0.7rem]">{t("shell.settings")}</Link>
               )}
-              <Link href="/dashboard" className="hms-nav h-8 text-[0.7rem]">Salon workspace</Link>
+              <Link href="/dashboard" className="hms-nav h-8 text-[0.7rem]">{t("shell.salon")}</Link>
               <button onClick={signOut} className="hms-nav h-8 w-full text-[0.7rem]" style={{ color: "#b91c1c" }}>
-                <LogOut size={13} /> Sign out
+                <LogOut size={13} /> {t("shell.signOut")}
               </button>
             </div>
           </div>
@@ -445,7 +456,8 @@ export function HmsShell({
         <main className="flex-1 px-3 py-3.5 sm:px-4 sm:py-4">{children}</main>
 
         <footer className="border-t px-4 py-2 text-[0.6rem]" style={{ borderColor: "var(--hms-border)", color: "var(--hms-faint)" }}>
-          {hospital.name} · {licence.plan} · All data stored locally · Health monitor {counts.alerts === 0 ? "clear" : `${counts.alerts} open`}
+          {hospital.name} · {licence.plan} · {t("shell.footer")} · {t("shell.footerHealth")}{" "}
+          {counts.alerts === 0 ? t("shell.clear") : t("shell.openCount", { count: counts.alerts })}
         </footer>
       </div>
 
@@ -456,6 +468,7 @@ export function HmsShell({
 
 function CommandPalette({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const { t } = useLang();
   const [q, setQ] = useState("");
   const [results, setResults] = useState<{ patients: { id: string; name: string; mrn: string }[]; drugs: { id: string; name: string }[] }>({
     patients: [],
@@ -483,7 +496,10 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(t);
   }, [q]);
 
-  const pages = NAV.flatMap((s) => s.items).filter((i) => i.label.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+  const pages = NAV.flatMap((s) => s.items)
+    .map((i) => ({ ...i, text: t(i.label) }))
+    .filter((i) => i.text.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 5);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-start justify-center bg-black/40 px-4 pt-[12vh]" onClick={onClose}>
@@ -498,7 +514,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Patient name, MRN, medicine or page…"
+            placeholder={t("shell.palettePlaceholder")}
             className="w-full bg-transparent text-[0.82rem] outline-none"
           />
           <kbd className="rounded border px-1 text-[0.6rem]" style={{ borderColor: "var(--hms-border)", color: "var(--hms-faint)" }}>esc</kbd>
@@ -506,7 +522,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
         <div className="max-h-[55vh] overflow-y-auto p-1.5">
           {pages.length > 0 && (
             <>
-              <p className="px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>Pages</p>
+              <p className="px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.palettePages")}</p>
               {pages.map((p) => (
                 <button
                   key={p.href}
@@ -516,14 +532,14 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
                   }}
                   className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[0.76rem] hover:bg-[var(--hms-surface-2)]"
                 >
-                  <p.icon size={13} style={{ color: "var(--hms-brand)" }} /> {p.label}
+                  <p.icon size={13} style={{ color: "var(--hms-brand)" }} /> {p.text}
                 </button>
               ))}
             </>
           )}
           {results.patients.length > 0 && (
             <>
-              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>Patients</p>
+              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.palettePatients")}</p>
               {results.patients.map((p) => (
                 <button
                   key={p.id}
@@ -542,7 +558,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
           )}
           {results.drugs.length > 0 && (
             <>
-              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>Medicines</p>
+              <p className="mt-1 px-2 py-1 text-[0.58rem] font-bold uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t("shell.paletteMedicines")}</p>
               {results.drugs.map((m) => (
                 <button
                   key={m.id}
@@ -558,11 +574,11 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
             </>
           )}
           {q.length >= 2 && !results.patients.length && !results.drugs.length && !pages.length && (
-            <p className="px-2 py-6 text-center text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>Nothing matched “{q}”.</p>
+            <p className="px-2 py-6 text-center text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>{t("shell.nothingMatched", { q })}</p>
           )}
           {q.length < 2 && (
             <p className="px-2 py-6 text-center text-[0.7rem]" style={{ color: "var(--hms-muted)" }}>
-              Type at least two characters. Tip: press ⌘K anywhere in the hospital.
+              {t("shell.typeTwo")}
             </p>
           )}
         </div>

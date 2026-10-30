@@ -5,20 +5,24 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Field, Status } from "@/components/hms/ui";
 import { money } from "@/lib/hms/format";
+import { statusText } from "@/lib/hms/i18n";
+import { useLang, useTx } from "@/components/hms/lang-provider";
 import type { AdmissionRow, listBeds } from "@/lib/hms/queries";
 
 type Bed = ReturnType<typeof listBeds>[number];
 type Patient = { id: string; name: string; mrn: string };
 
-const TONE: Record<string, { bg: string; border: string; label: string }> = {
-  occupied: { bg: "color-mix(in srgb,#ef4444 6%, var(--hms-surface))", border: "color-mix(in srgb,#ef4444 34%, var(--hms-border))", label: "Occupied" },
-  available: { bg: "color-mix(in srgb,#10b981 7%, var(--hms-surface))", border: "color-mix(in srgb,#10b981 34%, var(--hms-border))", label: "Ready" },
-  cleaning: { bg: "color-mix(in srgb,#f59e0b 8%, var(--hms-surface))", border: "color-mix(in srgb,#f59e0b 36%, var(--hms-border))", label: "Cleaning" },
-  blocked: { bg: "var(--hms-surface-2)", border: "var(--hms-border)", label: "Out of service" },
+const TONE: Record<string, { bg: string; border: string }> = {
+  occupied: { bg: "color-mix(in srgb,#ef4444 6%, var(--hms-surface))", border: "color-mix(in srgb,#ef4444 34%, var(--hms-border))" },
+  available: { bg: "color-mix(in srgb,#10b981 7%, var(--hms-surface))", border: "color-mix(in srgb,#10b981 34%, var(--hms-border))" },
+  cleaning: { bg: "color-mix(in srgb,#f59e0b 8%, var(--hms-surface))", border: "color-mix(in srgb,#f59e0b 36%, var(--hms-border))" },
+  blocked: { bg: "var(--hms-surface-2)", border: "var(--hms-border)" },
 };
 
 export function WardBoard({ beds, admissions, patients, role }: { beds: Bed[]; admissions: AdmissionRow[]; patients: Patient[]; role: string }) {
   const router = useRouter();
+  const tx = useTx();
+  const { lang } = useLang();
   const [busy, setBusy] = useState<string | null>(null);
   const [mode, setMode] = useState<{ kind: "admit"; bed: Bed } | { kind: "transfer"; admission: AdmissionRow } | { kind: "discharge"; admission: AdmissionRow } | null>(null);
   const [patientId, setPatientId] = useState(patients[0]?.id ?? "");
@@ -34,7 +38,7 @@ export function WardBoard({ beds, admissions, patients, role }: { beds: Bed[]; a
     const res = await fetch("/api/hms/beds", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
     const data = await res.json();
     setBusy(null);
-    setMsg(res.ok ? "Ward updated. The monitor will re-scan within seconds." : data.error ?? "Action failed.");
+    setMsg(res.ok ? tx("Ward updated. The monitor will re-scan within seconds.", "وارڈ به‌روز شد. مانیتور در چند ثانیه دوباره اسکن می‌کند.") : data.error ?? tx("Action failed.", "اقدام انجام نشد."));
     if (res.ok) {
       setMode(null);
       router.refresh();
@@ -75,10 +79,10 @@ export function WardBoard({ beds, admissions, patients, role }: { beds: Bed[]; a
                 <span className="text-[0.74rem] font-semibold">{b.label}</span>
                 <span className="text-[0.54rem]" style={{ color: "var(--hms-faint)" }}>{b.ward}</span>
               </div>
-              <p className="mt-0.5 text-[0.58rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{t.label} · {b.type}</p>
-              <p className="mt-1 truncate text-[0.7rem] font-medium">{b.patient_name ?? (b.status === "cleaning" ? "Housekeeping" : b.status === "blocked" ? b.notes ?? "Servicing" : "Tap to admit")}</p>
+              <p className="mt-0.5 text-[0.58rem] uppercase tracking-wide" style={{ color: "var(--hms-faint)" }}>{statusText(lang, b.status)} · {b.type}</p>
+              <p className="mt-1 truncate text-[0.7rem] font-medium">{b.patient_name ?? (b.status === "cleaning" ? tx("Housekeeping", "در حال نظافت") : b.status === "blocked" ? b.notes ?? tx("Servicing", "در تعمیر") : tx("Tap to admit", "برای بستر زدن لمس کنید"))}</p>
               {b.diagnosis && <p className="truncate text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{b.diagnosis}</p>}
-              <p className="mt-0.5 text-[0.58rem]" style={{ color: "var(--hms-faint)" }}>{money(b.daily_rate)}/night</p>
+              <p className="mt-0.5 text-[0.58rem]" style={{ color: "var(--hms-faint)" }}>{money(b.daily_rate, lang)}{tx("/night", " / شب")}</p>
               {b.status === "occupied" && b.admission_id && canEdit && (
                 <button
                   onClick={(e) => {
@@ -89,7 +93,7 @@ export function WardBoard({ beds, admissions, patients, role }: { beds: Bed[]; a
                   className="hms-btn hms-btn-sm mt-1"
                   style={{ height: "1.5rem" }}
                 >
-                  <LogOut size={9} /> Discharge
+                  <LogOut size={9} /> {tx("Discharge", "مرخص کردن")}
                 </button>
               )}
             </div>
@@ -97,59 +101,59 @@ export function WardBoard({ beds, admissions, patients, role }: { beds: Bed[]; a
         })}
       </div>
       <p className="mt-2 flex items-center gap-1 text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>
-        <Moon size={10} /> Cleaning beds require one tap to return to service — the monitor flags any bed stuck cleaning for more than 6 hours.
+        <Moon size={10} /> {tx("Cleaning beds require one tap to return to service — the monitor flags any bed stuck cleaning for more than 6 hours.", "بستر در حال نظافت با یک لمس به کار برمی‌گردد — مانیتور هر بستری که بیش از ۶ ساعت در نظافت بماند را علامت می‌زند.")}
       </p>
 
       {mode?.kind === "admit" && (
-        <Dialog title={`Admit to ${mode.bed.label}`} sub={`${mode.bed.ward} · ${money(mode.bed.daily_rate)} per night`} onClose={() => setMode(null)}>
+        <Dialog title={tx("Admit to {bed}", "بستر کردن در {bed}", { bed: mode.bed.label })} sub={`${mode.bed.ward} · ${money(mode.bed.daily_rate, lang)} ${tx("per night", "در هر شب")}`} onClose={() => setMode(null)}>
           <div className="grid gap-2 sm:grid-cols-2">
-            <Field label="Patient" className="sm:col-span-2">
+            <Field label={tx("Patient", "مریض")} className="sm:col-span-2">
               <select className="hms-input" value={patientId} onChange={(e) => setPatientId(e.target.value)}>
                 {patients.map((p) => <option key={p.id} value={p.id}>{p.name} · {p.mrn}</option>)}
               </select>
             </Field>
-            <Field label="Working diagnosis" className="sm:col-span-2"><input className="hms-input" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder="Acute appendicitis, post-op day 1" /></Field>
-            <Field label="Admission type">
+            <Field label={tx("Working diagnosis", "تشخیص اولیه")} className="sm:col-span-2"><input className="hms-input" value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} placeholder={tx("Acute appendicitis, post-op day 1", "آپندیسایت حاد، روز اول بعد از عمل")} /></Field>
+            <Field label={tx("Admission type", "نوع بستر شدن")}>
               <select className="hms-input" value={type} onChange={(e) => setType(e.target.value)}>
-                {["elective", "emergency", "transfer", "day-case"].map((t) => <option key={t}>{t}</option>)}
+                {[["elective", "پلانی"], ["emergency", "عاجل"], ["transfer", "تبدیل"], ["day-case", "یک‌روزه"]].map(([t, fa]) => <option key={t} value={t}>{tx(t, fa)}</option>)}
               </select>
             </Field>
           </div>
           <div className="mt-3 flex justify-end gap-1.5">
-            <button className="hms-btn" onClick={() => setMode(null)}>Cancel</button>
+            <button className="hms-btn" onClick={() => setMode(null)}>{tx("Cancel", "لغو")}</button>
             <button className="hms-btn hms-btn-primary" onClick={() => post({ action: "admit", bed_id: mode.bed.id, patient_id: patientId, diagnosis, admission_type: type })} disabled={busy === "x"}>
-              {busy === "x" ? <Loader2 size={11} className="animate-spin" /> : <UserPlus size={11} />} Admit patient
+              {busy === "x" ? <Loader2 size={11} className="animate-spin" /> : <UserPlus size={11} />} {tx("Admit patient", "بستر کردن مریض")}
             </button>
           </div>
         </Dialog>
       )}
 
       {mode?.kind === "transfer" && (
-        <Dialog title={`Move ${mode.admission?.patient_name}`} sub={`Currently in ${mode.admission?.bed_label ?? "a bed"}`} onClose={() => setMode(null)}>
-          <Field label="Target bed">
+        <Dialog title={tx("Move {name}", "انتقال {name}", { name: mode.admission?.patient_name ?? "" })} sub={tx("Currently in {bed}", "اکنون در {bed}", { bed: mode.admission?.bed_label ?? tx("a bed", "یک بستر") })} onClose={() => setMode(null)}>
+          <Field label={tx("Target bed", "بستر مقصد")}>
             <select className="hms-input" value={target} onChange={(e) => setTarget(e.target.value)}>
-              <option value="">Choose a free bed…</option>
+              <option value="">{tx("Choose a free bed…", "یک بستر خالی انتخاب کنید…")}</option>
               {beds.filter((b) => b.status !== "occupied").map((b) => <option key={b.id} value={b.id}>{b.label} · {b.ward} ({b.status})</option>)}
             </select>
           </Field>
           <div className="mt-3 flex justify-end gap-1.5">
-            <button className="hms-btn" onClick={() => setMode(null)}>Cancel</button>
+            <button className="hms-btn" onClick={() => setMode(null)}>{tx("Cancel", "لغو")}</button>
             <button className="hms-btn hms-btn-primary" onClick={() => post({ action: "transfer", admission_id: mode.admission?.id, target_bed: target })} disabled={!target || busy === "x"}>
-              <ArrowRightLeft size={11} /> Transfer
+              <ArrowRightLeft size={11} /> {tx("Transfer", "انتقال")}
             </button>
           </div>
         </Dialog>
       )}
 
       {mode?.kind === "discharge" && (
-        <Dialog title={`Discharge ${mode.admission?.patient_name}`} sub="The bed is released for cleaning immediately." onClose={() => setMode(null)}>
+        <Dialog title={tx("Discharge {name}", "مرخص کردن {name}", { name: mode.admission?.patient_name ?? "" })} sub={tx("The bed is released for cleaning immediately.", "بستر فوراً برای نظافت آزاد می‌شود.")} onClose={() => setMode(null)}>
           <p className="text-[0.72rem]" style={{ color: "var(--hms-muted)" }}>
-            Confirm the discharge summary is complete, take-home medication is dispensed and the invoice is settled or scheduled.
+            {tx("Confirm the discharge summary is complete, take-home medication is dispensed and the invoice is settled or scheduled.", "تأیید کنید که خلاصهٔ مرخصی کامل است، دواهای خانگی تحویل شده و بل تسویه یا زمان‌بندی شده است.")}
           </p>
           <div className="mt-3 flex justify-end gap-1.5">
-            <button className="hms-btn" onClick={() => setMode(null)}>Cancel</button>
+            <button className="hms-btn" onClick={() => setMode(null)}>{tx("Cancel", "لغو")}</button>
             <button className="hms-btn hms-btn-primary" onClick={() => post({ action: "discharge", admission_id: mode.admission?.id })} disabled={busy === "x"}>
-              <Sparkles size={11} /> Discharge
+              <Sparkles size={11} /> {tx("Discharge", "مرخص کردن")}
             </button>
           </div>
         </Dialog>
