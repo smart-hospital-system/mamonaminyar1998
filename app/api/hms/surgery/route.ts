@@ -1,6 +1,6 @@
 import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
-import { hAudit, hNow, hRun, hUid } from "@/lib/hms/db";
+import { hAudit, hNow, hRun, hUid , hGet} from "@/lib/hms/db";
 import { listSurgeries } from "@/lib/hms/queries";
 
 export const GET = route(async () => {
@@ -30,6 +30,7 @@ export const POST = route(async (req) => {
   }
 
   if (!p.id) return json({ error: "Case id is required." }, 422);
+  if (!hGet<{ id: string }>("SELECT id FROM hms_surgeries WHERE id = ?", [p.id])) return json({ error: "Surgical case not found." }, 404);
   const status = action === "start" ? "in_progress" : action === "complete" ? "completed" : "cancelled";
   hRun("UPDATE hms_surgeries SET status = ?, notes = COALESCE(?, notes) WHERE id = ?", [status, p.notes ?? null, p.id]);
   hAudit(user, "updated", "surgery", p.id, `Set surgical case to ${status.replace("_", " ")}`);

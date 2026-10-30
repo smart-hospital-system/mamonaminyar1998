@@ -241,6 +241,8 @@ const D: Record<string, Pair> = {
   "dash.noClinicHint": ["Book an appointment from the OPD screen to fill this list.", "از صفحهٔ معاینات یک وقت ثبت کنید تا این فهرست پر شود."],
   "dash.monitorSub": ["30-minute scans · 48-hour auto-repair", "اسکن هر ۳۰ دقیقه · تعمیر خودکار ۴۸ ساعته"],
   "dash.score": ["score", "امتیاز"],
+  "dash.deniedTitle": ["That screen belongs to another role.", "آن صفحه متعلق به نقش دیگری است."],
+  "dash.deniedBody": ["Your account was sent back here so that nothing was changed. Ask the medical director if you need wider access — every attempt is written to the audit trail.", "حساب شما به این‌جا برگردانده شد تا هیچ چیزی تغییر نکند. برای دسترسی بیشتر از رئیس طبی بپرسید — هر تلاش در سابقهٔ حسابرسی ثبت می‌شود."],
   "dash.monitorTitle": ["Health monitor", "مانیتور سلامت"],
   "status.critical": ["Critical", "بحرانی"],
   "status.warning": ["Warning", "هشدار"],

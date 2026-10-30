@@ -36,17 +36,24 @@ export function ConsultConsole({
   appointments,
   templates,
   canPrescribe,
+  initialPatientId,
+  initialAppointmentId,
 }: {
   patients: Patient[];
   appointments: Appt[];
   templates: { id: number; name: string }[];
   canPrescribe: boolean;
+  /** Set when the consult room is opened from a patient chart or a queue row. */
+  initialPatientId?: string;
+  initialAppointmentId?: string;
 }) {
   const router = useRouter();
   const tx = useTx();
   const { lang } = useLang();
-  const [patientId, setPatientId] = useState(appointments[0]?.patient_id ?? patients[0]?.id ?? "");
-  const [apptId, setApptId] = useState(appointments[0]?.id ?? "");
+  const preselected = initialPatientId && patients.some((p) => p.id === initialPatientId) ? initialPatientId : undefined;
+  const preselectedAppt = initialAppointmentId && appointments.some((a) => a.id === initialAppointmentId) ? initialAppointmentId : undefined;
+  const [patientId, setPatientId] = useState(preselected ?? appointments[0]?.patient_id ?? patients[0]?.id ?? "");
+  const [apptId, setApptId] = useState(preselectedAppt ?? appointments[0]?.id ?? "");
   const [q, setQ] = useState("");
   const [diagnosis, setDiagnosis] = useState("");
   const [icd10, setIcd10] = useState("");
@@ -131,7 +138,7 @@ export function ConsultConsole({
     setMsg(null);
     try {
       if (diagnosis.trim() || summary.trim()) {
-        await fetch("/api/hms/encounters", {
+        const enc = await fetch("/api/hms/encounters", {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
@@ -144,6 +151,12 @@ export function ConsultConsole({
             visit_type: apptId ? "followup" : "new",
           }),
         });
+        if (!enc.ok) {
+          const detail = await enc.json().catch(() => ({}));
+          setMsg({ tone: "bad", text: detail.error ?? tx("The clinical note could not be saved.", "یادداشت کلینیکی ذخیره نشد.") });
+          setBusy(null);
+          return;
+        }
       }
       const res = await fetch("/api/hms/prescriptions", {
         method: "POST",

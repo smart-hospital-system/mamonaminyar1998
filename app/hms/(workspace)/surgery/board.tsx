@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Field, Person, Status } from "@/components/hms/ui";
 import { dateShort, digitsOf, timeShort } from "@/lib/hms/format";
 import { useLang, useTx } from "@/components/hms/lang-provider";
+import { send } from "@/lib/hms/client";
 import type { SurgeryRow } from "@/lib/hms/queries";
 
 const COMMON = ["Appendicectomy", "Laparoscopic cholecystectomy", "Inguinal hernia repair", "Caesarean section", "Hydrocelectomy", "Excision biopsy", "Wound debridement"];
@@ -32,8 +33,10 @@ export function SurgeryBoard({ rows, patients, canBook, canProgress }: { rows: S
 
   async function progress(id: string, action: "start" | "complete" | "cancel") {
     setBusy(id + action);
-    await fetch("/api/hms/surgery", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action, id }) });
+    setMsg(null);
+    const res = await send("/api/hms/surgery", "POST", { action, id });
     setBusy(null);
+    if (!res.ok) return setMsg(res.error);
     router.refresh();
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Empty, Person, Status } from "@/components/hms/ui";
 import { timeShort } from "@/lib/hms/format";
+import { send } from "@/lib/hms/client";
 import { useLang, useTx } from "@/components/hms/lang-provider";
 import type { AppointmentRow } from "@/lib/hms/queries";
 
@@ -13,16 +14,15 @@ export function Queue({ rows, role }: { rows: AppointmentRow[]; role: string }) 
   const tx = useTx();
   const { lang } = useLang();
   const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const canEdit = ["admin", "doctor", "nurse", "reception"].includes(role);
 
   async function setStatus(id: string, status: string) {
     setBusy(id + status);
-    await fetch(`/api/hms/appointments/${id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
+    setError(null);
+    const res = await send(`/api/hms/appointments/${id}`, "PATCH", { status });
     setBusy(null);
+    if (!res.ok) return setError(res.error);
     router.refresh();
   }
 
@@ -30,6 +30,11 @@ export function Queue({ rows, role }: { rows: AppointmentRow[]; role: string }) 
 
   return (
     <div className="mt-2 space-y-1">
+      {error && (
+        <p className="rounded-md px-2 py-1 text-[0.66rem]" style={{ background: "#fee2e2", color: "#991b1b" }}>
+          {error}
+        </p>
+      )}
       {rows.map((a) => (
         <div key={a.id} className="flex items-center gap-2 rounded-lg border px-2 py-1.5" style={{ borderColor: "var(--hms-border)" }}>
           <div className="w-12 shrink-0">

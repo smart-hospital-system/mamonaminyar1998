@@ -1,6 +1,6 @@
 import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
-import { hAudit, hNow, hRun } from "@/lib/hms/db";
+import { hAudit, hGet, hNow, hRun } from "@/lib/hms/db";
 import { parseLabResult } from "@/lib/hms/ai";
 import { hUid } from "@/lib/hms/db";
 
@@ -9,6 +9,10 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
   const { id } = await params;
   const p = await body<{ action?: string; result?: string; priority?: string }>(req);
   const action = p.action ?? "result";
+  // Every action below targets one order: refuse to report success for an id
+  // that does not exist (a typo or a deleted row would otherwise look saved).
+  const order = hGet<{ id: string }>("SELECT id FROM hms_lab_orders WHERE id = ?", [id]);
+  if (!order) return json({ error: "Laboratory order not found." }, 404);
 
   if (action === "collect") {
     hRun("UPDATE hms_lab_orders SET status = 'collected' WHERE id = ?", [id]);

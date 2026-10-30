@@ -12,10 +12,11 @@ import { Queue } from "./queue";
 
 export const dynamic = "force-dynamic";
 
-export default async function OpdPage() {
+export default async function OpdPage({ searchParams }: { searchParams: Promise<{ patient?: string; appt?: string }> }) {
   const user = await requireHmsPage(["admin", "doctor", "nurse", "reception"]);
   await hmsReady();
   const lang = await getLang();
+  const sp = await searchParams;
   const tr = (en: string, fa: string, vars?: Record<string, string | number>) => tx(lang, en, fa, vars);
   const today = new Date().toISOString().slice(0, 10);
   const appts = listAppointments(today);
@@ -73,6 +74,8 @@ export default async function OpdPage() {
             appointments={appts.map((a) => ({ id: a.id, patient_id: a.patient_id, patient_name: a.patient_name, start_at: a.start_at, reason: a.reason }))}
             templates={RX_TEMPLATES.map((t) => ({ id: t.id, name: t.name }))}
             canPrescribe={canPrescribe}
+            initialPatientId={sp.patient}
+            initialAppointmentId={sp.appt}
           />
         </Panel>
       </div>

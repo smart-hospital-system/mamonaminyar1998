@@ -60,6 +60,7 @@ export const POST = route(async (req) => {
 
   if (action === "clean") {
     if (!p.bed_id) return json({ error: "Bed is required." }, 422);
+    if (!hGet<{ id: string }>("SELECT id FROM hms_beds WHERE id = ?", [p.bed_id])) return json({ error: "Bed not found." }, 404);
     hRun("UPDATE hms_beds SET status = 'available' WHERE id = ?", [p.bed_id]);
     hAudit(user, "cleaned", "inpatient", p.bed_id, "Bed cleaned and returned to service");
     return json({ ok: true });

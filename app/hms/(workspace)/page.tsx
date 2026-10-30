@@ -1,6 +1,6 @@
 import {
   Activity, AlertTriangle, ArrowUpRight, BedDouble, CalendarClock, ClipboardList, FlaskConical, HeartPulse,
-  Pill, Printer, Scissors, Sparkles, Stethoscope, TrendingUp, Users, Wallet, Wrench,
+  Pill, Printer, Scissors, ShieldAlert, Sparkles, Stethoscope, TrendingUp, Users, Wallet, Wrench,
 } from "lucide-react";
 import Link from "next/link";
 import { AlertList, ScanButton } from "@/components/hms/alert-list";
@@ -21,9 +21,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function CommandCentre() {
+export default async function CommandCentre({ searchParams }: { searchParams: Promise<{ denied?: string }> }) {
   await hmsReady();
   const lang = await getLang();
+  const sp = await searchParams;
   const tr = (key: string, vars?: Record<string, string | number>) => t(lang, key, vars);
   const user = await getHmsUser();
   const identity = getSection<Record<string, unknown>>("identity");
@@ -60,6 +61,22 @@ export default async function CommandCentre() {
 
   return (
     <div className="space-y-3.5">
+      {sp.denied && (
+        <div
+          className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[0.72rem]"
+          style={{ borderColor: "#fca5a5", background: "#fef2f2", color: "#991b1b" }}
+        >
+          <ShieldAlert size={14} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-semibold">
+              {tr("dash.deniedTitle")}
+            </p>
+            <p className="mt-0.5">
+              {tr("dash.deniedBody")}
+            </p>
+          </div>
+        </div>
+      )}
       {/* ------------------------------------------------------------ hero */}
       <Panel className="relative overflow-hidden !p-0">
         <div

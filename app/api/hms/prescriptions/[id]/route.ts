@@ -31,6 +31,12 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
     // pharmacy counter until it carries a signature (Settings -> Clinical rules).
     const clinical = getSection<Record<string, unknown>>("clinical");
     const flag = clinical.require_signature;
+    if (rx.status === "dispensed") {
+      return json({ error: "This prescription has already been dispensed — handing it over twice would double the charge and the stock movement." }, 409);
+    }
+    if (rx.status === "void") {
+      return json({ error: "This prescription was voided and cannot be dispensed." }, 409);
+    }
     const mustSign = flag === undefined ? true : ![false, 0, "0", "false", "no"].includes(flag as never);
     if (mustSign && rx.status !== "signed") {
       return json(

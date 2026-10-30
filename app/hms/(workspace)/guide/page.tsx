@@ -28,6 +28,21 @@ export default async function GuidePage({ searchParams }: { searchParams: Promis
         />
       </Panel>
 
+      <div
+        className="flex flex-wrap items-start gap-2 rounded-lg border px-3 py-2 text-[0.7rem]"
+        style={{ borderColor: "var(--hms-border)", background: "var(--hms-surface-2)", color: "var(--hms-muted)" }}
+      >
+        <span className="font-semibold" style={{ color: "var(--hms-ink)" }}>
+          {tr("Chapter text is in English", "متن فصل‌ها انگلیسی است")}
+        </span>
+        <span className="min-w-0 flex-1">
+          {tr(
+            "The chapters below are the technical steps used by whoever installs and maintains the machine. The full Persian handbook — written for you as the owner — is the file RAHNAMA-FA.html in the DOCS folder of the delivery disc, and it prints on A4.",
+            "فصل‌های زیر همان گام‌های تخنیکی است که نصب‌کننده و مسئول سیستم از آن استفاده می‌کند. راهنمای کامل فارسی — نوشته‌شده برای شما به‌عنوان مالک — فایل RAHNAMA-FA.html در پوشهٔ DOCS دیسک تحویل است و روی A4 چاپ می‌شود."
+          )}
+        </span>
+      </div>
+
       <div className="grid gap-3.5 xl:grid-cols-[1.6fr_1fr]">
         <Panel>
           <GuideBrowser chapters={GUIDE.map((g) => ({ id: g.id, title: g.title, audience: g.audience, summary: g.summary, minutes: g.minutes, steps: g.steps, faq: g.faq ?? [] }))} initial={sp.chapter ?? GUIDE[0].id} />

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Empty, Field, Person, Status } from "@/components/hms/ui";
 import { dateShort, digitsOf, money, relTime } from "@/lib/hms/format";
 import { useLang, useTx } from "@/components/hms/lang-provider";
+import { send } from "@/lib/hms/client";
 import type { MedicineRow } from "@/lib/hms/queries";
 
 type Rx = { id: string; rx_no: string; patient_name: string; patient_mrn: string; diagnosis: string | null; status: string; items: number; created_at: string; doctor_name: string };
@@ -44,12 +45,16 @@ export function PharmacyBoard({ prescriptions, medicines, initialTab, initialQue
   async function saveRestock() {
     if (!restock) return;
     setBusy(restock.id);
-    await fetch(`/api/hms/medicines/${restock.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ add: amount, batch: batch || undefined, expiry: expiry || undefined }),
+    const res = await send(`/api/hms/medicines/${restock.id}`, "PATCH", {
+      add: amount,
+      batch: batch || undefined,
+      expiry: expiry || undefined,
     });
     setBusy(null);
+    if (!res.ok) {
+      setMsg({ tone: "bad", text: res.error });
+      return;
+    }
     setRestock(null);
     setBatch("");
     setExpiry("");
