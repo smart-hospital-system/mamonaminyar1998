@@ -96,6 +96,52 @@ department that owns it.
 
 ---
 
+## 2b. Ask Aybek (`/hms/ask`)
+
+Type a question the way you would say it out loud — "how much came in today?",
+"what is low on stock?", "who has not paid?" — in English or Dari.
+
+- The big number is the answer, the paragraph explains it, the table is the evidence,
+  and the button opens the screen where you can act on it.
+- Each answer suggests the question that naturally follows.
+- Start every morning with `summary`: money, appointments, beds, lab backlog, stock
+  warnings and system health in one line.
+- The reader is a fixed, local rule set. No internet, nothing leaves the building, and
+  the same question always gives the same answer. If nothing matches, it returns the
+  hospital summary rather than inventing a number.
+
+## 2c. Clinical toolkit (`/hms/intelligence`)
+
+Five offline instruments, in both languages:
+
+1. **NEWS2 early warning** — enter the observations; read the score, the risk band and
+   the escalation instruction for that ward.
+2. **qSOFA sepsis screen** — runs from the same numbers; two or more is positive.
+3. **Interaction checker** — two drug names, severity, mechanism, action and a safer
+   alternative where one exists. The consultation room runs the same library
+   automatically before a prescription can be signed.
+4. **Paediatric weight-based dosing** and **renal dose adjustment (CrCl)**.
+5. **Laboratory interpretation** against printed reference ranges, plus **body metrics**
+   (BMI, BSA, ideal body weight, Cockcroft–Gault clearance).
+
+> These are prompts for a clinician, not a diagnosis. Every screen names the rule it used
+> (NEWS2, Sepsis-3, Cockcroft–Gault, Mosteller, Devine). Dose ceilings are conservative —
+> confirm against your printed formulary.
+
+## 2d. Universal search and the command palette (`⌘K`)
+
+Press `⌘K` (or `Ctrl+K`) on any screen: patients, prescriptions, invoices, medicines,
+lab/imaging orders and staff, from one box. `↑` `↓` to move, `Enter` to open. The last
+eight places you visited are remembered.
+
+## 2e. Patient timeline and audit trail
+
+- Every patient chart opens with **one timeline** — visits, prescriptions, lab, imaging,
+  admissions, operations and bills in chronological order, filterable by kind.
+- `/hms/audit` (owner and medical director): every registration, signature, dispense,
+  result, admission, payment and settings change, with the person and the time. Filter it
+  and export CSV. It cannot be edited from the application — that is the point.
+
 ## 3. The health monitor (`/hms/alerts`)
 
 The bell in the header shows open alarms; the badge on the sidebar shows the same

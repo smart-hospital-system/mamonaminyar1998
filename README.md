@@ -128,6 +128,19 @@ Optional: set `SLOTLY_DB_PATH` to store the database somewhere else (see `.env.e
   updates with rollback on failure, toast notifications
 - Public booking page (`/book`) for clients — service picker → live slots → details → confirmation
 
+### v7 — intelligence layer
+- **Ask Aybek** (`/hms/ask`, `GET /api/hms/ask`): deterministic natural-language analytics over
+  the hospital's own records, bilingual, offline, 14 intents with tables and follow-up questions
+- **Clinical toolkit** (`/hms/intelligence`): NEWS2 early warning, qSOFA sepsis screen, 24-rule
+  interaction library with alternatives, paediatric weight dosing, renal dose bands, 15 laboratory
+  reference ranges with critical flags, BMI/BSA/IBW/Cockcroft–Gault
+- **Universal search** (`GET /api/hms/search`): patients, prescriptions, invoices, medicines,
+  lab/imaging orders, staff — powering a keyboard-driven ⌘K palette with recents and quick actions
+- **Unified patient timeline** + safety strip on every chart; **audit trail** viewer with CSV export
+- **Bilingual printed prescriptions** (labels and RTL), two new premium themes (Obsidian Gold,
+  Ivory Atelier), toast notifications, and a refined design layer (hairline borders, elevation,
+  tabular numerals, staggered motion)
+
 ### Data & system
 - Persistent **SQLite** database (`node:sqlite`, WAL journaling) with 19 tables
 - Deterministic seed: 6 staff, 14 services, 62 customers, ~2,300 bookings, ~1,500 payments,
