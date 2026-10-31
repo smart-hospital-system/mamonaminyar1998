@@ -3,6 +3,7 @@ import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
 import type { HmsRole } from "@/lib/hms/auth";
 import { hAll, hAudit, hGet, hNow, hRun, hUid } from "@/lib/hms/db";
+import { scoreCode } from "@/lib/hms/passwords";
 
 const ROLES: HmsRole[] = ["admin", "doctor", "pharmacist", "lab", "radiology", "nurse", "reception"];
 
@@ -28,7 +29,16 @@ export const POST = route(async (req) => {
     return json({ error: "A member of staff already uses that email address." }, 409);
   }
   const password = (p.password ?? "").trim();
-  if (password.length < 8) return json({ error: "The initial password must be at least 8 characters." }, 422);
+  const quality = scoreCode(password);
+  if (!quality.acceptable) {
+    return json(
+      {
+        error: `That code is too easy to guess (${quality.label[0]}). Use 12+ characters mixing letters and digits — or press Generate.`,
+        score: quality.score,
+      },
+      422
+    );
+  }
 
   const id = hUid("usr");
   hRun(

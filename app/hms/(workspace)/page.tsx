@@ -5,7 +5,7 @@ import {
 import Link from "next/link";
 import { AlertList, ScanButton } from "@/components/hms/alert-list";
 import { dateLong, digitsOf, money, relTime, timeShort } from "@/lib/hms/format";
-import { statusText, t } from "@/lib/hms/i18n";
+import { statusText, t, tx } from "@/lib/hms/i18n";
 import { getLang } from "@/lib/hms/lang-server";
 import { AreaLine, Bars, Donut, LoadBar } from "@/components/hms/charts";
 import { Btn, Empty, Meter, Panel, Person, Pill as PillTag, SectionTitle, Stat, Status } from "@/components/hms/ui";
@@ -61,6 +61,29 @@ export default async function CommandCentre({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-3.5">
+      {!sp.denied && hGet<{ c: number }>("SELECT COUNT(*) AS c FROM hms_audit")!.c < 20 && (
+        <Link
+          href="/hms/start"
+          className="group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 transition hover:-translate-y-px"
+          style={{ borderColor: "color-mix(in srgb, var(--hms-brand) 30%, var(--hms-border))", background: "color-mix(in srgb, var(--hms-brand) 6%, var(--hms-surface))" }}
+        >
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-white" style={{ background: "var(--hms-brand)" }}>
+            <Sparkles size={15} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[0.8rem] font-semibold">{tx(lang, "New here? Start with the eight steps", "تازه‌اید؟ با هشت قدم شروع کنید")}</span>
+            <span className="block text-[0.68rem]" style={{ color: "var(--hms-muted)" }}>
+              {tx(
+                lang,
+                "Each step says exactly where to go and what to press — sign-in, your hospital's name, staff codes, one test patient, then the printer and the backup.",
+                "هر قدم دقیقاً می‌گوید کجا بروید و چه را بزنید — ورود، نام شفاخانه، رمز کارمندان، یک بیمار آزمایشی، بعد چاپگر و پشتیبان."
+              )}
+            </span>
+          </span>
+          <span className="hms-btn hms-btn-sm hms-btn-soft shrink-0">{tx(lang, "Open the guide", "باز کن")}</span>
+        </Link>
+      )}
+
       {sp.denied && (
         <div
           className="flex items-start gap-2 rounded-lg border px-3 py-2 text-[0.72rem]"

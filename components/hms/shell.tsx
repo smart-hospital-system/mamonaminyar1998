@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   Activity, Bell, Beaker, BookOpen, ChevronsLeft, CreditCard, Cross, FlaskConical, HeartPulse, KeyRound,
   LayoutDashboard, LogOut, Menu, Pill, Printer, ScanLine, Scissors, Search, Settings, ShieldCheck,
-  Brain, History, Sparkles, Stethoscope, UserCog, Users, X,
+  Brain, Compass, History, Sparkles, Stethoscope, UserCog, Users, X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -31,6 +31,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
   {
     title: "nav.command",
     items: [
+      { href: "/hms/start", label: "nav.start", icon: Compass },
       { href: "/hms", label: "nav.dashboard", icon: LayoutDashboard },
       { href: "/hms/ask", label: "nav.ask", icon: Sparkles },
       { href: "/hms/opd", label: "nav.opd", icon: Stethoscope, roles: ["admin", "doctor", "nurse", "reception"] },
@@ -72,6 +73,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
 
 const TITLES: Record<string, [string, string]> = {
   "/hms": ["title.dashboard", "title.dashboard.sub"],
+  "/hms/start": ["title.start", "title.start.sub"],
   "/hms/ask": ["title.ask", "title.ask.sub"],
   "/hms/intelligence": ["title.intelligence", "title.intelligence.sub"],
   "/hms/audit": ["title.audit", "title.audit.sub"],

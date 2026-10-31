@@ -24,6 +24,28 @@ export type GuideChapter = {
  */
 export const GUIDE: GuideChapter[] = [
   {
+    id: "start",
+    icon: "compass",
+    title: "First hour: the eight steps, in order",
+    audience: "Everyone on day one",
+    summary: "Sign in, put your name on the hospital, create real logins, walk one test patient end to end, print, back up. Nothing here needs training.",
+    minutes: 30,
+    steps: [
+      { n: 1, title: "Change the starter code", where: "/hms/team → your own row → key icon", action: "Press Generate, then Set code. Print the access card it shows and keep it in a drawer — the code is never shown again.", tip: "A long sentence beats a short code: “Kabul-surgery-2026-ward” is strong and memorable.", href: "/hms/team" },
+      { n: 2, title: "Name the hospital", where: "/hms/settings?section=identity", action: "Hospital name, phone, emergency number, address, city, then Save. Every printed document reads from this one screen.", href: "/hms/settings?section=identity" },
+      { n: 3, title: "Create one login per person", where: "/hms/team → Add staff", action: "Name, email, role, then Generate for the initial code. Give the printed card to that person once.", tip: "Never share one login: the audit trail has to name the clinician who signed.", href: "/hms/team" },
+      { n: 4, title: "Walk one test patient", where: "/hms/patients → chart → New encounter", action: "Register a patient, document an encounter, write and sign a prescription, dispense it in Pharmacy, then invoice and take payment in Billing.", href: "/hms/patients" },
+      { n: 5, title: "Visit each department once", where: "/hms/lab · /hms/radiology · /hms/inpatients · /hms/surgery", action: "Collect → result → verify in the lab; accept → report in radiology; admit → discharge → clean in the ward; book → start → complete in theatre.", href: "/hms/lab" },
+      { n: 6, title: "Print one prescription", where: "/hms/prescriptions → open → Print", action: "A4, default margins. Switch the language to Dari and print once more to see the right-to-left sheet.", href: "/hms/prescriptions" },
+      { n: 7, title: "Take the first backup and practise a restore", where: "/hms/settings?section=data", action: "Download the JSON onto a USB stick, then type RESET and rebuild the demo hospital once, on purpose, so a real restore never surprises you.", href: "/hms/settings?section=data" },
+      { n: 8, title: "Learn the two shortcuts", where: "Anywhere · /hms/ask", action: "Ctrl+K opens universal search; Ask Aybek answers “summary”, “low stock”, “who has not paid?” in one sentence.", href: "/hms/ask" },
+    ],
+    faq: [
+      { q: "Who can see the owner-only steps?", a: "Only an administrator. Everyone else sees the six steps that apply to their role, so a new nurse is not asked to edit hospital identity." },
+      { q: "The ticks disappeared", a: "Progress is stored per browser. Signing in on a different computer starts the checklist fresh — the work itself is in the database, not the checklist." },
+    ],
+  },
+  {
     id: "install",
     icon: "download",
     title: "Install the hospital on a new computer",

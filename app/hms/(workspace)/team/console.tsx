@@ -4,6 +4,9 @@ import { Check, KeyRound, Loader2, Lock, ShieldCheck, UserPlus, UserX, X } from 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Field, Person, Pill } from "@/components/hms/ui";
+import { CodeField } from "@/components/hms/code-field";
+import { scoreCode } from "@/lib/hms/passwords";
+import { Printer } from "lucide-react";
 import { digitsOf, relTime } from "@/lib/hms/format";
 import { statusText } from "@/lib/hms/i18n";
 import { useLang, useTx } from "@/components/hms/lang-provider";
@@ -34,6 +37,10 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
   const [resetFor, setResetFor] = useState<U | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [mine, setMine] = useState("");
+  const [card, setCard] = useState<{ name: string; email: string; role: string; code: string } | null>(null);
+  const [mineOk, setMineOk] = useState(false);
+  const [resetOk, setResetOk] = useState(false);
+  const [addOk, setAddOk] = useState(false);
 
   async function call(path: string, method: string, payload: unknown, key: string) {
     setBusy(key);
@@ -50,8 +57,10 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
     e.preventDefault();
     const ok = await call("/api/hms/users", "POST", form, "add");
     if (ok) {
+      setCard({ name: form.name, email: form.email, role: form.role, code: form.password });
       setAdding(false);
       setForm({ name: "", email: "", role: "nurse", department: "", title: "", phone: "", password: "" });
+      setAddOk(false);
     }
   }
 
@@ -144,10 +153,14 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
       <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
         <form onSubmit={changeMine} className="rounded-lg border p-2.5" style={{ borderColor: "var(--hms-border)" }}>
           <p className="flex items-center gap-1.5 text-[0.74rem] font-semibold"><Lock size={12} /> {tx("Change my password", "تغییر رمز من")}</p>
-          <p className="mt-0.5 text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>{tx("At least 8 characters. Everyone else keeps their own password.", "حداقل ۸ حرف. رمز دیگران دست‌نخورده می‌ماند.")}</p>
-          <div className="mt-1.5 flex gap-1.5">
-            <input className="hms-input" type="password" value={mine} onChange={(e) => setMine(e.target.value)} placeholder={tx("New password", "رمز جدید")} minLength={8} required />
-            <button className="hms-btn hms-btn-primary" type="submit" disabled={mine.length < 8 || busy === "mine"}>
+          <p className="mt-0.5 text-[0.62rem]" style={{ color: "var(--hms-faint)" }}>
+            {tx("Twelve characters or more. Press Generate and the hospital mints one for you.", "دوازده حرف یا بیشتر. «تولید» را بزنید تا شفاخانه یکی برایتان بسازد.")}
+          </p>
+          <div className="mt-1.5">
+            <CodeField label={tx("New code", "رمز جدید")} value={mine} onChange={setMine} onQuality={setMineOk} />
+          </div>
+          <div className="mt-1.5 flex justify-end">
+            <button className="hms-btn hms-btn-primary" type="submit" disabled={!mineOk || busy === "mine"}>
               {busy === "mine" ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />} {tx("Save", "ذخیره")}
             </button>
           </div>
@@ -185,13 +198,19 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
               <Field label={tx("Department", "دیپارتمنت")}><input className="hms-input" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder={tx("OPD, Pharmacy…", "معاینات، دواخانه…")} /></Field>
               <Field label={tx("Job title", "عنوان وظیفه")}><input className="hms-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
               <Field label={tx("Phone", "تلفن")}><input className="hms-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></Field>
-              <Field label={tx("Initial password", "رمز اولیه")} className="sm:col-span-2" hint={tx("Share it privately; they can change it on this page after signing in.", "این رمز را خصوصی بدهید؛ او می‌تواند بعد از ورود آن را در همین صفحه عوض کند.")}>
-                <input className="hms-input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={8} required />
-              </Field>
+              <div className="sm:col-span-2">
+                <CodeField
+                  label={tx("Initial code", "رمز اولیه")}
+                  value={form.password}
+                  onChange={(v) => setForm({ ...form, password: v })}
+                  onQuality={setAddOk}
+                  hint={tx("Press Generate — then print the access card and hand it over once.", "«تولید» را بزنید — بعد کارت دسترسی را چاپ کنید و یک بار تحویل دهید.")}
+                />
+              </div>
             </div>
             <div className="mt-3 flex justify-end gap-1.5">
               <button type="button" className="hms-btn" onClick={() => setAdding(false)}>{tx("Cancel", "لغو")}</button>
-              <button type="submit" className="hms-btn hms-btn-primary" disabled={busy === "add"}>
+              <button type="submit" className="hms-btn hms-btn-primary" disabled={busy === "add" || !addOk}>
                 {busy === "add" ? <Loader2 size={11} className="animate-spin" /> : <UserPlus size={11} />} {tx("Create account", "ایجاد حساب")}
               </button>
             </div>
@@ -210,9 +229,13 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
               <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={() => setResetFor(null)}><X size={13} /></button>
             </div>
             <div className="mt-2">
-              <Field label={tx("New password", "رمز جدید")} hint={tx("At least 8 characters. Tell them to change it after the first sign-in.", "حداقل ۸ حرف. بگویید بعد از اولین ورود آن را عوض کند.")}>
-                <input className="hms-input" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-              </Field>
+              <CodeField
+                label={tx("New code for this person", "رمز جدید برای این شخص")}
+                value={newPassword}
+                onChange={setNewPassword}
+                onQuality={setResetOk}
+                hint={tx("Hand it over on paper once; they change it on their first sign-in.", "یک بار روی کاغذ بدهید؛ او در اولین ورود عوضش می‌کند.")}
+              />
             </div>
             <div className="mt-3 flex justify-end gap-1.5">
               <button className="hms-btn" onClick={() => setResetFor(null)}>{tx("Cancel", "لغو")}</button>
@@ -220,11 +243,63 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
                 className="hms-btn hms-btn-primary"
                 onClick={async () => {
                   const ok = await call(`/api/hms/users/${resetFor.id}`, "PATCH", { password: newPassword }, "reset");
-                  if (ok) setResetFor(null);
+                  if (ok) {
+                    setCard({ name: resetFor.name, email: resetFor.email, role: resetFor.role, code: newPassword });
+                    setResetFor(null);
+                    setNewPassword("");
+                  }
                 }}
-                disabled={newPassword.length < 8 || busy === "reset"}
+                disabled={!resetOk || busy === "reset"}
               >
-                {busy === "reset" ? <Loader2 size={11} className="animate-spin" /> : <KeyRound size={11} />} {tx("Set password", "تعیین رمز")}
+                {busy === "reset" ? <Loader2 size={11} className="animate-spin" /> : <KeyRound size={11} />} {tx("Set code", "تعیین رمز")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {card && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 p-4" onClick={() => setCard(null)}>
+          <div className="w-full max-w-md rounded-xl border bg-[var(--hms-surface)] p-4 shadow-2xl" style={{ borderColor: "var(--hms-border)" }} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-[0.84rem] font-semibold">{tx("Access card", "کارت دسترسی")}</p>
+                <p className="text-[0.64rem]" style={{ color: "var(--hms-faint)" }}>
+                  {tx("Print it, fold it, hand it over once. The code is not shown again.", "چاپ کنید، تا بزنید و یک بار تحویل دهید. رمز دیگر نشان داده نمی‌شود.")}
+                </p>
+              </div>
+              <button className="hms-btn hms-btn-sm hms-btn-ghost" onClick={() => setCard(null)}><X size={13} /></button>
+            </div>
+
+            <div className="print-area mt-2 rounded-lg border-2 p-3" style={{ borderColor: "var(--hms-brand)", background: "#fff", color: "#0f172a" }}>
+              <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: "#dbe7ef" }}>
+                <div>
+                  <p className="text-[0.58rem] font-bold uppercase tracking-[0.14em]" style={{ color: "#0e9488" }}>Aybek Ten-Bed Specialy Surgical Hospital</p>
+                  <p className="text-[0.56rem]" style={{ color: "#64748b" }}>شفاخانه ده بستر جراحی ایبک</p>
+                </div>
+                <KeyRound size={16} style={{ color: "#0e9488" }} />
+              </div>
+              <table className="mt-2 w-full text-[0.7rem]">
+                <tbody>
+                  <tr><td className="py-0.5" style={{ color: "#64748b", width: "38%" }}>Name / نام</td><td className="py-0.5 font-semibold">{card.name}</td></tr>
+                  <tr><td className="py-0.5" style={{ color: "#64748b" }}>Sign-in / ورود</td><td className="py-0.5 font-mono">{card.email}</td></tr>
+                  <tr><td className="py-0.5" style={{ color: "#64748b" }}>Role / نقش</td><td className="py-0.5">{statusText(lang, card.role)}</td></tr>
+                </tbody>
+              </table>
+              <div className="mt-2 rounded-md border border-dashed p-2 text-center" style={{ borderColor: "#0e9488" }}>
+                <p className="text-[0.56rem] uppercase tracking-[0.12em]" style={{ color: "#64748b" }}>One-time code / رمز یک‌بارمصرف</p>
+                <p className="mt-0.5 font-mono text-[1.05rem] font-bold tracking-[0.08em]" style={{ color: "#0f172a" }}>{card.code}</p>
+              </div>
+              <p className="mt-2 text-[0.56rem] leading-relaxed" style={{ color: "#64748b" }}>
+                Sign in at http://localhost:3000/hms/login — then open Team and set your own code.
+                <br />وارد شوید، بعد در بخش کارمندان رمز خودتان را بگذارید. این کارت را در جای محرم نگه دارید.
+              </p>
+            </div>
+
+            <div className="mt-3 flex justify-end gap-1.5">
+              <button className="hms-btn" onClick={() => setCard(null)}>{tx("Close", "بستن")}</button>
+              <button className="hms-btn hms-btn-primary" onClick={() => window.print()}>
+                <Printer size={11} /> {tx("Print card", "چاپ کارت")}
               </button>
             </div>
           </div>

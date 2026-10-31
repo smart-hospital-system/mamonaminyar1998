@@ -3,6 +3,7 @@ import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
 import type { HmsRole } from "@/lib/hms/auth";
 import { hAudit, hGet, hRun } from "@/lib/hms/db";
+import { scoreCode } from "@/lib/hms/passwords";
 
 const ROLES: HmsRole[] = ["admin", "doctor", "pharmacist", "lab", "radiology", "nurse", "reception"];
 
@@ -17,7 +18,16 @@ export const PATCH = route<{ id: string }>(async (req, { params }) => {
   // changing your own password is allowed for everybody
   if (p.password !== undefined) {
     if (!self && !isAdmin) return json({ error: "Only an administrator can reset another person's password." }, 403);
-    if (p.password.trim().length < 8) return json({ error: "The password must be at least 8 characters." }, 422);
+    const quality = scoreCode(p.password.trim());
+    if (!quality.acceptable) {
+      return json(
+        {
+          error: `That code is too easy to guess (${quality.label[0]}). Use 12+ characters mixing letters and digits — or press Generate.`,
+          score: quality.score,
+        },
+        422
+      );
+    }
     hRun("UPDATE hms_users SET password_hash = ? WHERE id = ?", [bcrypt.hashSync(p.password.trim(), 10), id]);
     hAudit(actor, "password", "user", id, self ? "Changed their own password" : `Reset the password of ${id}`);
   }
