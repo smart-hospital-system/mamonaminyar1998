@@ -41,8 +41,12 @@ const dbPath = path.join(root, "data", "slotly.db");
 const demoPath = path.join(root, "data", "demo-hospital.db");
 
 if (fs.existsSync(dbPath)) {
-  const size = (fs.statSync(dbPath).size / 1024 / 1024).toFixed(1);
-  log(`Database found (${size} MB) — keeping the existing hospital records.`);
+  // SQLite runs in WAL mode, so most recent writes live in slotly.db-wal until a
+  // checkpoint: count the sidecars or the report reads "0.0 MB" for a full hospital.
+  const bytes = [dbPath, `${dbPath}-wal`, `${dbPath}-shm`]
+    .filter((p) => fs.existsSync(p))
+    .reduce((sum, p) => sum + fs.statSync(p).size, 0);
+  log(`Database found (${(bytes / 1024 / 1024).toFixed(1)} MB on disk) — keeping the existing hospital records.`);
 } else if (fs.existsSync(demoPath)) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
   fs.copyFileSync(demoPath, dbPath);
