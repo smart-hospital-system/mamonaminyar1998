@@ -265,6 +265,40 @@ of where the server runs.
 
 ---
 
+## Cloudflare Workers check (`ash-magic-transit`)
+
+This repository is connected to Cloudflare Workers Builds, which runs `npx wrangler deploy` on every
+push. **The hospital system is not deployed to Workers and cannot be:** it stores records in a local
+SQLite file (`node:sqlite`), writes backups to disk, prints on the local network and must keep working
+with no internet connection. Deploying it to the edge would mean throwing the offline guarantee away.
+
+So the deploy target is deliberately a small, dependency-free **status Worker**:
+
+| Path | File |
+| --- | --- |
+| `wrangler.jsonc` | points Wrangler at the status Worker, pins the service name |
+| `workers/status.mjs` | `/` bilingual status page, `/health` JSON probe, `/version` JSON, 404 otherwise |
+
+Why the explicit config matters: with no `wrangler.toml`/`wrangler.jsonc`, Wrangler falls back to
+*automatic project configuration* — it detects Next.js, tries to scaffold an OpenNext adapter inside
+the build container and the check fails within a second. The config file makes the deploy
+deterministic.
+
+Maintainer commands (optional, needs internet — Wrangler is intentionally **not** a dependency, so a
+hospital install stays ~150 MB lighter):
+
+```bash
+npm run worker:check    # npx wrangler deploy --dry-run — bundles without uploading
+npm run worker:deploy   # npx wrangler deploy — only from a machine logged in to Cloudflare
+```
+
+Dashboard settings for the Worker (`Workers & Pages → ash-magic-transit → Settings → Builds`):
+**Build command** empty (or `npm run build`), **Deploy command** `npx wrangler deploy`,
+**Root directory** `/`. Do **not** point it at `npm run deploy` — that script starts the on-premise
+hospital server and would never exit.
+
+---
+
 ## Notes
 
 - Prices are in SGD and GST defaults to 9% (configurable in Settings → Payments).

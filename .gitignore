@@ -56,3 +56,7 @@ data/*.db-shm
 aybek-hms/SERIALS.txt
 public/uploads/
 .DS_Store
+
+# Cloudflare Workers tooling (status Worker only — see wrangler.jsonc)
+.wrangler/
+.dev.vars
