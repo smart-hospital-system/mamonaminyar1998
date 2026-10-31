@@ -1,49 +1,104 @@
-# Slotly — AI-powered booking & business management
+# Aybek Ten-Bed Specialy Surgical Hospital
 
-A full-stack booking platform for small service businesses — salons, clinics, gyms, tutors,
-photographers, repair shops and home-service teams. Take reservations online, run the front desk,
-manage staff and schedules, collect payments, market to clients, and let an AI copilot fill the
-gaps in the calendar.
+**شفاخانه ده بستر جراحی ایبک** — a complete, bilingual (English / دری) hospital information
+system that runs on one ordinary computer, with no internet connection required.
 
-Built with **Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · SQLite**.
+Owner: **Dr. Mamon Aminyar** · Built with **Next.js 15 (App Router) · React 19 · TypeScript ·
+Tailwind CSS v4 · SQLite (`node:sqlite`)**
+
+Twenty-one screens cover the whole hospital: OPD consultations and prescriptions, pharmacy
+dispensing and stock, laboratory and radiology workflows, ten beds and theatre, billing and
+receipts, staff and roles, licences and serials, a health monitor that scans every 30 minutes,
+an audit trail, ten prescription papers and twelve interface themes.
+
+Around that sit four things that make it usable in a real ten-bed hospital:
+
+- **Ask Aybek** — ask a question in English or Dari ("how much came in today?", "what is low on
+  stock?") and get an answer computed from this hospital's own records. Deterministic, offline.
+- **Clinical toolkit** — NEWS2 early warning, qSOFA sepsis screen, 24-rule interaction library,
+  paediatric weight dosing, renal dose bands, laboratory reference ranges, BMI/BSA/IBW/CrCl.
+- **Universal search (⌘K)** — patients, prescriptions, invoices, medicines, orders and staff.
+- **Start here** — eight guided steps from an empty screen to a working hospital, in-app.
+
+Everything is bilingual: the interface, the printed prescription a patient carries home, and the
+documentation. Dari renders right-to-left throughout.
 
 ---
 
 ## Quick start
 
 ```bash
+git clone https://github.com/smart-hospital-system/mamonaminyar1998.git aybek-hospital
+cd aybek-hospital
 npm install
-npm run dev          # http://localhost:3000
+npm run deploy
 ```
 
-The database is created and seeded automatically on first boot (`data/slotly.db`).
+`npm run deploy` checks the Node version, installs the demonstration hospital if no database
+exists yet, builds the app when the build is missing, and serves it on `0.0.0.0:3000` so a ward
+phone or tablet can reach it.
 
-### Demo credentials
+Open <http://localhost:3000/hms/login> and sign in with `doctor@aybek.hospital` / `mamonaminyar`,
+then open **Start here** in the sidebar and change the code before real patients are entered.
 
-| Role | Email | Password |
-| --- | --- | --- |
-| **Owner** | `mamon.aminyar650432@gmail.com` | `mamonaminyar` |
-| Manager | `priya@lumierestudio.sg` | `slotly123` |
-| Staff | `ava@lumierestudio.sg` | `slotly123` |
+| Command | What it does |
+|---|---|
+| `npm run deploy` | one-shot: check Node, seed if empty, build if needed, serve on port 3000 |
+| `npm run dev` | development server with hot reload |
+| `npm run build` / `npm start` | production build, then serve an existing build |
+| `PORT=3100 npm run deploy` | the same, on another port |
+| `npm run hms:verify` | health report across all 19 hospital tables |
+| `npm run hms:reset` | drop and rebuild the demonstration hospital (destructive) |
+| `npm run hms:demo-db` | refresh `data/demo-hospital.db`, the copy that ships on the disc |
 
-The sign-in screen is pre-filled with the owner account, and has one-click **Owner / Manager /
-Staff** demo buttons plus a "Continue with Google" button that signs in the demo owner account.
-Roles are enforced on the server (route handlers + page guards), not just in the UI.
+**On Windows, without a terminal:** copy the disc (or the zip) and double-click `START-HERE.bat`.
+The step-by-step Persian guide is `aybek-hms/docs/شروع-از-صفر.md` (English: `DOCS/START-FROM-ZERO-FA.md`
+on the disc, `USER-GUIDE.md` for the English user guide).
 
-Useful scripts:
+### Demonstration accounts
 
-```bash
-npm run seed         # wipe + reseed six months of demo activity
-npm run db:reset     # delete the SQLite file, then seed
-npm run build        # production build
-npm start            # run the production server
-```
+Password for every account below: `mamonaminyar`. Change them in **Team** before going live.
 
-Optional: set `SLOTLY_DB_PATH` to store the database somewhere else (see `.env.example`).
+| Role | Email |
+|---|---|
+| Medical Director (owner, everything) | `doctor@aybek.hospital` |
+| Surgeon | `arash@aybek.hospital` |
+| Physician | `evelyn@aybek.hospital` |
+| Physician | `yusuf@aybek.hospital` |
+| Pharmacist | `pharmacy@aybek.hospital` |
+| Laboratory | `lab@aybek.hospital` |
+| Nurse (ward) | `nurse@aybek.hospital` |
+| Nurse | `laila@aybek.hospital` |
+| Reception | `reception@aybek.hospital` |
+
+Try it without any risk: **Settings → Data & backup** can rebuild the demo hospital at any time
+(type `RESET`), and downloads a full JSON backup before you do.
+
+### Delivered media
+
+| File | Size | For |
+|---|---|---|
+| `Aybek-Hospital-HMS-v7.iso` | 35 MB | burn to CD/DVD |
+| `Aybek-Hospital-HMS-v7.iso.sha256` | 92 B | verify the burn |
+| `Aybek-Hospital-HMS-v7.zip` | 32 MB | USB stick |
+| `Aybek-DISC-v7/` | 34 MB | same content, no burning |
 
 ---
 
-## What's inside
+## The original booking demo (still in this repository)
+
+The repository began life as **Slotly**, a booking platform for small service businesses. That
+half is still here and still builds — `/book` for customers, `/dashboard` for the front desk —
+sharing the same SQLite file but with its own tables and its own seed (`npm run seed`,
+owner `mamon.aminyar650432@gmail.com` / `mamonaminyar`). The hospital lives under `/hms` and is
+seeded independently (`npm run hms:verify`). You can ignore the booking half entirely; nothing in
+the hospital depends on it.
+
+The sections below document that original platform.
+
+---
+
+## Appendix — Slotly feature reference
 
 ### Authentication & security
 - Email + password sign-in with **bcrypt** hashed passwords
@@ -216,7 +271,7 @@ of where the server runs.
 - Google sign-in is intentionally simulated for this demo build so the workspace can be explored
   without OAuth credentials; the session handling is the same as a real provider flow.
 - The workspace reseeds itself only when the database is empty, so your changes persist across
-  restarts. Use Settings → Data → Reset demo to start fresh.
+  restarts. Use Settings → Data & backup → Rebuild demo data (type `RESET`) to start fresh.
 
 ## Bilingual by design — English / دری
 
@@ -225,8 +280,8 @@ the login form: choosing Dari mirrors the whole layout right-to-left, switches e
 uses Persian digits and the Solar Hijri calendar. The choice is stored per browser (`aybek_lang`
 cookie), so two people can work side by side in different languages on the same server. The
 hospital-wide default is **Settings → Hospital identity → Default language for new sessions**
-(`en` or `fa`). Printed papers stay in English with the local hospital name so they can be read
-anywhere.
+(`en` or `fa`). The prescription sheet a patient carries home is bilingual too: in Dari it prints
+right-to-left with Dari labels, while medicine and doctor names stay exactly as entered.
 
 Implementation: `lib/hms/i18n.ts` (dictionary + `t()` / `tx()` + `statusText()`),
 `lib/hms/lang-server.ts` (cookie → settings → English), `components/hms/lang-provider.tsx`
