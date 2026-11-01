@@ -6,10 +6,12 @@ name: Verify
 # source is sound — type-checks, builds and contains no committed credentials.
 
 on:
+  # A pull request run is the one that matters while working on a branch; running
+  # on every branch push as well produced two identical jobs for every commit.
   pull_request:
   push:
     branches:
-      - "**"
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -22,7 +24,9 @@ permissions:
 jobs:
   verify:
     name: type-check, build, secret scan
-    runs-on: ubuntu-latest
+    # Pinned: the ubuntu-latest label moves to a new image on 2026-10-19, and a
+    # hospital build should not change underneath us on that date.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
