@@ -13,6 +13,9 @@ import {
   searchDiseases,
   type Disease,
 } from "@/lib/hms/diseases";
+import { buildForDisease } from "@/lib/hms/regimens/engine";
+import { FORMULARY_NOTE, reviewRegimen } from "@/lib/hms/regimens/safety";
+import { RegimenReview, type BandView } from "./regimen";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +32,35 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
   const counts = categoryCounts();
   const results = searchDiseases(q, cat || undefined, 60);
   const selected: Disease | undefined = sp.id ? diseaseById(sp.id) : results[0];
+
+  // The prescriptions for this condition, reviewed live by the safety engine.
+  const bandViews: BandView[] = (selected ? buildForDisease(selected.id) : [])
+    .filter((r) => r.sex === "female")
+    .map((r) => {
+      const review = reviewRegimen(r.items, { band: r.band, age: r.age, lang });
+      return {
+        band: r.band,
+        label: lang === "fa" ? (r.band === "child" ? "کمتر از ۱۸ سال" : r.band === "adult" ? "۱۸ تا ۷۰ سال" : "۷۱ تا ۹۰ سال") : r.bandLabel,
+        patient: lang === "fa" ? r.nameFa : r.name,
+        age: r.age,
+        sex: r.sex,
+        items: r.items.map((i) => ({
+          ...i,
+          drug: lang === "fa" && i.drugFa ? i.drugFa : i.drug,
+          shareLabel: `${i.sharePct}%`,
+        })),
+        findings: review.findings.map((f) => ({
+          severity: f.severity,
+          drug: f.drug,
+          rule: f.rule,
+          title: lang === "fa" ? f.titleFa : f.titleEn,
+          detail: lang === "fa" ? f.detailFa : f.detailEn,
+        })),
+        verdict: review.verdict,
+      };
+    });
+
+  const note = lang === "fa" ? FORMULARY_NOTE.fa : FORMULARY_NOTE.en;
 
   const href = (patch: Partial<Search>) => {
     const p = new URLSearchParams();
@@ -181,12 +213,35 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
             </div>
 
             <Panel>
-              <p className="text-xs leading-relaxed" style={{ color: "var(--hms-muted)" }}>
-                {tr(
-                  "Reference aid for clinicians. Doses are not printed here — the prescription screen, the paediatric dose calculator and the renal adjustment table own dosing. Confirm against national guidance before treating.",
-                  "این تنها یک مرجع کمکی برای کلینسیسین‌ها است. دوز دوا اینجا نوشته نشده — دوزدهی در صفحهٔ نسخه، محاسبه‌گر دوز اطفال و جدول تنظیم کلیوی است. پیش از تداوی با رهنمود ملی مطابقت کنید."
+              <SectionTitle
+                title={tr("What this looks like for this patient", "این تداوی برای این بیمار چگونه است")}
+                subtitle={tr(
+                  "One prescription per age band, checked by the system before you read it",
+                  "برای هر گروه سنی یک نسخه، پیش از خواندن شما توسط سیستم سنجیده شده"
                 )}
-              </p>
+              />
+              <div className="mt-2">
+                <RegimenReview
+                  bands={bandViews}
+                  noteTitle={note.title}
+                  noteBody={note.body}
+                  labels={{
+                    medicines: tr("Medicines", "ادویه"),
+                    share: tr("Share", "سهم"),
+                    review: tr("System review", "بازبینی سیستم"),
+                    noFindings: tr(
+                      "No age, renal, interaction or duplication problem found for this band.",
+                      "برای این گروه سنی هیچ اشکال سنی، کلیوی، تداخل یا تکرار دوا پیدا نشد."
+                    ),
+                    patient: tr("Patient", "بیمار"),
+                    years: tr("years", "سال"),
+                    sexFemale: tr("female", "زن"),
+                    sexMale: tr("male", "مرد"),
+                    blocks: tr("blocking", "بازدارنده"),
+                    cautions: tr("to check", "نیازمند بررسی"),
+                  }}
+                />
+              </div>
             </Panel>
           </div>
         ) : (

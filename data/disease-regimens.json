@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-11-01T17:41:14.235Z",
+ "generatedAt": "2026-11-01T17:54:34.596Z",
  "source": "Aybek Ten-Bed Specialy Surgical Hospital — clinical catalogue",
  "disclaimer": "Demonstration and teaching dataset. Doses are standard textbook ranges, not a prescribing authority. Confirm against the national formulary, renal/hepatic adjustment and the prescriber's judgement.",
  "bands": [
@@ -24497,7 +24497,7 @@
      "durationDays": 3,
      "quantity": 6,
      "unit": "sachet",
-     "sharePct": 5.8
+     "sharePct": 5.2
     },
     {
      "drugId": "ringer",
@@ -24512,22 +24512,22 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 13.5
+     "sharePct": 12.2
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
-     "frequency": "Every 12 hours",
+     "drugId": "azithromycin",
+     "drug": "Azithromycin",
+     "drugFa": "آزیترومایسین",
+     "className": "Antibiotic — macrolide",
+     "form": "Suspension",
+     "strength": "200 mg/5 ml",
+     "dose": "10 mg/kg once daily",
+     "frequency": "Once daily",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 13.5
+     "durationDays": 5,
+     "quantity": 25,
+     "unit": "ml",
+     "sharePct": 21.7
     },
     {
      "drugId": "zinc",
@@ -24542,7 +24542,7 @@
      "durationDays": 14,
      "quantity": 70,
      "unit": "ml",
-     "sharePct": 67.2
+     "sharePct": 60.9
     }
    ]
   },
@@ -24574,7 +24574,7 @@
      "durationDays": 3,
      "quantity": 6,
      "unit": "sachet",
-     "sharePct": 5.8
+     "sharePct": 5.2
     },
     {
      "drugId": "ringer",
@@ -24589,22 +24589,22 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 13.5
+     "sharePct": 12.2
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
-     "frequency": "Every 12 hours",
+     "drugId": "azithromycin",
+     "drug": "Azithromycin",
+     "drugFa": "آزیترومایسین",
+     "className": "Antibiotic — macrolide",
+     "form": "Suspension",
+     "strength": "200 mg/5 ml",
+     "dose": "10 mg/kg once daily",
+     "frequency": "Once daily",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 13.5
+     "durationDays": 5,
+     "quantity": 25,
+     "unit": "ml",
+     "sharePct": 21.7
     },
     {
      "drugId": "zinc",
@@ -24619,7 +24619,7 @@
      "durationDays": 14,
      "quantity": 70,
      "unit": "ml",
-     "sharePct": 67.2
+     "sharePct": 60.9
     }
    ]
   },
@@ -25883,22 +25883,22 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 5.2
+     "sharePct": 2.7
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
+     "drugId": "co_trimoxazole",
+     "drug": "Co-trimoxazole",
+     "drugFa": "کو-تریموکسازول",
+     "className": "Antibiotic — sulfonamide",
+     "form": "Suspension",
+     "strength": "240 mg/5 ml",
+     "dose": "6 mg/kg (trimethoprim) per dose",
      "frequency": "Every 12 hours",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 10.4
+     "durationDays": 14,
+     "quantity": 140,
+     "unit": "ml",
+     "sharePct": 53.6
     },
     {
      "drugId": "paracetamol",
@@ -25913,7 +25913,7 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 74.1
+     "sharePct": 38.3
     },
     {
      "drugId": "ringer",
@@ -25928,7 +25928,7 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 10.3
+     "sharePct": 5.4
     }
    ]
   },
@@ -25960,22 +25960,22 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 5.2
+     "sharePct": 2.7
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
+     "drugId": "co_trimoxazole",
+     "drug": "Co-trimoxazole",
+     "drugFa": "کو-تریموکسازول",
+     "className": "Antibiotic — sulfonamide",
+     "form": "Suspension",
+     "strength": "240 mg/5 ml",
+     "dose": "6 mg/kg (trimethoprim) per dose",
      "frequency": "Every 12 hours",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 10.4
+     "durationDays": 14,
+     "quantity": 140,
+     "unit": "ml",
+     "sharePct": 53.6
     },
     {
      "drugId": "paracetamol",
@@ -25990,7 +25990,7 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 74.1
+     "sharePct": 38.3
     },
     {
      "drugId": "ringer",
@@ -26005,7 +26005,7 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 10.3
+     "sharePct": 5.4
     }
    ]
   },
@@ -27731,7 +27731,7 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 5.2
+     "sharePct": 3.1
     },
     {
      "drugId": "ringer",
@@ -27746,7 +27746,7 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 10.4
+     "sharePct": 6.2
     },
     {
      "drugId": "paracetamol",
@@ -27761,22 +27761,22 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 74.1
+     "sharePct": 44.2
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
-     "frequency": "Every 12 hours",
+     "drugId": "amoxicillin",
+     "drug": "Amoxicillin",
+     "drugFa": "اموکسی‌سیلین",
+     "className": "Antibiotic — penicillin",
+     "form": "Syrup",
+     "strength": "125 mg/5 ml",
+     "dose": "25 mg/kg per dose",
+     "frequency": "Every 8 hours",
      "route": "Oral",
      "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 10.3
+     "quantity": 105,
+     "unit": "ml",
+     "sharePct": 46.5
     }
    ]
   },
@@ -27808,7 +27808,7 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 5.2
+     "sharePct": 3.1
     },
     {
      "drugId": "ringer",
@@ -27823,7 +27823,7 @@
      "durationDays": 7,
      "quantity": 14,
      "unit": "vial",
-     "sharePct": 10.4
+     "sharePct": 6.2
     },
     {
      "drugId": "paracetamol",
@@ -27838,22 +27838,22 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 74.1
+     "sharePct": 44.2
     },
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
-     "frequency": "Every 12 hours",
+     "drugId": "amoxicillin",
+     "drug": "Amoxicillin",
+     "drugFa": "اموکسی‌سیلین",
+     "className": "Antibiotic — penicillin",
+     "form": "Syrup",
+     "strength": "125 mg/5 ml",
+     "dose": "25 mg/kg per dose",
+     "frequency": "Every 8 hours",
      "route": "Oral",
      "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 10.3
+     "quantity": 105,
+     "unit": "ml",
+     "sharePct": 46.5
     }
    ]
   },
@@ -43949,19 +43949,19 @@
    "category": "Infectious",
    "items": [
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
+     "drugId": "co_trimoxazole",
+     "drug": "Co-trimoxazole",
+     "drugFa": "کو-تریموکسازول",
+     "className": "Antibiotic — sulfonamide",
+     "form": "Suspension",
+     "strength": "240 mg/5 ml",
+     "dose": "6 mg/kg (trimethoprim) per dose",
      "frequency": "Every 12 hours",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 7.3
+     "durationDays": 14,
+     "quantity": 140,
+     "unit": "ml",
+     "sharePct": 44.2
     },
     {
      "drugId": "gentamicin",
@@ -43976,7 +43976,7 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 3.7
+     "sharePct": 2.2
     },
     {
      "drugId": "paracetamol",
@@ -43991,7 +43991,7 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 52.4
+     "sharePct": 31.5
     },
     {
      "drugId": "omeprazole",
@@ -44006,7 +44006,7 @@
      "durationDays": 14,
      "quantity": 70,
      "unit": "ml",
-     "sharePct": 36.6
+     "sharePct": 22.1
     }
    ]
   },
@@ -44026,19 +44026,19 @@
    "category": "Infectious",
    "items": [
     {
-     "drugId": "doxycycline",
-     "drug": "Doxycycline",
-     "drugFa": "داکسی‌سیکلین",
-     "className": "Antibiotic — tetracycline",
-     "form": "Capsule",
-     "strength": "100 mg",
-     "dose": "2 mg/kg per dose (over 8 years)",
+     "drugId": "co_trimoxazole",
+     "drug": "Co-trimoxazole",
+     "drugFa": "کو-تریموکسازول",
+     "className": "Antibiotic — sulfonamide",
+     "form": "Suspension",
+     "strength": "240 mg/5 ml",
+     "dose": "6 mg/kg (trimethoprim) per dose",
      "frequency": "Every 12 hours",
      "route": "Oral",
-     "durationDays": 7,
-     "quantity": 14,
-     "unit": "unit",
-     "sharePct": 7.3
+     "durationDays": 14,
+     "quantity": 140,
+     "unit": "ml",
+     "sharePct": 44.2
     },
     {
      "drugId": "gentamicin",
@@ -44053,7 +44053,7 @@
      "durationDays": 7,
      "quantity": 7,
      "unit": "vial",
-     "sharePct": 3.7
+     "sharePct": 2.2
     },
     {
      "drugId": "paracetamol",
@@ -44068,7 +44068,7 @@
      "durationDays": 5,
      "quantity": 100,
      "unit": "ml",
-     "sharePct": 52.4
+     "sharePct": 31.5
     },
     {
      "drugId": "omeprazole",
@@ -44083,7 +44083,7 @@
      "durationDays": 14,
      "quantity": 70,
      "unit": "ml",
-     "sharePct": 36.6
+     "sharePct": 22.1
     }
    ]
   },

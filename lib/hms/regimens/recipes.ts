@@ -9,7 +9,15 @@
  * The first drug is the definitive therapy; the others are adjunct, supportive
  * or prophylactic. Doses come from the formulary band table, never from here.
  */
-export const RECIPES: Record<string, string[]> = {
+export type Recipe = string[] | { default: string[]; child?: string[]; adult?: string[]; elderly?: string[] };
+
+/**
+ * A recipe may be a plain list (same drugs in every band) or an object with a
+ * band override — used where a drug is banned in one band, for example
+ * doxycycline under 8 years: cholera gets azithromycin for a child, plague gets
+ * co-trimoxazole, brucellosis gets co-trimoxazole.
+ */
+export const RECIPES: Record<string, Recipe> = {
   // ---- respiratory -------------------------------------------------------
   "RES-001": ["paracetamol", "chlorpheniramine", "amoxicillin_syrup_note", "zinc"],
   "RES-002": ["penicillin_v", "paracetamol", "amoxicillin_syrup_note", "ibuprofen"],
@@ -65,14 +73,14 @@ export const RECIPES: Record<string, string[]> = {
   "SEA-010": ["salbutamol_neb", "prednisolone", "amox_clav", "oxygen"],
   "SEA-011": ["ceftriaxone", "paracetamol", "ors", "ondansetron"],
   "SEA-012": ["ors", "zinc", "ringer", "ondansetron"],
-  "SEA-013": ["ors", "ringer", "doxycycline", "zinc"],
+  "SEA-013": { default: ["ors", "ringer", "doxycycline", "zinc"], child: ["ors", "ringer", "azithromycin", "zinc"] },
   "SEA-014": ["artemether", "paracetamol", "ors", "folic_acid"],
   "SEA-015": ["chloroquine", "primaquine", "paracetamol", "folic_acid"],
-  "SEA-016": ["gentamicin", "doxycycline", "paracetamol", "ringer"],
+  "SEA-016": { default: ["gentamicin", "doxycycline", "paracetamol", "ringer"], child: ["gentamicin", "co_trimoxazole", "paracetamol", "ringer"] },
   "SEA-017": ["ciprofloxacin", "paracetamol", "amoxicillin_syrup_note", "tetanus_toxoid"],
   "SEA-018": ["stibogluconate", "paracetamol", "amoxicillin_syrup_note", "cetirizine"],
   "SEA-019": ["amphotericin_b", "paracetamol", "ors", "ferrous"],
-  "SEA-020": ["ceftriaxone", "ringer", "paracetamol", "doxycycline"],
+  "SEA-020": { default: ["ceftriaxone", "ringer", "paracetamol", "doxycycline"], child: ["ceftriaxone", "ringer", "paracetamol", "amoxicillin"] },
   "SEA-021": ["ceftriaxone", "paracetamol", "ors", "ondansetron"],
   "SEA-022": ["ors", "ondansetron", "zinc", "ringer"],
   "SEA-023": ["oseltamivir", "paracetamol", "ors", "chlorpheniramine"],
@@ -109,7 +117,7 @@ export const RECIPES: Record<string, string[]> = {
   "INF-022": ["fluconazole", "nystatin", "omeprazole", "paracetamol"],
   "INF-023": ["amphotericin_b", "ceftriaxone", "paracetamol", "ringer"],
   "INF-024": ["gentamicin", "ciprofloxacin", "paracetamol", "ors"],
-  "INF-025": ["doxycycline", "gentamicin", "paracetamol", "omeprazole"],
+  "INF-025": { default: ["doxycycline", "gentamicin", "paracetamol", "omeprazole"], child: ["co_trimoxazole", "gentamicin", "paracetamol", "omeprazole"] },
   "INF-026": ["rabies_vaccine", "rabies_ig", "tetanus_toxoid", "amox_clav"],
   "INF-027": ["ors", "omeprazole", "folic_acid", "ondansetron"],
   "INF-028": ["paracetamol", "ibuprofen", "ors", "cetirizine"],

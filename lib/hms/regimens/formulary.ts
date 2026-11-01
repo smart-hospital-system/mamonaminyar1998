@@ -57,6 +57,13 @@ type Spec = {
 };
 
 const SPECS: Record<string, Spec> = {
+  co_trimoxazole: {
+    name: "Co-trimoxazole", nameFa: "کو-تریموکسازول", className: "Antibiotic — sulfonamide",
+    child: c("Suspension", "240 mg/5 ml", "6 mg/kg (trimethoprim) per dose", "Every 12 hours"),
+    adult: A("960 mg tablet", "960 mg", "Every 12 hours"),
+    elderly: A("960 mg tablet", "960 mg", "Every 12 hours, check renal function"),
+    duration: "14 days",
+  },
   paracetamol_syrup: {
     name: "Paracetamol (oral liquid)", nameFa: "پاراسیتامول (شربت)", className: "Analgesic / antipyretic",
     child: c("Syrup", "120 mg/5 ml", "10–15 mg/kg per dose", "Every 6 hours if needed"),
