@@ -1,6 +1,6 @@
 # Age- and sex-stratified demo prescriptions
 
-**Generated:** 2026-11-01T18:30:03.147Z · **Conditions:** 200 · **Patients:** 1200 · **Prescription lines:** 4962
+**Generated:** 2026-11-01T23:06:39.575Z · **Conditions:** 260 · **Patients:** 1560 · **Prescription lines:** 6518
 
 Every condition has one patient per band and per sex: child (< 18), adult (18–70) and older
 adult (71–90), half female and half male. Every prescription contains **at least four
@@ -9,24 +9,24 @@ system** — age bans, renal adjustment, interactions and duplication.
 
 | Band | Patients |
 | --- | --- |
-| < 18 years | 400 |
-| 18–70 years | 400 |
-| 71–90 years | 400 |
+| < 18 years | 520 |
+| 18–70 years | 520 |
+| 71–90 years | 520 |
 
 | Sex | Patients |
 | --- | --- |
-| female | 600 |
-| male | 600 |
+| female | 780 |
+| male | 780 |
 
 | Measure | Result |
 | --- | --- |
 | Medicines per prescription (min / max) | 4 / 6 |
-| Prescriptions with a liquid preparation | 1200 of 1200 (100%) |
-| Child prescriptions with an oral syrup | 400 of 400 (100%) |
-| Prescriptions with an injectable (vial) | 690 of 1200 (57%) |
-| Prescriptions with a safety finding | 102 of 1200 |
+| Prescriptions with a liquid preparation | 1560 of 1560 (100%) |
+| Child prescriptions with an oral syrup | 520 of 520 (100%) |
+| Prescriptions with an injectable (vial) | 888 of 1560 (57%) |
+| Prescriptions with a safety finding | 126 of 1560 |
 | … of those, blocking findings | 0 |
-| Total findings raised | 226 |
+| Total findings raised | 296 |
 
 ## Files
 

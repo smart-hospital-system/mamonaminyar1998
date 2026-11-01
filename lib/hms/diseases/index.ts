@@ -6,6 +6,7 @@
 import { CARDIOVASCULAR } from "./ch-cardiovascular";
 import { GASTROINTESTINAL } from "./ch-gastrointestinal";
 import { INFECTIOUS } from "./ch-infectious";
+import { NEUROLOGICAL } from "./ch-neurological";
 import { RESPIRATORY } from "./ch-respiratory";
 import { SEASONAL } from "./ch-seasonal";
 
@@ -15,4 +16,5 @@ export const CHAPTERS: string[] = [
   INFECTIOUS,
   GASTROINTESTINAL,
   CARDIOVASCULAR,
+  NEUROLOGICAL,
 ];
