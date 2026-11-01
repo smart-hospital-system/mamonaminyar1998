@@ -302,6 +302,38 @@ hospital server and would never exit.
 
 ---
 
+## Where credentials belong
+
+A token pasted into a chat, a screenshot or a commit is a spent token. The hospital needs **no cloud
+credentials at all**, so there is exactly one rule: **nothing secret is ever written into this
+repository**. Use the destination that matches what you are doing:
+
+| You are… | Put the token here | Never here |
+| --- | --- | --- |
+| Running the hospital locally | nowhere — the app needs no token | `.env`, source files |
+| Deploying the optional status Worker from your PC | `npx wrangler login` (browser sign-in), or `$env:CLOUDFLARE_API_TOKEN` **only in that PowerShell window** | a file in the project |
+| Letting Cloudflare build on push | Cloudflare's own **Settings → Builds** token, or a GitHub **Actions secret** | `wrangler.jsonc`, `package.json` |
+| Scripting a one-off deploy | an environment variable on that machine (`setx` / `export`), or a password-manager entry | git history |
+
+Guard rail: `npm run check:secrets` scans every tracked file and fails on Cloudflare/GitHub/AWS/
+Slack/Stripe tokens, private-key blocks and long values assigned to `*_KEY` / `*_SECRET` /
+`*_TOKEN` names. It is fast and dependency-free — run it before pushing:
+
+```bash
+npm run check:secrets     # → check:secrets — clean. Scanned 310 path(s)…
+```
+
+If a token is ever exposed (chat, screenshot, commit): **revoke it first**, then issue a new one. A
+commit is not private just because the repository is — and history keeps what you delete later.
+
+**Serial licences:** `lib/hms/license.ts` signs licence keys with `AYBEK_LICENSE_SECRET`, falling
+back to a constant in that file, so licences work out of the box on a fresh clone. That fallback is
+public by design (it is in the source); on a real commercial deployment set `AYBEK_LICENSE_SECRET`
+in the hospital's own `.env.local` before issuing serials, and keep that value backed up — rotating
+it invalidates every licence signed with the old one.
+
+---
+
 ## Notes
 
 - Prices are in SGD and GST defaults to 9% (configurable in Settings → Payments).
