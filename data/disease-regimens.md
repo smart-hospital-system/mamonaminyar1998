@@ -1,6 +1,6 @@
 # Age- and sex-stratified demo prescriptions
 
-**Generated:** 2026-11-01T18:30:03.147Z · **Conditions:** 200 · **Patients:** 1200 · **Prescription lines:** 4962
+**Generated:** 2026-11-01T23:16:03.422Z · **Conditions:** 375 · **Patients:** 2250 · **Prescription lines:** 9508
 
 Every condition has one patient per band and per sex: child (< 18), adult (18–70) and older
 adult (71–90), half female and half male. Every prescription contains **at least four
@@ -9,24 +9,24 @@ system** — age bans, renal adjustment, interactions and duplication.
 
 | Band | Patients |
 | --- | --- |
-| < 18 years | 400 |
-| 18–70 years | 400 |
-| 71–90 years | 400 |
+| < 18 years | 750 |
+| 18–70 years | 750 |
+| 71–90 years | 750 |
 
 | Sex | Patients |
 | --- | --- |
-| female | 600 |
-| male | 600 |
+| female | 1125 |
+| male | 1125 |
 
 | Measure | Result |
 | --- | --- |
 | Medicines per prescription (min / max) | 4 / 6 |
-| Prescriptions with a liquid preparation | 1200 of 1200 (100%) |
-| Child prescriptions with an oral syrup | 400 of 400 (100%) |
-| Prescriptions with an injectable (vial) | 690 of 1200 (57%) |
-| Prescriptions with a safety finding | 102 of 1200 |
+| Prescriptions with a liquid preparation | 2250 of 2250 (100%) |
+| Child prescriptions with an oral syrup | 750 of 750 (100%) |
+| Prescriptions with an injectable (vial) | 1202 of 2250 (53%) |
+| Prescriptions with a safety finding | 150 of 2250 |
 | … of those, blocking findings | 0 |
-| Total findings raised | 226 |
+| Total findings raised | 360 |
 
 ## Files
 
@@ -39,7 +39,7 @@ system** — age bans, renal adjustment, interactions and duplication.
 1. **Reference doses, not a prescribing order.** Every entry is a textbook range for teaching.
    `/hms/diseases` prints this above the regimen, and the review panel runs age, renal,
    interaction and duplication checks on the prescription you are looking at.
-2. **Injectables only where clinically right.** 57% of these prescriptions carry a vial — admitted,
+2. **Injectables only where clinically right.** 53% of these prescriptions carry a vial — admitted,
    severe or emergency care. A viral cold or a fungal skin infection gets tablets or a syrup,
    because injecting there would be wrong. Children are the exception in the other direction:
    100% receive an oral syrup.
