@@ -265,40 +265,31 @@ of where the server runs.
 
 ---
 
-## Cloudflare Workers status endpoint (`ash-magic-transit`) — optional
+## No cloud dependency
 
-**The hospital system is not deployed to Workers and cannot be:** it stores records in a local
-SQLite file (`node:sqlite`), writes backups to disk, prints on the local network and must keep working
-with no internet connection. Deploying it to the edge would mean throwing the offline guarantee away.
-Nothing in the install path (`npm install` → `npm run deploy`) depends on Cloudflare.
+The hospital is an on-premise application: it keeps its records in a local SQLite file
+(`node:sqlite`), writes backups to disk, prints on the local network and must keep working with no
+internet connection. **It needs no Cloudflare account, no Worker, no tunnel and no network at all at
+runtime.** The install path — `npm install` → `npm run deploy` — touches nothing outside the hospital
+computer.
 
-For a while this repository was linked to a Workers Builds project called `ash-magic-transit`, and
-that pipeline failed within a second of every push, before any code ran. The link has been removed,
-so the `Workers Builds: ash-magic-transit` check no longer appears on pull requests. What remains in
-the repository is a small, dependency-free status Worker, so that the repository is self-describing
-and can be deployed deliberately if anyone ever wants it:
+This repository used to carry a small status Worker (`wrangler.jsonc` + `workers/status.mjs`) so that a
+linked Workers Builds project could not fall back to Wrangler's *automatic project configuration*
+(detect Next.js → scaffold an OpenNext adapter inside the build container → fail in the first second
+of every push). That pipeline is disconnected and those files are now deleted: the repository has no
+`wrangler` file, no `main` entry point for an edge runtime and no `worker:*` scripts, so no cloud
+build can attach itself to it again.
 
-| Path | File |
+If you ever want the hospital reachable over the network, do not use an edge service — use the server
+that is already there. `npm run deploy` binds `0.0.0.0:3000` and serves every page to the hospital LAN;
+put it behind a reverse proxy on the same machine if you need TLS. Patient data never leaves the
+computer, which is the whole point of the offline guarantee.
+
+| Question | Answer |
 | --- | --- |
-| `wrangler.jsonc` | points Wrangler at the status Worker, pins the service name |
-| `workers/status.mjs` | `/` bilingual status page, `/health` JSON probe, `/version` JSON, 404 otherwise |
-
-It exists because, with no `wrangler.toml`/`wrangler.jsonc`, Wrangler falls back to *automatic project
-configuration* — it detects Next.js, tries to scaffold an OpenNext adapter inside the build container
-and fails immediately.
-
-Maintainer commands (optional, needs internet — Wrangler is intentionally **not** a dependency, so a
-hospital install stays ~150 MB lighter):
-
-```bash
-npm run worker:check    # npx wrangler deploy --dry-run — bundles without uploading
-npm run worker:deploy   # npx wrangler deploy — only from a machine logged in to Cloudflare
-```
-
-If the Worker is ever reconnected in Cloudflare (`Workers & Pages → ash-magic-transit → Settings →
-Builds`): **Build command** empty (or `npm run build`), **Deploy command** `npx wrangler deploy`,
-**Root directory** `/`. Do **not** point it at `npm run deploy` — that script starts the on-premise
-hospital server and would never exit.
+| Does the app read any cloud credential? | No. No `CLOUDFLARE_*`, `WRANGLER_*` or `CF_*` variable is read anywhere in `app/`, `lib/` or `scripts/`; the only match in the tree is the token *detector* in `scripts/check-secrets.mjs`. |
+| Is a Cloudflare account needed to install or run? | No. |
+| Does anything in CI call wrangler? | No — `.github/workflows/verify.yml` only runs install, secret scan, `tsc`, build and `hms:verify`. |
 
 ---
 
@@ -311,9 +302,9 @@ repository**. Use the destination that matches what you are doing:
 | You are… | Put the token here | Never here |
 | --- | --- | --- |
 | Running the hospital locally | nowhere — the app needs no token | `.env`, source files |
-| Deploying the optional status Worker from your PC | `npx wrangler login` (browser sign-in), or `$env:CLOUDFLARE_API_TOKEN` **only in that PowerShell window** | a file in the project |
-| Letting Cloudflare build on push | Cloudflare's own **Settings → Builds** token, or a GitHub **Actions secret** | `wrangler.jsonc`, `package.json` |
-| Scripting a one-off deploy | an environment variable on that machine (`setx` / `export`), or a password-manager entry | git history |
+| Any cloud service you add later, on purpose | that provider's own secret store, or `.env.local` (git-ignored) | a tracked file, `package.json` |
+| Scripting a one-off task | an environment variable for that session only (`setx` / `export`), or a password-manager entry | git history |
+| A token that has been pasted into a chat | nowhere — revoke it first, then issue a new one | reusing it anywhere |
 
 Guard rail: `npm run check:secrets` scans every tracked file and fails on Cloudflare/GitHub/AWS/
 Slack/Stripe tokens, private-key blocks and long values assigned to `*_KEY` / `*_SECRET` /
