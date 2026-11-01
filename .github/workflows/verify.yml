@@ -27,10 +27,10 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -43,6 +43,15 @@ jobs:
 
       - name: Type-check
         run: npx tsc --noEmit
+
+      - name: Restore the Next.js build cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            next-${{ runner.os }}-
 
       - name: Build the hospital application
         run: npm run build
