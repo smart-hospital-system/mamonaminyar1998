@@ -41,6 +41,7 @@ const NAV: { title: string; items: { href: string; label: string; icon: typeof L
   {
     title: "nav.clinical",
     items: [
+      { href: "/hms/diseases", label: "nav.diseases", icon: BookOpen, roles: ["admin", "doctor", "nurse", "pharmacist"] },
       { href: "/hms/intelligence", label: "nav.intelligence", icon: Brain, roles: ["admin", "doctor", "nurse", "pharmacist", "lab", "radiology"] },
       { href: "/hms/prescriptions", label: "nav.prescriptions", icon: Pill, roles: ["admin", "doctor", "pharmacist", "nurse"], badge: "rx" },
       { href: "/hms/lab", label: "nav.lab", icon: FlaskConical, roles: ["admin", "lab", "doctor"], badge: "lab" },
