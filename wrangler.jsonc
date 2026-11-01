@@ -1,0 +1,28 @@
+/**
+ * Wrangler configuration for the Aybek HMS repository.
+ *
+ * Cloudflare Workers Builds runs `npx wrangler deploy` on every push to this
+ * repository. Without this file Wrangler tries "automatic project
+ * configuration": it detects a Next.js project, attempts to scaffold an
+ * OpenNext adapter inside the build container and the build fails.
+ *
+ * The hospital application cannot run on Workers: it reads and writes a local
+ * SQLite database (`node:sqlite`), writes backups to disk, prints on the local
+ * network and must work with no internet connection. So the deploy target here
+ * is deliberately a small, dependency-free status Worker — see workers/status.mjs.
+ * Keep `name` identical to the Worker service connected to this repository,
+ * otherwise Wrangler deploys to a different service.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ash-magic-transit",
+  "main": "workers/status.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true
+  },
+  "upload_source_maps": false,
+  "minify": true
+}

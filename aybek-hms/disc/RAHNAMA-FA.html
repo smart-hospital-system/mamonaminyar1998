@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>راهنمای شفاخانه ایبک — نصب، استفاده و تحویل</title>
+<style>
+  :root{
+    --ink:#10241f; --muted:#5b6b66; --line:#d9e3df; --paper:#ffffff;
+    --brand:#0e7c6b; --brand-soft:#e6f4f0; --accent:#b3541e; --warn:#8a5209;
+    --warn-soft:#fdf3e2; --bad:#a51c1c; --bad-soft:#fdecec; --good:#0b6b4d; --good-soft:#e7f6ef;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#eef2f1;color:var(--ink);
+    font-family:"Segoe UI","Tahoma","Iranian Sans",system-ui,sans-serif;
+    font-size:11.2pt;line-height:1.9}
+  .sheet{background:var(--paper);max-width:210mm;margin:14px auto;padding:16mm 16mm 14mm;
+    box-shadow:0 6px 28px rgba(16,36,31,.12);border-radius:3px}
+  h1{font-size:20pt;line-height:1.5;margin:0 0 2mm}
+  h2{font-size:14pt;margin:9mm 0 3mm;padding-bottom:2mm;border-bottom:2px solid var(--brand);color:var(--brand)}
+  h3{font-size:11.8pt;margin:5mm 0 2mm;color:var(--accent)}
+  p{margin:0 0 2.5mm}
+  small{color:var(--muted)}
+  a{color:var(--brand);text-decoration:none}
+  .cover{border:1px solid var(--line);border-radius:6px;padding:8mm;background:
+    linear-gradient(180deg,#f7fbfa,#fff)}
+  .cover .brand{display:flex;justify-content:space-between;align-items:flex-start;gap:6mm;flex-wrap:wrap}
+  .logo{width:16mm;height:16mm;border-radius:4mm;background:var(--brand);color:#fff;display:flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:15pt}
+  .meta{font-size:9.4pt;color:var(--muted);margin-top:3mm}
+  .meta b{color:var(--ink)}
+  .lede{background:var(--brand-soft);border-right:4px solid var(--brand);padding:4mm 5mm;border-radius:4px;margin:5mm 0}
+  table{width:100%;border-collapse:collapse;margin:3mm 0 4mm;font-size:9.8pt}
+  th,td{border:1px solid var(--line);padding:2mm 2.5mm;text-align:right;vertical-align:top}
+  th{background:#f2f7f5;font-weight:600}
+  tbody tr:nth-child(even){background:#fafcfb}
+  code,kbd{font-family:"Cascadia Mono","Consolas",monospace;font-size:9.2pt;direction:ltr;unicode-bidi:embed;
+    background:#f4f7f6;border:1px solid var(--line);border-radius:3px;padding:.4mm 1.4mm}
+  pre{background:#0f1f1b;color:#e6f4f0;padding:3.5mm 4mm;border-radius:5px;direction:ltr;text-align:left;
+    font-family:"Cascadia Mono","Consolas",monospace;font-size:9pt;line-height:1.75;overflow:auto}
+  pre code{background:none;border:0;color:inherit;padding:0}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps>li{counter-increment:s;position:relative;padding:0 9mm 0 0;margin:0 0 3mm}
+  .steps>li::before{content:counter(s);position:absolute;right:0;top:.6mm;width:6mm;height:6mm;border-radius:50%;
+    background:var(--brand);color:#fff;font-size:9pt;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .box{border:1px solid var(--line);border-radius:5px;padding:3.5mm 4mm;margin:3mm 0;background:#fafcfb}
+  .box.warn{background:var(--warn-soft);border-color:#f0d3a3;border-right:4px solid var(--warn)}
+  .box.bad{background:var(--bad-soft);border-color:#f3bcbc;border-right:4px solid var(--bad)}
+  .box.good{background:var(--good-soft);border-color:#b9e2cf;border-right:4px solid var(--good)}
+  .box .t{font-weight:700;margin-bottom:1mm}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+  .toc{columns:2;column-gap:8mm;font-size:10.2pt;padding:0;margin:3mm 0 0;list-style:none}
+  .toc li{margin:0 0 1.4mm;break-inside:avoid}
+  .toc span{color:var(--muted);font-size:9.4pt}
+  .chk{list-style:none;padding:0;margin:0;font-size:10.4pt}
+  .chk li{margin:0 0 2mm;padding-right:7mm;position:relative}
+  .chk li::before{content:"☐";position:absolute;right:0;top:-.4mm;font-size:12pt;color:var(--brand)}
+  .foot{margin-top:10mm;border-top:1px solid var(--line);padding-top:3mm;font-size:9pt;color:var(--muted);
+    display:flex;justify-content:space-between;gap:4mm;flex-wrap:wrap}
+  .pill{display:inline-block;background:var(--brand-soft);color:var(--brand);border:1px solid #bfe0d8;
+    border-radius:999px;padding:.3mm 2.4mm;font-size:9pt;margin-left:1.5mm}
+  .pb{break-before:page}
+  @media print{
+    body{background:#fff;font-size:10.4pt}
+    .sheet{box-shadow:none;margin:0;max-width:none;padding:0;border-radius:0}
+    @page{size:A4;margin:14mm 14mm 12mm}
+    a{color:var(--ink)}
+    h2{break-after:avoid}
+    table,.box,.steps>li{break-inside:avoid}
+    .noprint{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<!-- ============================== COVER ============================== -->
+<div class="cover">
+  <div class="brand">
+    <div style="display:flex;gap:4mm;align-items:center">
+      <div class="logo">ایبک</div>
+      <div>
+        <h1>شفاخانه ده بستر جراحی ایبک</h1>
+        <div style="font-size:12pt;color:var(--accent);font-weight:600">Aybek Ten-Bed Specialy Surgical Hospital</div>
+        <div class="meta">سیستم مدیریت شفاخانه · نسخه ۴ · ۳۰ اکتبر ۲۰۲۶</div>
+      </div>
+    </div>
+    <div class="meta" style="text-align:left">
+      <b>مالک:</b> داکتر مامون امینیار<br>
+      <b>لایسنس وزارت:</b> MOPH-AYB-2026-0148<br>
+      <b>تماس:</b> ‎+93 20 250 1188<br>
+      <b>عاجل:</b> ‎+93 700 118 800
+    </div>
+  </div>
+
+  <div class="lede">
+    <p style="margin:0"><b>این راهنما برای دو نفر نوشته شده است:</b> برای <b>خودِ شما</b> که شفاخانه را نصب و اداره می‌کنید،
+    و برای <b>هر کسی که بعد از شما</b> این سیستم را نصب یا استفاده می‌کند — داکتر، نرس، دواخانه، لابراتوار،
+    یا کمپیوتر دوم شفاخانه.</p>
+  </div>
+
+  <ul class="toc">
+    <li><a href="#s0">۰ — در یک نگاه: روی این دیسک چه هست</a></li>
+    <li><a href="#s1">۱ — نصب برای خودم (سه راه)</a></li>
+    <li><a href="#s2">۲ — اولین روز کار با سیستم</a></li>
+    <li><a href="#s3">۳ — تحویل دادن به شخص دیگر</a></li>
+    <li><a href="#s4">۴ — نصب بدون اینترنت (دیویدی)</a></li>
+    <li><a href="#s5">۵ — پشتیبان‌گیری و بازگردانی</a></li>
+    <li><a href="#s6">۶ — خطاهای رایج و راه حل</a></li>
+    <li><a href="#s7">۷ — حساب‌ها، نقش‌ها و رمزها</a></li>
+    <li><a href="#s8">۸ — چک‌لیست تحویل (قابل چاپ)</a></li>
+    <li><a href="#s9">۹ — چاپ اسناد روی A4</a></li>
+  </ul>
+</div>
+
+<!-- ============================== 0 ============================== -->
+<h2 id="s0">۰ — در یک نگاه: روی این دیسک چه هست</h2>
+
+<table>
+  <thead><tr><th style="width:34%">نام</th><th>چیست</th></tr></thead>
+  <tbody>
+    <tr><td><code>START-HERE.bat</code></td><td>نصب یک‌کلیکی: برنامه را در <code>C:\AybekHMS</code> می‌گذارد، کتابخانه‌ها را نصب می‌کند، دیتابیس نمونه را می‌آورد و سرور را بالا می‌آورد.</td></tr>
+    <tr><td><code>README-FIRST-FA.txt</code></td><td>یک صفحهٔ کوتاه: اگر عجله دارید، همین را بخوانید.</td></tr>
+    <tr><td><code>RAHNAMA-FA.html</code></td><td>همین راهنما (قابل چاپ به PDF).</td></tr>
+    <tr><td><code>CHECKLIST-FA.txt</code></td><td>چک‌لیست تحویل به دیگران، یک صفحه، قابل چاپ.</td></tr>
+    <tr><td><code>APP\</code></td><td>کل برنامه: ۲۱ صفحهٔ شفاخانه، ۲۵ سرویس داخلی، ۱۰ طرح چاپ، اسکریپت‌های نصب.</td></tr>
+    <tr><td><code>COPY-TO-ANOTHER-PC\</code></td><td>نسخهٔ فشرده (zip) برای دادن به شخص دیگر یا کمپیوتر دوم.</td></tr>
+    <tr><td><code>DOCS\</code></td><td>۱۰ سند: نصب ویندوز، نصب آفلاین، راهنمای کاربر، رفع خطا، لایسنس، سیستم طراحی، تحویل فنی.</td></tr>
+    <tr><td><code>TOOLS\</code></td><td>ساخت دیویدی آفلاین، محل گذاشتن نصب‌کنندهٔ Node.js.</td></tr>
+    <tr><td><code>MANIFEST-SHA256.txt</code></td><td>اثر انگشت همهٔ فایل‌ها؛ برای اطمینان از سالم بودن نسخه.</td></tr>
+  </tbody>
+</table>
+
+<div class="box good">
+  <div class="t">یک جملهٔ مهم</div>
+  این سیستم <b>اینترنت لازم ندارد</b> تا کار کند. اینترنت فقط برای دو چیز استفاده می‌شود: نصب اولیهٔ
+  کتابخانه‌های برنامه (یک‌بار)، و نصب Node.js. بعد از آن، شفاخانه کاملاً روی همین کمپیوتر و در شبکهٔ
+  داخلی خودش کار می‌کند.
+</div>
+
+<!-- ============================== 1 ============================== -->
+<h2 id="s1">۱ — نصب برای خودم (سه راه)</h2>
+
+<h3>پیش‌نیاز مشترک هر سه راه</h3>
+<p>روی کمپیوتر باید <b>Node.js نسخهٔ ۲۰ یا بالاتر</b> نصب باشد (یک‌بار برای همیشه). اگر نصب نیست، از
+<code>https://nodejs.org/en/download</code> نسخهٔ <b>LTS</b> را بگیرید، یا نسخهٔ آفلاین را از
+<code>TOOLS\</code> نصب کنید.</p>
+
+<h3>راه ۱ — یک‌کلیکی (توصیه‌شده)</h3>
+<ol class="steps">
+  <li>روی <code>START-HERE.bat</code> دوبار کلیک کنید. اگر ویندوز پرسید، «Yes» بزنید.</li>
+  <li>پنجرهٔ سیاه باز می‌شود و پنج مرحله را پشت سر هم انجام می‌دهد. <b>صبر کنید</b>؛ بار اول ۱۰ تا ۱۵ دقیقه طول می‌کشد.</li>
+  <li>مرورگر خودکار باز می‌شود. اگر باز نشد، خودتان بروید به <code>http://localhost:3000</code>.</li>
+  <li>وارد شوید: <code>doctor@aybek.hospital</code> با رمز <code>mamonaminyar</code>.</li>
+</ol>
+
+<h3>راه ۲ — دستی، مرحله به مرحله</h3>
+<p>در پوشهٔ <code>APP</code>، دکمهٔ راست را بگیرید و «Open in Terminal» یا PowerShell را باز کنید و این چهار دستور را
+به ترتیب بزنید:</p>
+<pre><code>.\aybek-hms\scripts\install\01-setup.ps1
+.\aybek-hms\scripts\install\02-install.ps1
+.\aybek-hms\scripts\install\03-seed.ps1
+.\aybek-hms\scripts\install\04-start.ps1</code></pre>
+<p>اگر ویندوز اجازهٔ اجرای اسکریپت نداد، یک‌بار این را بزنید و بعد تکرار کنید:</p>
+<pre><code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned</code></pre>
+
+<h3>راه ۳ — با دیتابیس آماده (سریع‌ترین)</h3>
+<p>در پوشهٔ <code>APP\data</code> فایل <code>demo-hospital.db</code> هست که از قبل با داده‌های نمونه پر شده است.
+نامش را به <code>slotly.db</code> تغییر دهید، بعد فقط ۰۱، ۰۲ و ۰۴ را اجرا کنید. در این حالت مرحلهٔ ساخت
+دیتابیس حذف می‌شود.</p>
+
+<div class="box warn">
+  <div class="t">پنجرهٔ سیاه را نبندید</div>
+  آن پنجره سرور شفاخانه است. تا وقتی کار می‌کنید باید باز بماند. برای خاموش کردن، در همان پنجره
+  <code>Ctrl+C</code> بزنید. اگر ببندید، صفحهٔ سیستم در مرورگر باز نمی‌شود.
+</div>
+
+<!-- ============================== 2 ============================== -->
+<h2 id="s2">۲ — اولین روز کار با سیستم</h2>
+
+<h3>پنج دقیقهٔ اول (کارهایی که فقط یک‌بار انجام می‌شود)</h3>
+<ol class="steps">
+  <li><b>رمز مدیر را عوض کنید:</b> <code>/hms/team</code> → «تغییر رمز من». تا این کار را نکرده‌اید، داده‌های واقعی وارد نکنید.</li>
+  <li><b>هویت شفاخانه را دقیق کنید:</b> <code>/hms/settings</code> → «هویت شفاخانه». نام، تلفن، آدرس، شمارهٔ لایسنس.
+      <span class="pill">اثر فوری روی همهٔ چاپ‌ها</span></li>
+  <li><b>تعرفه‌ها را تنظیم کنید:</b> <code>/hms/settings</code> → «تعرفه و حساب».</li>
+  <li><b>سریال خودتان را فعال کنید:</b> <code>/hms/activate</code>. ۱۴ روز اول آزمایشی است.</li>
+  <li><b>پشتیبان شبانه بسازید:</b> در PowerShell، داخل <code>C:\AybekHMS</code>:
+    <pre><code>.\aybek-hms\scripts\install\07-backup.ps1 -Schedule -At 20:00</code></pre></li>
+</ol>
+
+<h3>صبح تا شب — تقسیم کار</h3>
+<table>
+  <thead><tr><th style="width:14%">وقت</th><th style="width:22%">چه کسی</th><th>چه کاری</th></tr></thead>
+  <tbody>
+    <tr><td>۰۷:۴۵</td><td>استقبال</td><td>ثبت مریضان جدید، بررسی فهرست امروز در <code>/hms/opd</code></td></tr>
+    <tr><td>۰۸:۰۰</td><td>نرسنگ</td><td>تختهٔ ده بستر در <code>/hms/inpatients</code>، تمام شدن نظافت، فهرست ویزیت</td></tr>
+    <tr><td>۰۸:۰۰</td><td>لابراتوار</td><td>جمع‌آوری نمونه، ثبت نتیجه در <code>/hms/lab</code>، تأیید</td></tr>
+    <tr><td>۰۸:۳۰</td><td>داکتر</td><td>معاینات؛ نسخه را همان‌جا امضا کنید تا دواخانه بتواند تحویل دهد</td></tr>
+    <tr><td>۱۲:۰۰</td><td>دواخانه</td><td>صف تحویل، دریافت دارو، بررسی تاریخ انقضا در <code>/hms/pharmacy</code></td></tr>
+    <tr><td>۱۶:۰۰</td><td>اکسری</td><td>گزارش همهٔ عکس‌های پذیرفته‌شده در <code>/hms/radiology</code></td></tr>
+    <tr><td>۱۸:۰۰</td><td>حساب</td><td>صورت‌حساب‌ها، دریافت پول، چاپ رسید A4 در <code>/hms/billing</code></td></tr>
+    <tr><td>۲۰:۰۰</td><td>مدیر</td><td>یک نگاه به <code>/hms/alerts</code> و <code>/hms</code> (مرکز فرمان)</td></tr>
+  </tbody>
+</table>
+
+<h3>پنج دیپارتمنت، هر کدام با همهٔ امکانات</h3>
+<table>
+  <thead><tr><th style="width:24%">دیپارتمنت</th><th>آدرس</th><th>مهم‌ترین کار</th></tr></thead>
+  <tbody>
+    <tr><td>معاینات (OPD)</td><td><code>/hms/opd</code></td><td>صف، علائم حیاتی، یادداشت هوشمند، نسخهٔ ایمن، چاپ</td></tr>
+    <tr><td>دواخانه</td><td><code>/hms/pharmacy</code></td><td>تحویل نسخه (موجودی خودکار کم می‌شود)، موجودی، انقضا</td></tr>
+    <tr><td>لابراتوار</td><td><code>/hms/lab</code></td><td>فهرست کار، ثبت نتیجه، هشدار مقدار خطرناک، تأیید</td></tr>
+    <tr><td>اکسری</td><td><code>/hms/radiology</code></td><td>درخواست، گزارش با قالب آماده، ارسال به پرونده</td></tr>
+    <tr><td>بستری و عملیات</td><td><code>/hms/inpatients</code> · <code>/hms/surgery</code></td><td>تختهٔ بستر، پذیرش/انتقال/مرخصی، فهرست عملیات</td></tr>
+  </tbody>
+</table>
+
+<!-- ============================== 3 ============================== -->
+<h2 id="s3">۳ — تحویل دادن به شخص دیگر <small>(این بخش را دقیق بخوانید)</small></h2>
+
+<div class="box bad">
+  <div class="t">قبل از هر چیز: سریال و داده‌های مریضان</div>
+  <b>سریال‌ها مالِ شما هستند.</b> فایل <code>aybek-hms\SERIALS.txt</code> و هر سریالی که در
+  <code>/hms/activate</code> می‌سازید، کلیدِ قفلِ سیستم است؛ آن را به کسی ندهید مگر اینکه واقعاً بخواهید
+  آن نسخه برای او فعال شود. همچنین اگر در سیستم مریض واقعی ثبت شده، <b>پوشهٔ <code>data</code> را کپی نکنید</b>؛
+  نسخهٔ تازه باید با دیتابیس خالی یا نمونه شروع کند.
+</div>
+
+<h3>گام‌های تحویل — برای هر نفر یا هر کمپیوتر جدید</h3>
+<ol class="steps">
+  <li><b>نسخهٔ تازه بدهید، نه نسخهٔ خودتان.</b> فایل zip از پوشهٔ <code>COPY-TO-ANOTHER-PC</code> را بردارید
+      (یا خود دیسک را بدهید).</li>
+  <li><b>او باید Node.js داشته باشد.</b> اگر ندارد، نصب‌کنندهٔ آن را هم بدهید (پوشهٔ <code>TOOLS</code>).</li>
+  <li><b>او فایل را Extract می‌کند</b> (نه اینکه داخل zip کار کند) و <code>START-HERE.bat</code> را اجرا می‌کند.</li>
+  <li><b>سیستم او ۱۴ روز آزمایشی است.</b> اگر می‌خواهید دائمی باشد، برایش یک سریال بسازید:
+      <code>/hms/activate</code> → «ابزارهای مالک» → پلن و تعداد → Generate. فقط همان یک سریال را به او بدهید.</li>
+  <li><b>او سریال را در <code>/hms/activate</code> وارد می‌کند</b> — بدون اینترنت، همان لحظه فعال می‌شود.
+      هر سریال به یک کمپیوتر بسته می‌شود.</li>
+  <li><b>هویت شفاخانه برای او جداست.</b> او در <code>/hms/settings</code> نام و آدرس خودش را وارد می‌کند؛
+      این کار روی نسخهٔ شما اثری ندارد.</li>
+</ol>
+
+<h3>چه چیزی را بدهید، چه چیزی را نه</h3>
+<table>
+  <thead><tr><th style="width:46%">بدهید</th><th>ندهید</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>
+        <ul style="margin:0;padding-right:4mm">
+          <li>دیسک، یا zip از <code>COPY-TO-ANOTHER-PC</code></li>
+          <li>نصب‌کنندهٔ Node.js (اگر لازم است)</li>
+          <li>یک سریال (اگر باید دائمی باشد)</li>
+          <li>راهنمای <code>DOCS\GUIDE-FA.md</code> یا همین فایل</li>
+        </ul>
+      </td>
+      <td>
+        <ul style="margin:0;padding-right:4mm">
+          <li><code>data\slotly.db</code> با مریضان واقعی شما</li>
+          <li><code>aybek-hms\SERIALS.txt</code> و بقیهٔ سریال‌ها</li>
+          <li>رمز حساب مدیر خودتان</li>
+          <li>پوشهٔ <code>backups\</code></li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="box">
+  <div class="t">اگر فقط می‌خواهید کسی «ببیند» و نه اینکه استفاده کند</div>
+  لازم نیست چیزی نصب کند: در همان شبکهٔ داخلی شفاخانه، آدرس
+  <code>http://&lt;IP این کمپیوتر&gt;:3000</code> را به او بدهید و برایش یک حساب با نقش محدود بسازید
+  (<code>/hms/team</code>). این بهترین راه است: داده یک‌جا می‌ماند و همه یک سیستم را می‌بینند.
+  آدرس IP را خود <code>04-start.ps1</code> چاپ می‌کند.
+</div>
+
+<!-- ============================== 4 ============================== -->
+<h2 id="s4">۴ — نصب بدون اینترنت (دیویدی یا فلش)</h2>
+
+<p>در حالت عادی، نصب اولیه کتابخانه‌های برنامه از اینترنت گرفته می‌شود (یک‌بار). اگر کمپیوتر مقصد
+اینترنت ندارد، یک «نسخهٔ آفلاین» بسازید:</p>
+
+<ol class="steps">
+  <li>روی کمپیوتری که اینترنت دارد، داخل پوشهٔ نصب:</li>
+</ol>
+<pre><code>.\aybek-hms\scripts\install\05-build.ps1 -OfflineTarget "F:\AybekOffline"</code></pre>
+<ol class="steps" start="2" style="counter-reset:s 1">
+  <li>این دستور پروژه، کتابخانه‌های نصب‌شده و نصب‌کنندهٔ Node.js را روی فلش (یا پوشه) کپی می‌کند.</li>
+  <li>فلش را به کمپیوتر بدون اینترنت ببرید، پوشه را در دیسک کپی کنید و <code>START-HERE.bat</code> را اجرا کنید.</li>
+  <li>در پایان، <code>10-doctor.ps1</code> را بزنید تا مطمئن شوید همه‌چیز سالم است.</li>
+</ol>
+
+<div class="box good">
+  <div class="t">نسخهٔ آفلاین کم‌تر از آنلاین نیست</div>
+  همین کد، همین پنج دیپارتمنت، همین ۱۰ طرح چاپ، همین مانیتورینگ. تنها تفاوت این است که کتابخانه‌ها
+  از کجا می‌آیند: اینترنت یا فلش. هیچ قابلیتی حذف نشده است.
+</div>
+
+<p><small>اگر می‌خواهید نسخهٔ آفلاین را روی DVD بریزید، از <code>TOOLS\MAKE-OFFLINE-DVD.ps1</code>
+استفاده کنید؛ حجم آن حدود ۵۵۰ مگابایت می‌شود و روی یک دیویدی (یا سیدی ۷۰۰ مگابایتی) جا می‌شود.</small></p>
+
+<!-- ============================== 5 ============================== -->
+<h2 id="s5">۵ — پشتیبان‌گیری و بازگردانی</h2>
+
+<div class="box warn">
+  <div class="t">قاعدهٔ طلایی</div>
+  پشتیبان روی <b>همان دیسک</b>، پشتیبان نیست. هر هفته پوشهٔ <code>backups</code> را روی یک دیسک دوم
+  یا فلش کپی کنید.
+</div>
+
+<h3>پشتیبان دستی</h3>
+<pre><code>.\aybek-hms\scripts\install\07-backup.ps1</code></pre>
+<p>یک پوشه با تاریخ می‌سازد: دیتابیس، فایل‌های همراه، تنظیمات و لوگوها. ۱۴ نسخهٔ آخر نگه داشته می‌شود.</p>
+
+<h3>پشتیبان خودکار، هر شب ساعت ۲۰:۰۰</h3>
+<pre><code>.\aybek-hms\scripts\install\07-backup.ps1 -Schedule -At 20:00</code></pre>
+
+<h3>بازگردانی</h3>
+<pre><code>.\aybek-hms\scripts\install\08-restore.ps1 -Backup "backups\2026-10-30_2000"</code></pre>
+<p>قبل از بازگردانی، سرور را ببندید (<code>Ctrl+C</code>). اسکریپت خودش از وضعیت فعلی یک نسخهٔ ایمنی می‌گیرد.</p>
+
+<!-- ============================== 6 ============================== -->
+<h2 id="s6">۶ — خطاهای رایج و راه حل</h2>
+
+<table>
+  <thead><tr><th style="width:38%">پیام / نشانه</th><th>معنی و راه حل</th></tr></thead>
+  <tbody>
+    <tr><td>«Node.js was not found»</td><td>Node.js نصب نیست. نصب‌کننده را از <code>TOOLS</code> یا سایت رسمی بگیرید و دوباره اجرا کنید.</td></tr>
+    <tr><td>«Port 3000 already in use»</td><td>یک نسخهٔ دیگر سرور باز است. آن پنجره را ببندید، یا با <code>04-start.ps1 -Port 3001</code> اجرا کنید.</td></tr>
+    <tr><td>صفحهٔ مرورگر باز نمی‌شود</td><td>آدرس کامل: <code>http://localhost:3000</code>. اگر باز هم نشد، پنجرهٔ سیاه را ببینید: سرور بالا آمده یا خطا داده؟</td></tr>
+    <tr><td>«This prescription is still unsigned»</td><td>نسخه امضا نشده است. داکتر باید در <code>/hms/prescriptions</code> دکمهٔ «Sign» را بزند. این قفل، عمدی و ایمنی است.</td></tr>
+    <tr><td>«Email or password is incorrect»</td><td>رمز را اشتباه زده‌اید یا حساب تعلیق شده. مدیر می‌تواند از <code>/hms/team</code> رمز را بازنشانی کند.</td></tr>
+    <tr><td>چاپ ناقص یا سفید</td><td>در پنجرهٔ چاپ: کاغذ A4، حاشیه <b>None</b>، <b>Background graphics</b> روشن، Scale 100%.</td></tr>
+    <tr><td>هشدار صوتی قطع نمی‌شود</td><td>یک هشدار بحرانی باز است. در <code>/hms/alerts</code> آن را «تأیید» یا «حل» کنید.</td></tr>
+    <tr><td>«The trial has expired»</td><td>۱۴ روز تمام شده. در <code>/hms/activate</code> سریال خودتان را وارد کنید. داده‌ها پاک نمی‌شوند.</td></tr>
+    <tr><td>هیچ‌چیز کار نمی‌کند</td><td>عیب‌یابی کامل: <code>.\aybek-hms\scripts\install\10-doctor.ps1</code> — خروجی را نگه دارید.</td></tr>
+  </tbody>
+</table>
+
+<p><small>توضیح مفصل هر خطا در <code>DOCS\TROUBLESHOOTING.md</code> است.</small></p>
+
+<!-- ============================== 7 ============================== -->
+<h2 id="s7">۷ — حساب‌ها، نقش‌ها و رمزها</h2>
+
+<table>
+  <thead><tr><th style="width:30%">ایمیل</th><th style="width:26%">نام</th><th style="width:18%">نقش</th><th>دسترسی</th></tr></thead>
+  <tbody>
+    <tr><td><code>doctor@aybek.hospital</code></td><td>داکتر مامون امینیار</td><td>مالک / مدیر</td><td>همه‌چیز، تنظیمات، لایسنس، کارمندان</td></tr>
+    <tr><td><code>arash@aybek.hospital</code></td><td>داکتر آرش شیرازی</td><td>داکتر</td><td>معاینات، نسخه، نتایج</td></tr>
+    <tr><td><code>evelyn@aybek.hospital</code></td><td>داکتر ایولین رید</td><td>داکتر</td><td>معاینات، نسخه، نتایج</td></tr>
+    <tr><td><code>yusuf@aybek.hospital</code></td><td>داکتر یوسف کریمی</td><td>جراح</td><td>عملیات، بستری، معاینات</td></tr>
+    <tr><td><code>pharmacy@aybek.hospital</code></td><td>زهرا احمدی</td><td>دواخانه</td><td>تحویل دارو، موجودی</td></tr>
+    <tr><td><code>lab@aybek.hospital</code></td><td>سمیر هادی</td><td>لابراتوار</td><td>نمونه، نتیجه، تأیید</td></tr>
+    <tr><td><code>laila@aybek.hospital</code></td><td>داکتر لیلا نور</td><td>اکسری</td><td>درخواست، گزارش</td></tr>
+    <tr><td><code>nurse@aybek.hospital</code></td><td>نادیا سلطانی</td><td>نرس</td><td>بستر، ویزیت، تحویل</td></tr>
+    <tr><td><code>reception@aybek.hospital</code></td><td>رضا امیری</td><td>استقبال</td><td>ثبت مریض، حساب</td></tr>
+  </tbody>
+</table>
+<p><b>رمز هر ۹ حساب نمونه:</b> <code>mamonaminyar</code> — <b>قبل از کار واقعی عوض کنید.</b></p>
+
+<div class="box">
+  <div class="t">چرا نقش‌ها مهم‌اند</div>
+  هر نقش فقط صفحهٔ خودش را می‌بیند؛ دواخانه نمی‌تواند تنظیمات یا کارمندان را باز کند. این محدودیت
+  در سرور هم بررسی می‌شود، نه فقط در منو. هر تغییری در دسترسی‌ها در «سابقهٔ دسترسی» ثبت می‌شود.
+</div>
+
+<!-- ============================== 8 ============================== -->
+<h2 id="s10">۱۰ — دو زبانه: انگلیسی و دری <small>(این بخش جدید است)</small></h2>
+<p>سیستم به‌طور کامل <b>دو زبانه</b> است. هر کس روی رایانهٔ خودش می‌تواند زبان را عوض کند و بقیهٔ کارکنان زبان خودشان را نگه می‌دارند — همان سرور، همان داده، دو زبان.</p>
+<ol>
+  <li>بالای هر صفحه، در سرصفحه، دکمهٔ <b>EN / دری</b> هست. با یک کلیک هم رابط و هم جهت صفحه (چپ‌به‌راست یا راست‌به‌چپ) عوض می‌شود.</li>
+  <li>در صفحهٔ ورود هم همان دکمه بالای فورم است، پس کارمند دواخانه می‌تواند از همان اول دری وارد شود.</li>
+  <li>برای اینکه <b>همهٔ</b> رایانه‌های جدید به‌صورت پیش‌فرض دری باز شوند: تنظیمات ← هویت شفاخانه ← «زبان پیش‌فرض نشست‌های جدید» را روی <code>fa</code> بگذارید و ذخیره کنید. (انتخاب هر کاربر از این پیش‌فرض مقدم است.)</li>
+  <li>نام شفاخانه در سند‌های چاپی همیشه به هر دو زبان چاپ می‌شود: «شفاخانه ده بستر جراحی ایبک» زیر نام انگلیسی.</li>
+  <li>اعداد در حالت دری با رقم‌های فارسی و تاریخ به تقویم هجری شمسی نشان داده می‌شود؛ مبلغ‌ها با همان واحد پول تنظیمات.</li>
+</ol>
+<p class="tip"><b>نکته:</b> کاغذ نسخه و اسناد مریض (برگهٔ چاپ) به انگلیسی چاپ می‌شود تا در هر جایی خوانده شود؛ سرنامه و نام محلی شفاخانه روی همان برگه هست. اگر کاغذ نسخه را هم ۱۰۰٪ دری می‌خواهید، بگویید تا نسخهٔ دری طرح‌ها را هم اضافه کنیم.</p>
+
+<h2 id="s8" class="pb">۸ — چک‌لیست تحویل (این صفحه را چاپ کنید)</h2>
+
+<h3>الف) تحویل به یک کمپیوتر جدید</h3>
+<ul class="chk">
+  <li>Node.js ۲۰ یا بالاتر روی آن کمپیوتر نصب شد.</li>
+  <li>نسخهٔ تازه (zip یا دیسک) کپی شد — نه نسخهٔ حاوی داده‌های من.</li>
+  <li>فایل Extract شد و <code>START-HERE.bat</code> اجرا شد و بدون خطا تمام شد.</li>
+  <li>ورود با <code>doctor@aybek.hospital</code> امتحان شد.</li>
+  <li>رمز مدیر عوض شد.</li>
+  <li>در <code>/hms/settings</code> نام و آدرس و تلفن شفاخانه تنظیم شد.</li>
+  <li>در <code>/hms/activate</code> سریال وارد و وضعیت «فعال» شد.</li>
+  <li>یک نسخهٔ آزمایشی در <code>/hms/print</code> چاپ شد و درست درآمد.</li>
+  <li>پشتیبان شبانه با <code>07-backup.ps1 -Schedule</code> تنظیم شد.</li>
+  <li>آدرس شبکهٔ داخلی به تیم داده شد (<code>http://IP:3000</code>).</li>
+</ul>
+
+<h3>ب) تحویل به یک شخص</h3>
+<ul class="chk">
+  <li>فایل zip یا دیسک تحویل داده شد.</li>
+  <li>یک سریال جداگانه برای او ساخته و ثبت شد (در دفتر سریال‌ها).</li>
+  <li>به او گفته شد که سریال مالِ اوست و به کسی دیگر ندهد.</li>
+  <li>رمزها و داده‌های من به او داده <b>نشد</b>.</li>
+  <li>راهنمای فارسی (<code>RAHNAMA-FA.html</code>) همراه نسخه بود.</li>
+  <li>یک شمارهٔ تماس برای پشتیبانی به او داده شد.</li>
+</ul>
+
+<h3>ج) هر ماه</h3>
+<ul class="chk">
+  <li>پوشهٔ <code>backups</code> روی دیسک دوم کپی شد.</li>
+  <li>در <code>/hms/alerts</code> هشدارهای باز بررسی شدند.</li>
+  <li>در <code>/hms/pharmacy</code> داروهای نزدیک به انقضا بررسی شدند.</li>
+  <li>در <code>/hms/team</code> کارمندان غیرفعال تعلیق شدند.</li>
+</ul>
+
+<!-- ============================== 9 ============================== -->
+<h2 id="s9">۹ — چاپ اسناد روی A4</h2>
+<p>سه نوع سند چاپ می‌شود و هر سه با هم <b>متفاوت</b> طراحی شده‌اند تا در پروندهٔ مریض اشتباه نشوند:</p>
+<table>
+  <thead><tr><th style="width:26%">سند</th><th style="width:30%">از کجا</th><th>ظاهر</th></tr></thead>
+  <tbody>
+    <tr><td>نسخه</td><td><code>/hms/rx/&lt;شماره&gt;</code></td><td>۱۰ طرح مختلف؛ هر نسخه می‌تواند طرح خودش را داشته باشد</td></tr>
+    <tr><td>رسید / صورت‌حساب</td><td><code>/hms/receipt/&lt;بل&gt;</code></td><td>سربرگ رسمی با جدول اقلام و مبلغ پرداخت‌شده</td></tr>
+    <tr><td>نامه / خلاصهٔ مرخصی</td><td><code>/hms/print</code></td><td>چهار چیدمان اداری جدا از نسخه</td></tr>
+  </tbody>
+</table>
+<p>تنظیمات چاپ: <b>A4</b> · حاشیه <b>None</b> · <b>Background graphics</b> روشن · <b>Scale 100%</b>.
+برای فرستادن با ایمیل، «Save as PDF» را انتخاب کنید.</p>
+
+<div class="foot">
+  <div>
+    <b>شفاخانه ده بستر جراحی ایبک</b> · Street 4, Aybek Medical District, Kabul<br>
+    ‎+93 20 250 1188 · ‎+93 700 118 800 · care@aybekhospital.af
+  </div>
+  <div style="text-align:left">
+    نسخه ۴ · ۳۰ اکتبر ۲۰۲۶<br>
+    لایسنس: MOPH-AYB-2026-0148
+  </div>
+</div>
+</div>
+</body>
+</html>
