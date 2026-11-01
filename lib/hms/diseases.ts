@@ -52,6 +52,10 @@ export type Disease = {
   diagnosis: string[];
   treatment: string[];
   fa: string;
+  /** Red flags that change the plan today — optional, added with the GI/CV chapters. */
+  danger: string[];
+  /** What happens if the condition is left alone — optional, same chapters. */
+  complications: string[];
 };
 
 export const CATEGORY_LABEL: Record<DiseaseCategory, { en: string; fa: string }> = {
@@ -81,7 +85,7 @@ import { CHAPTERS } from "./diseases/index";
 function parse(line: string): Disease | null {
   const p = line.split("|").map((x) => x.trim());
   if (p.length < 9) return null;
-  const [id, icd10, category, nameEn, nameFa, symptoms, diagnosis, treatment, fa] = p;
+  const [id, icd10, category, nameEn, nameFa, symptoms, diagnosis, treatment, fa, danger = "", complications = ""] = p;
   if (!id || !nameEn) return null;
   const split = (s: string) => s.split("•").map((x) => x.trim()).filter(Boolean);
   return {
@@ -94,6 +98,8 @@ function parse(line: string): Disease | null {
     diagnosis: split(diagnosis),
     treatment: split(treatment),
     fa,
+    danger: split(danger),
+    complications: split(complications),
   };
 }
 
@@ -103,7 +109,7 @@ export const DISEASES: Disease[] = CHAPTERS.flatMap((chunk) =>
 
 const SEARCH_INDEX = DISEASES.map((d) => ({
   d,
-  hay: [d.nameEn, d.nameFa, d.icd10, d.category, d.fa, d.symptoms.join(" "), d.diagnosis.join(" "), d.treatment.join(" ")]
+  hay: [d.nameEn, d.nameFa, d.icd10, d.category, d.fa, d.symptoms.join(" "), d.diagnosis.join(" "), d.treatment.join(" "), d.danger.join(" "), d.complications.join(" ")]
     .join(" ")
     .toLowerCase(),
 }));
@@ -146,5 +152,6 @@ export function catalogueStats() {
     categories: categoryCounts().length,
     seasonal: DISEASES.filter((d) => d.category === "seasonal").length,
     withDrugs: DISEASES.filter((d) => d.treatment.some((t) => /\bmg\b|tablet|capsule|syrup|injection|IV|oral/i.test(t))).length,
+    withRedFlags: DISEASES.filter((d) => d.danger.length > 0).length,
   };
 }

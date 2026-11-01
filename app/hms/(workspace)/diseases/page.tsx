@@ -78,7 +78,7 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
         <Stat label={tr("Conditions in the catalogue", "بیماری‌ها در کاتالوگ")} value={digitsOf(lang, stats.total)} hint={tr("Diagnosis, signs, treatment", "تشخیص، اعراض، تداوی")} tone="brand" icon={<BookOpen size={14} />} />
         <Stat label={tr("Clinical chapters", "فصل‌های بالینی")} value={digitsOf(lang, stats.categories)} hint={tr("Grouped by body system", "بر اساس سیستم بدن")} tone="info" icon={<Filter size={14} />} />
         <Stat label={tr("Seasonal illnesses", "امراض فصلی")} value={digitsOf(lang, stats.seasonal)} hint={tr("Heat, cold, dust, water", "گرما، سرما، گرد، آب")} tone="warn" icon={<Stethoscope size={14} />} />
-        <Stat label={tr("With drug treatment", "با تداوی دوايي")} value={digitsOf(lang, stats.withDrugs)} hint={tr("Named medicines in each entry", "نام دوا در هر مدخل")} tone="good" icon={<ShieldAlert size={14} />} />
+        <Stat label={tr("With red flags listed", "با علایم خطر ثبت‌شده")} value={digitsOf(lang, stats.withRedFlags)} hint={tr("When to refer today", "کی امروز ارجاع شود")} tone="bad" icon={<ShieldAlert size={14} />} />
       </div>
 
       <Panel>
@@ -211,6 +211,43 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                 </ul>
               </Panel>
             </div>
+
+            {(selected.danger.length > 0 || selected.complications.length > 0) && (
+              <div className="grid gap-3.5 md:grid-cols-2">
+                {selected.danger.length > 0 && (
+                  <Panel>
+                    <SectionTitle
+                      title={tr("Red flags — refer today", "علایم خطر — امروز ارجاع دهید")}
+                      subtitle={tr("These change the plan immediately", "اینها پلان را فوراً تغییر می‌دهند")}
+                    />
+                    <ul className="mt-2 space-y-1.5 text-sm">
+                      {selected.danger.map((d, i) => (
+                        <li key={i} className="flex gap-2 rounded-lg px-2 py-1" style={{ background: "rgba(192,57,43,.08)", color: "var(--hms-ink)" }}>
+                          <span style={{ color: "#c0392b" }}>▲</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Panel>
+                )}
+                {selected.complications.length > 0 && (
+                  <Panel>
+                    <SectionTitle
+                      title={tr("If left untreated", "اگر تداوی نشود")}
+                      subtitle={tr("Complications to prevent", "عوارضی که باید پیشگیری شود")}
+                    />
+                    <ul className="mt-2 space-y-1.5 text-sm" style={{ color: "var(--hms-ink)" }}>
+                      {selected.complications.map((d, i) => (
+                        <li key={i} className="flex gap-2">
+                          <span style={{ color: "var(--hms-muted)" }}>•</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </Panel>
+                )}
+              </div>
+            )}
 
             <Panel>
               <SectionTitle
