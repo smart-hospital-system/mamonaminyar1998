@@ -7,10 +7,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "4mb" },
   },
-  // No `images.remotePatterns`: the hospital runs offline and ships no remote
-  // imagery, so the default (local-only) loader is the only one allowed. An
-  // open https wildcard here would turn a missing picture into a 30-second
-  // stall on a ward machine with no internet.
+  images: { remotePatterns: [{ protocol: "https", hostname: "**" }] },
 };
 
 export default nextConfig;

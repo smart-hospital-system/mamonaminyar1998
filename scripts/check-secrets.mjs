@@ -6,7 +6,7 @@
  * README is a spent token. The hospital runs on-premise and needs no cloud
  * credentials at all, so the only correct place for a token is *outside* this
  * repository — an environment variable on the owner's machine, a GitHub
- * Actions secret, or a hosting dashboard. This script is the guard
+ * Actions secret, or Cloudflare's own build settings. This script is the guard
  * rail: it scans every tracked file and stops the mistake before it reaches git
  * history, where it can never be removed by a later commit.
  *
@@ -120,7 +120,7 @@ console.error(`
 Do not commit it. Instead:
   1. Revoke it where it was created (it is already exposed).
   2. Move it to an environment variable on the machine that needs it,
-     a GitHub Actions secret, or a hosting dashboard.
+     a GitHub Actions secret, or Cloudflare's build settings.
   3. If it reached a commit, rewrite history before pushing:
      git rm --cached <file> && git commit --amend   — or rotate the key and move on.
 `);
