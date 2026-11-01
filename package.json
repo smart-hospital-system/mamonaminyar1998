@@ -15,6 +15,7 @@
     "lint": "next lint",
     "hms:verify": "tsx scripts/verify-hms.ts",
     "hms:regimens": "tsx scripts/build-regimens.ts",
+    "hms:store": "tsx scripts/build-store.ts",
     "check:secrets": "node scripts/check-secrets.mjs",
     "hms:demo-db": "node scripts/make-demo-db.mjs",
     "hms:reset": "node scripts/reset-hms.mjs"
