@@ -1,0 +1,4 @@
+# Dependencies for isolated audit reproductions, not a hospital application.
+fastapi==0.120.0
+SQLAlchemy==2.0.44
+httpx==0.28.1

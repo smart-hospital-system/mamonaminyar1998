@@ -1,0 +1,87 @@
+name: ASH phase-1 verification
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m pip install -r requirements-dev.txt -c requirements-tested.txt
+      - run: python -m pip check
+      - run: python -m pytest -q
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm}
+      - run: npm ci --ignore-scripts
+      - run: npm run check:css
+      - run: npm run check
+      - run: npm test
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: ash_test
+          POSTGRES_PASSWORD: ci-test-only-not-a-deployment-password
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U ash_test -d postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      ASH_TEST_DATABASE_URL: postgresql+psycopg://ash_test:ci-test-only-not-a-deployment-password@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m pip install -r requirements-dev.txt -r requirements-enterprise.txt -c requirements-tested.txt
+      - run: python -m pytest tests/integration/test_enterprise_phase1.py -q
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m scripts.enterprise_secrets
+      - run: mkdir -p imports
+      - run: docker compose config --quiet
+      - run: docker build -t ash-enterprise:dev .
+      - run: docker compose up -d --wait db
+      - name: Explicit test-only initialization via stdin, never a default deployment password
+        run: |
+          python - <<'PY'
+          import secrets, subprocess
+          password=secrets.token_urlsafe(32)
+          subprocess.run(['docker','compose','run','--rm','-T','ops','python','-m','scripts.enterprise','init','--password-stdin','--physician-owner'],input=password+'\n',text=True,check=True)
+          PY
+      - run: docker compose up -d --wait web
+      - run: curl --fail http://127.0.0.1:8000/readyz
+      - run: docker compose run --rm -T ops python -m scripts.postgres_ops backup --output /backups/ci-only.dump
+      - name: Restore only into a dedicated new test database
+        run: |
+          docker compose exec -T db psql -U ash_bootstrap -d ash -v ON_ERROR_STOP=1 -c 'CREATE DATABASE ash_ci_restore OWNER ash_owner'
+          docker compose run --rm -T ops python - <<'PY'
+          from pathlib import Path
+          from sqlalchemy import text
+          from scripts.migrate_postgres import enterprise_target
+          from scripts.postgres_ops import restore_to_empty
+          from backend.app.database import open_database
+          from backend.app.observability import ready
+          engine,_=open_database(enterprise_target().set(database='ash_ci_restore'))
+          try:
+              restore_to_empty(engine,Path('/backups/ci-only.dump'))
+              assert ready(engine)
+              with engine.connect() as db:
+                  assert db.scalar(text('SELECT count(*) FROM sessions'))==0
+          finally:
+              engine.dispose()
+          PY
+      - if: always()
+        run: docker compose down

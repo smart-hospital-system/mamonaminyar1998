@@ -1,0 +1,19 @@
+{
+  "name": "ash-nexus-workspace",
+  "private": true,
+  "version": "0.5.0-dev.1",
+  "description": "Local-first hospital workspace; no frontend build or CDN required",
+  "scripts": {
+    "test": "node --test tests/frontend/*.test.cjs",
+    "check": "node --check frontend/app.js && node --check frontend/workspace.js && node --check frontend/professional.js && node --check installer/setup.js && node --check frontend/dashboard.js",
+    "build:css": "tailwindcss -i ./frontend/tailwind.input.css -o ./frontend/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./frontend/tailwind.input.css -o ./frontend/tailwind.css --watch",
+    "build": "npm run build:css",
+    "check:css": "node scripts/check_tailwind.cjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.3",
+    "jsdom": "26.1.0",
+    "tailwindcss": "4.3.3"
+  }
+}
