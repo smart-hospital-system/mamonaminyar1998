@@ -1,0 +1,6 @@
+/* Tailwind v4, local build only. Deliberately no Preflight: preserve clinical forms/A4. */
+@layer theme;
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" prefix(tw) source(none);
+@source "./dashboard.js";
+@source "./professional.js";

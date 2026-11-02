@@ -1,0 +1,142 @@
+// Optional real Chromium smoke test. Requires a running TEST deployment only.
+// Never run against real hospital data: it creates clearly labelled synthetic records.
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const crypto=require('node:crypto');
+const {chromium}=require('playwright-core');
+const packaged=require('@sparticuz/chromium');
+const base=process.env.ASH_E2E_URL||'http://127.0.0.1:8000';
+const username=process.env.ASH_E2E_USERNAME;
+const password=process.env.ASH_E2E_PASSWORD;
+if(!username||!password)throw new Error('Set ASH_E2E_USERNAME and ASH_E2E_PASSWORD for a TEST-only admin.');
+const out=process.env.ASH_E2E_OUTPUT||'.cache/browser-output';
+fs.mkdirSync(out,{recursive:true});
+(async()=>{
+ const browser=await chromium.launch({executablePath:await packaged.executablePath(),headless:true,
+  args:packaged.args.filter(a=>!['--disable-web-security','--allow-running-insecure-content'].includes(a))});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ page.on('dialog',dialog=>dialog.accept());
+ const login=async(user,pass)=>{await page.locator('#login-form').waitFor();await page.locator('[name=username]').fill(user);await page.locator('[name=password]').fill(pass);await page.locator('#login-form [type=submit]').click();await page.locator('.workspace').waitFor();await page.locator('[data-dashboard-stats]').waitFor();};
+ const api=async(route,method='GET',body)=>page.evaluate(async({route,method,body})=>{
+  const me=await fetch('/api/auth/me').then(r=>r.json());
+  const response=await fetch('/api'+route,{method,headers:{'Content-Type':'application/json','X-CSRF-Token':me.csrf},...(body?{body:JSON.stringify(body)}:{})});
+  return {status:response.status,data:await response.json()};
+ },{route,method,body});
+ let created;
+ try{
+  await page.goto(base);await login(username,password);
+  await page.locator('.nav-link[data-page=patients]').click();
+  await page.locator('[data-action=patient-new]').click();
+  await page.locator('#patient-form [name=first_name]').fill('آزمایشی مرورگر');
+  await page.locator('#patient-form [name=last_name]').fill('بدون اطلاعات واقعی');
+  await page.locator('#patient-form [name=age]').fill('30');
+  await page.locator('#patient-form [name=sex]').selectOption('female');
+  await page.locator('#patient-form [type=submit]').click();
+  await page.waitForFunction(()=>document.querySelector('#patient-rows')?.textContent.includes('آزمایشی مرورگر'));
+  assert.ok((await page.locator('#patient-rows').innerText()).includes('آزمایشی مرورگر'));
+  const doctorUser='e2e-doctor-'+Date.now();const doctorPassword=crypto.randomBytes(20).toString('base64url');
+  created=await api('/auth/users','POST',{username:doctorUser,name:'داکتر آزمایشی مرورگر',password:doctorPassword,role:'doctor'});
+  assert.equal(created.status,201);
+  await page.locator('[data-action=logout]').click();await login(doctorUser,doctorPassword);
+  await page.locator('.nav-link[data-page=patients]').click();
+  await page.locator('[data-action=workspace-dossier]').first().click();
+  await page.locator('[data-action=workspace-visit-new]').click();
+  await page.locator('#workspace-visit-form [name=subjective]').fill('TEST ONLY — NOT A CLINICAL RECORD');
+  await page.locator('#workspace-visit-form [name=objective]').fill('TEST ONLY OBSERVATIONS');
+  await page.locator('#workspace-visit-form [name=pulse]').fill('72');
+  await page.locator('#workspace-visit-form [type=submit]').click();
+  await page.locator('.timeline-event').first().waitFor();
+  await page.locator('.timeline-event summary').first().click();
+  assert.ok((await page.locator('.event-content').innerText()).includes('TEST ONLY'));
+  await page.screenshot({path:path.join(out,'dossier-desktop.png'),fullPage:true});
+  await page.locator('[data-action=modal-close]').click();
+  await page.locator('.nav-link[data-page=tasks]').click();
+  await page.locator('[data-action=workspace-task-new]').click();
+  await page.locator('#workspace-task-form [name=title]').fill('TEST ONLY — workflow follow-up');
+  await page.locator('#workspace-task-form [type=submit]').click();
+  await page.locator('.work-task').first().waitFor();
+  await page.locator('[data-action=workspace-task-state]').first().click();
+  await page.locator('.work-task.done').first().waitFor();
+  await page.locator('.nav-link[data-page=appointments]').click();
+  await page.locator('[data-action=workspace-appointment-new]').click();
+  await page.locator('#workspace-appointment-form [name=patient_id]').selectOption({index:1});
+  await page.locator('#workspace-appointment-form [name=doctor_id]').selectOption({label:'داکتر آزمایشی مرورگر'});
+  await page.locator('#workspace-appointment-form [name=starts_at]').fill('2026-10-30T10:30');
+  await page.locator('#workspace-appointment-form [name=reason]').fill('TEST ONLY — appointment flow');
+  await page.locator('#workspace-appointment-form [type=submit]').click();
+  await page.locator('[data-action=workspace-appointment-state][data-state=checked_in]').first().waitFor();
+  await page.locator('[data-action=workspace-appointment-state][data-state=checked_in]').first().click();
+  await page.waitForFunction(()=>!document.querySelector('[data-action=workspace-appointment-state][data-state=checked_in]'));
+  await page.locator('[data-action=workspace-appointment-state][data-state=completed]').first().click();
+  await page.waitForFunction(()=>document.querySelector('tbody')?.textContent.includes('تکمیل‌شده'));
+  await page.locator('.nav-link[data-page=smart]').click();
+  await page.locator('#workspace-symptom').fill('headace');
+  await page.locator('#workspace-symptom-results .smart-result').first().waitFor();
+  assert.ok((await page.locator('#workspace-symptom-results').innerText()).includes('سردرد'));
+  await page.keyboard.press('Control+k');
+  await page.locator('#workspace-command-query').fill('شخصی');
+  await page.locator('.command-item[data-page=appearance]').click();
+  await page.locator('[name=theme][value=midnight]').check();
+  await page.locator('#workspace-preferences [type=submit]').click();
+  await page.waitForFunction(()=>document.documentElement.dataset.theme==='midnight');
+  await page.locator('.nav-link[data-page=dashboard]').click();
+  await page.locator('[data-dashboard-hero]').waitFor();
+  await page.screenshot({path:path.join(out,'dashboard-night.png'),fullPage:true});
+  await page.locator('.nav-link[data-page=appearance]').click();
+  await page.locator('[name=theme][value=sage]').check();
+  await page.locator('#workspace-preferences [type=submit]').click();
+  await page.waitForFunction(()=>document.documentElement.dataset.theme==='sage');
+  await page.locator('.nav-link[data-page=patients]').click();await page.locator('[data-action=rx-new]').first().click();
+  await page.locator('#rx-form').waitFor();
+  await page.locator('#rx-form [name=complaint]').fill('TEST ONLY — NOT A CLINICAL RECORD');
+  await page.locator('#rx-form [name=diagnosis]').fill('TEST ONLY — NO DIAGNOSIS');
+  assert.equal(await page.locator('.rx-item').count(),0);
+  await page.locator('[data-action=rx-add]').click();
+  const item={name:'TEST ONLY — NOT MEDICINE',form:'TEST',dose:'TEST — NOT A DOSE',frequency:'TEST ONLY',duration:'TEST ONLY',quantity:'1',instructions:'DO NOT USE FOR TREATMENT'};
+  for(const [name,value] of Object.entries(item))await page.locator(`.rx-item [name=${name}]`).fill(value);
+  await page.locator('#rx-form [type=submit]').click();
+  await page.locator('#preview-sheet .print-sheet').waitFor();
+  assert.ok((await page.locator('#print-root').textContent()).includes('پیش‌نویس'));
+  await page.locator('[data-action=rx-edit]').click();
+  await page.locator('#rx-form [name=notes]').fill('EDITED TEST RECORD');
+  await page.locator('#rx-form [type=submit]').click();
+  for(let template=1;template<=200;template++){
+   await page.locator('#print-template').selectOption(String(template));
+   await page.locator(`#print-template[data-saved-template="${template}"]:not(:disabled)`).waitFor();
+   assert.ok((await page.locator('#print-root').textContent()).includes(item.name));
+   const pdf=await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true});
+   assert.ok(pdf.length>1000);fs.writeFileSync(path.join(out,`synthetic-template-${template}.pdf`),pdf);
+  }
+  // Print-only synthetic stress document; never writes extra items to the database.
+  await page.evaluate(()=>{const body=document.querySelector('#print-root tbody');const prototype=body.firstElementChild.cloneNode(true);for(let i=2;i<=30;i++){const row=prototype.cloneNode(true);row.cells[0].textContent=String(i);row.cells[1].textContent=`SYNTHETIC ITEM ${i} — `+'LONG TEST INSTRUCTION '.repeat(15);body.append(row);}});
+  fs.writeFileSync(path.join(out,'synthetic-long-prescription.pdf'),await page.pdf({format:'A4',printBackground:true,preferCSSPageSize:true}));
+  await page.locator('[data-action=rx-confirm]').click();
+  await page.waitForFunction(()=>document.querySelector('#print-root')?.textContent.includes('بازبینی در سیستم تأیید شده'));
+  assert.equal(await page.locator('#print-template').isDisabled(),true);
+  await page.screenshot({path:path.join(out,'prescription-desktop.png'),fullPage:true});
+  await page.locator('[data-action=modal-close]').click();
+  await page.locator('.nav-link[data-page=templates]').click();
+  await page.locator('.template-tile').first().waitFor();assert.equal(await page.locator('.template-tile').count(),40);
+  await page.screenshot({path:path.join(out,'templates-desktop.png'),fullPage:true});
+  await page.locator('[data-action=logout]').click();await login(username,password);
+  await api(`/auth/users/${created.data.id}/deactivate`,'POST');created=null;
+  await page.screenshot({path:path.join(out,'dashboard-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator('#sidebar').evaluate(el=>getComputedStyle(el).visibility),'hidden');
+  await page.screenshot({path:path.join(out,'dashboard-mobile.png'),fullPage:true});
+  await page.locator('[data-action=menu]').click();
+  assert.equal(await page.locator('#sidebar').evaluate(el=>getComputedStyle(el).visibility),'visible');
+  await page.locator('.nav-link[data-page=guide]').click();
+  assert.equal(await page.locator('#sidebar').evaluate(el=>getComputedStyle(el).visibility),'hidden');
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);
+  assert.deepEqual(errors,[]);
+  console.log('PASS: real-browser login, patient persistence, doctor draft/edit/confirm, all 200 Chromium PDF outputs, SOAP/vitals dossier, private tasks, appointment check-in/completion, fuzzy vocabulary, personal theme, command palette, template gallery, desktop/mobile dashboard; no page errors.');
+ }finally{
+  // The synthetic record is retained; deactivate the temporary doctor if the flow failed.
+  if(created?.data?.id){try{await page.goto(base);await page.locator('[data-action=logout]').click({timeout:1000});await login(username,password);await api(`/auth/users/${created.data.id}/deactivate`,'POST');}catch{}}
+  await browser.close();
+ }
+})().catch(error=>{console.error(error);process.exit(1)});

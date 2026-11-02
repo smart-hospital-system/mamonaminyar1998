@@ -1,0 +1,3 @@
+# Optional server deployment only; offline Windows/SQLite dependency set stays unchanged.
+-r requirements.txt
+psycopg[binary]==3.2.13
