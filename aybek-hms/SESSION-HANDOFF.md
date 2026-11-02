@@ -110,8 +110,9 @@ problems               none
 | `npm run build` | موفق · Next.js 15.5.28 · ۲۸ صفحهٔ static تولید شد |
 | `npm run release:iso` | موفق · DISC ۱۹۵۱ فایل · ISO ۱۲۵٫۱ MB · ۱۹۵۱/۱۹۵۱ هش مانیفست و Joliet برابر |
 | PR #9 | ادغام‌شده در `main`؛ CI آن PR پنج بررسی موفق داشت |
+| PR فصل چشم/امنیت | هنوز ساخته نشده: `gh pr create` و REST هر دو HTTP 403 با پیام `Resource not accessible by integration` دادند؛ شاخه push شده است |
 
-فصل چشم و اصلاح امنیتی روی شاخهٔ فعال‌اند؛ PR #9 مرحلهٔ پیشین بود. وضعیت PR/CI تغییرات تازه را در GitHub پیگیری کنید و تا موفقیت CI و بازبینی بالینی، آن را ادغام نکنید.
+فصل چشم و اصلاح امنیتی روی شاخهٔ فعال‌اند؛ PR #9 مرحلهٔ پیشین بود. پس از وصل‌کردن مجدد GitHub با اجازهٔ ساخت PR، PR تازه را از `arena/14025ffa-mamonaminyar1998` به `main` به‌صورت draft بسازید. پیوند مقایسه: https://github.com/smart-hospital-system/mamonaminyar1998/compare/main...arena/14025ffa-mamonaminyar1998?expand=1. تا موفقیت CI و بازبینی بالینی، ادغام نکنید.
 
 ---
 
