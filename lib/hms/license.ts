@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import { hAll, hGet, hNow, hRun, hUid, getSection, saveSettings } from "./db";
 
 /**
@@ -11,13 +13,68 @@ import { hAll, hGet, hNow, hRun, hUid, getSection, saveSettings } from "./db";
  * PowerShell `06-activate.ps1` wizard.
  */
 
-const SECRET = process.env.AYBEK_LICENSE_SECRET ?? "aybek-hms::2026::ten-bed-surgical";
+/**
+ * The signing key.
+ *
+ * A key compiled into the source is not a secret: anyone with the file can mint
+ * serials. So the signing key is resolved in this order and *never* written into
+ * the repository:
+ *
+ *   1. AYBEK_LICENSE_SECRET from the environment or .env.local (the intended way
+ *      for the owner, and what the install guide asks for).
+ *   2. data/license.key — a random 32-byte key generated on first use, kept with
+ *      the hospital database and ignored by git.
+ *   3. LEGACY_SECRET, only to *verify* serials that were already issued before
+ *      this change. It is never used to sign a new serial.
+ *
+ * Consequence: a fresh clone still activates licences out of the box (step 2),
+ * but forging one requires the key, which lives on the owner's machine or in the
+ * owner's secret store — not in this file.
+ */
+const LEGACY_SECRET = "aybek-hms::2026::ten-bed-surgical";
+let cachedSecret: string | null = null;
+
+function secretPath() {
+  const base = process.env.SLOTLY_DB_PATH ? path.dirname(process.env.SLOTLY_DB_PATH) : path.join(process.cwd(), "data");
+  return path.join(base, "license.key");
+}
+
+function resolveSecret(): string {
+  if (cachedSecret) return cachedSecret;
+  const fromEnv = process.env.AYBEK_LICENSE_SECRET?.trim();
+  if (fromEnv) {
+    cachedSecret = fromEnv;
+    return cachedSecret;
+  }
+  const file = secretPath();
+  try {
+    const existing = fs.readFileSync(file, "utf8").trim();
+    if (existing.length >= 32) {
+      cachedSecret = existing;
+      return cachedSecret;
+    }
+  } catch {
+    // No key yet — fall through and make one.
+  }
+  const fresh = crypto.randomBytes(32).toString("hex");
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${fresh}\n`, { mode: 0o600 });
+  } catch {
+    // A read-only installation (a CD, for instance) still has to run: fall back
+    // to the legacy key so licences issued earlier keep working.
+    cachedSecret = LEGACY_SECRET;
+    return cachedSecret;
+  }
+  cachedSecret = fresh;
+  return cachedSecret;
+}
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I, O, 0, 1
 const PREFIX = "AYBK";
 const TRIAL_DAYS = 14;
 
-function checksum(body: string) {
-  const digest = crypto.createHash("sha256").update(`${SECRET}|${body}`).digest();
+function checksum(body: string, key = resolveSecret()) {
+  const digest = crypto.createHash("sha256").update(`${key}|${body}`).digest();
   let out = "";
   for (let i = 0; i < 4; i++) out += ALPHABET[digest[i] % ALPHABET.length];
   return out;
@@ -55,13 +112,20 @@ export function validateSerial(raw: string) {
   const match = /^AYBK-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})-([A-Z0-9]{4})$/.exec(serial);
   if (!match) return { valid: false as const, reason: "Format must be AYBK-XXXX-XXXX-XXXX-XXXX." };
   const body = `${match[1]}-${match[2]}-${match[3]}`;
-  if (checksum(body) !== match[4]) {
-    return { valid: false as const, reason: "Checksum mismatch — this serial was not issued by Aybek." };
-  }
   const existing = hGet<{ status: string; plan: string; hospital: string | null }>(
     "SELECT status, plan, hospital FROM hms_licenses WHERE serial = ?",
     [serial]
   );
+
+  // The legacy key is only honoured for a serial this installation already knows
+  // about — one that was issued before the key moved out of the source. A serial
+  // nobody has ever issued must match the current key, so the old constant cannot
+  // be used to mint new ones.
+  const currentOk = checksum(body) === match[4];
+  const legacyOk = Boolean(existing) && checksum(body, LEGACY_SECRET) === match[4];
+  if (!currentOk && !legacyOk) {
+    return { valid: false as const, reason: "Checksum mismatch — this serial was not issued by Aybek." };
+  }
   if (existing?.status === "activated" && existing.hospital) {
     return { valid: false as const, reason: `Already activated for ${existing.hospital}. Ask the owner to issue a new seat.` };
   }
