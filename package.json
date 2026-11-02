@@ -8,8 +8,6 @@
     "build": "next build",
     "deploy": "node scripts/deploy.mjs",
     "start": "next start -H 0.0.0.0 -p 3000",
-    "worker:deploy": "npx --yes wrangler@4 deploy",
-    "worker:check": "npx --yes wrangler@4 deploy --dry-run",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "node scripts/reset-db.mjs",
     "lint": "next lint",

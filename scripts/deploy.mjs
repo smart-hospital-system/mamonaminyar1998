@@ -19,6 +19,10 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
+// Next.js telemetry is on by default and phones home on every build; on a
+// hospital machine with no internet that is a pointless delay.
+process.env.NEXT_TELEMETRY_DISABLED = process.env.NEXT_TELEMETRY_DISABLED ?? "1";
+
 const PORT = process.env.PORT ?? "3000";
 const HOST = process.env.HOSTNAME ?? "0.0.0.0";
 
