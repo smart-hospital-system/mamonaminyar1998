@@ -9,6 +9,7 @@ import { ENDOCRINE } from "./ch-endocrine";
 import { GASTROINTESTINAL } from "./ch-gastrointestinal";
 import { INFECTIOUS } from "./ch-infectious";
 import { ENT } from "./ch-ent";
+import { OPHTHALMIC } from "./ch-ophthalmic";
 import { MUSCULOSKELETAL } from "./ch-musculoskeletal";
 import { NEUROLOGICAL } from "./ch-neurological";
 import { RENAL } from "./ch-renal";
@@ -20,6 +21,7 @@ export const CHAPTERS: string[] = [
   SEASONAL,
   INFECTIOUS,
   ENT,
+  OPHTHALMIC,
   GASTROINTESTINAL,
   CARDIOVASCULAR,
   NEUROLOGICAL,

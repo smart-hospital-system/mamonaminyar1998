@@ -271,8 +271,8 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                       "برای این گروه سنی هیچ اشکال سنی، کلیوی، تداخل یا تکرار دوا پیدا نشد."
                     ),
                     noMedicines: tr(
-                      "No routine medicine is indicated in this example. Follow the supportive or procedural plan above; do not add a drug just to complete the sample.",
-                      "در این نمونه دوا به‌طور روتین لازم نیست. پلان حمایتی یا عملی بالا را دنبال کنید و تنها برای پُرکردن نمونه دوا اضافه نکنید."
+                      "No medicine is prefilled in this example. Follow the supportive, procedural or specialist-directed plan above; do not add a drug just to complete the sample.",
+                      "در این نمونه دوا به‌صورت پیش‌فرض درج نشده است. پلان حمایتی، عملی یا پلان متخصص را دنبال کنید و تنها برای پُرکردن نمونه دوا اضافه نکنید."
                     ),
                     noMedicationReview: tr(
                       "No medicine is listed, so there was no medicine-safety review to run.",

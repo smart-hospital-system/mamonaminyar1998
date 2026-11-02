@@ -75,11 +75,12 @@ try {
   const generated = JSON.parse(fs.readFileSync(path.join(root, "data", "disease-regimens.json"), "utf8"));
   catalogueStats = {
     conditions: Number(generated.totals?.diseases ?? 0),
+    medicatedConditions: Number(generated.totals?.medicatedConditions ?? 0),
     chapters: Number(generated.totals?.chapters ?? 0),
     prescriptions: Number(generated.totals?.prescriptionExamples ?? 0),
     formulary: Number(generated.totals?.formularyMedicines ?? 0),
   };
-  if (!catalogueStats.conditions || !catalogueStats.prescriptions || !catalogueStats.formulary) {
+  if (!catalogueStats.conditions || !catalogueStats.medicatedConditions || !catalogueStats.prescriptions || !catalogueStats.formulary) {
     die("Generated catalogue totals are missing. Run `npm run hms:regimens` first.");
   }
 } catch (e) {
@@ -113,10 +114,17 @@ if (demoStats.prescriptions !== catalogueStats.prescriptions) {
       "`npm run hms:catalogue`, then `npm run hms:demo-db`, then build the disc again."
   );
 }
+if (demoStats.prescriptionConditions !== catalogueStats.medicatedConditions) {
+  die(
+    `The demo database has ${demoStats.prescriptionConditions} distinct catalogue diagnoses; ` +
+      `the generated data expects ${catalogueStats.medicatedConditions}. Run ` +
+      "`npm run hms:catalogue`, then `npm run hms:demo-db`, then build the disc again."
+  );
+}
 if (demoStats.prescriptions < 1000) {
   die("The demo database has fewer than 1000 catalogue prescriptions; check the clinical seeder.");
 }
-ok(`demo database: ${demoStats.conditions} conditions · ${demoStats.prescriptions} prescription examples · ${demoStats.formulary} formulary medicines`);
+ok(`demo database: ${demoStats.conditions} conditions · ${demoStats.prescriptionConditions} conditions with medication examples · ${demoStats.prescriptions} prescription examples · ${demoStats.formulary} formulary medicines`);
 
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });

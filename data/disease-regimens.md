@@ -1,6 +1,6 @@
 # Age- and sex-stratified clinical catalogue examples
 
-**Generated:** 2026-11-02T13:01:20.987Z · **Conditions:** 537 · **Synthetic patient examples:** 3222 · **Prescription examples:** 3012 · **Prescription lines:** 12324
+**Generated:** 2026-11-02T17:23:52.244Z · **Conditions:** 597 · **Synthetic patient examples:** 3582 · **Prescription examples:** 3086 · **Prescription lines:** 12408
 
 Each condition has one synthetic patient example for each sex in each band: child (< 18), adult
 (18–70) and older adult (71–90). Cases with no routine medicine have **no prescription example**;
@@ -10,25 +10,26 @@ only medicines that may be indicated are shown, and some ENT cases correctly hav
 
 | Band | Synthetic patient examples |
 | --- | --- |
-| < 18 years | 1074 |
-| 18–70 years | 1074 |
-| 71–90 years | 1074 |
+| < 18 years | 1194 |
+| 18–70 years | 1194 |
+| 71–90 years | 1194 |
 
 | Sex | Synthetic patient examples |
 | --- | --- |
-| female | 1611 |
-| male | 1611 |
+| female | 1791 |
+| male | 1791 |
 
 | Measure | Result |
 | --- | --- |
+| Conditions with at least one medication example | 515 of 597 |
 | Medicines per non-empty prescription example (min / max) | 1 / 6 |
-| Prescription examples with a liquid preparation | 2982 of 3012 (99%) |
-| Child prescription examples with an oral syrup | 978 of 1004 (97%) |
-| Prescription examples with an injectable (vial) | 1600 of 3012 (53%) |
-| Prescription examples with a safety finding | 234 of 3012 |
+| Prescription examples with a liquid preparation | 3042 of 3086 (99%) |
+| Child prescription examples with an oral syrup | 984 of 1026 (96%) |
+| Prescription examples with an injectable (vial) | 1604 of 3086 (52%) |
+| Prescription examples with a safety finding | 234 of 3086 |
 | … of those, blocking findings | 0 |
 | Total findings raised | 550 |
-| Cases without a medication example | 210 |
+| Cases without a medication example | 496 |
 
 ## Files
 
