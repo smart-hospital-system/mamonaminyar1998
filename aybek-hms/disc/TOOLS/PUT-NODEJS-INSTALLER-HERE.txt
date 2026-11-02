@@ -1,0 +1,31 @@
+PLACE THE NODE.JS INSTALLER IN THIS FOLDER
+==========================================
+
+Why: the hospital needs Node.js 20 or newer. If the target computer has no
+internet, put the official installer in this folder so the person installing
+can find it on the same disc.
+
+What to download (on a computer that has internet):
+
+    https://nodejs.org/en/download
+    Choose: Windows Installer (.msi)  -  x64  -  LTS
+
+Expected file name (any LTS version is fine):
+
+    node-v22.x.x-x64.msi
+
+Then:
+
+ 1. Copy the .msi into this TOOLS folder on the disc (before burning), or
+    just hand the .msi over together with the disc.
+ 2. 05-build.ps1 -OfflineTarget  copies it automatically when it is here.
+ 3. On the offline computer: double-click the .msi, install with the default
+    options, then run START-HERE.bat from the disc.
+
+Version check after installing (Command Prompt):
+
+    node -v        should print v20.x or higher
+    npm -v
+
+Nothing else is downloaded from the internet at run time: the hospital works
+fully offline once Node.js and the program libraries are in place.

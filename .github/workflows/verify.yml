@@ -1,0 +1,66 @@
+name: Verify
+
+# Runs on every pull request and on pushes to the working branches.
+# Deliberately limited to checks that need no secrets, no database and no network
+# beyond npm: the hospital is an on-premise application, so CI only proves the
+# source is sound — type-checks, builds and contains no committed credentials.
+
+on:
+  # A pull request run is the one that matters while working on a branch; running
+  # on every branch push as well produced two identical jobs for every commit.
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: type-check, build, secret scan
+    # Pinned: the ubuntu-latest label moves to a new image on 2026-10-19, and a
+    # hospital build should not change underneath us on that date.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Scan tracked files for committed credentials
+        run: npm run check:secrets
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Restore the Next.js build cache
+        uses: actions/cache@v5
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+            next-${{ runner.os }}-
+
+      - name: Build the hospital application
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Verify the hospital schema and demo data
+        run: npm run hms:verify

@@ -1,0 +1,106 @@
+<#
+.SYNOPSIS
+  07 - Back up the whole hospital (database, settings and reference files).
+
+.DESCRIPTION
+  Copies the SQLite database with its WAL files, the hospital settings, and
+  the uploaded logo folder into a timestamped folder under backups\. Old
+  backups are pruned so the disk never fills up.
+
+.EXAMPLE
+  .\scripts\install\07-backup.ps1
+  .\scripts\install\07-backup.ps1 -Keep 30
+  .\scripts\install\07-backup.ps1 -Schedule -At 20:00
+
+.NOTES
+  -Schedule registers a Windows scheduled task called AybekHMS-Backup that runs
+  this script every night at the time you choose. Remove it again with:
+      schtasks /Delete /TN AybekHMS-Backup /F
+#>
+
+param(
+    [string]$Path,
+    [int]$Keep = 14,
+    [string]$Destination,
+    [switch]$Schedule,
+    [string]$At = "20:00"
+)
+
+Import-Module ScheduledTasks -ErrorAction SilentlyContinue
+
+. "$PSScriptRoot\_common.ps1"
+
+Write-Banner "AYBEK HOSPITAL - BACKUP"
+
+if ($Schedule) {
+    $scriptPath = Join-Path $PSScriptRoot "07-backup.ps1"
+    $taskName = "AybekHMS-Backup"
+    $action = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$scriptPath`" -Keep $Keep"
+    schtasks /Create /TN $taskName /TR $action /SC DAILY /ST $At /F | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+        Write-Ok "Nightly backup scheduled at $At (task: $taskName)."
+        Write-Info "Check it with:  schtasks /Query /TN $taskName"
+        Write-Info "Remove it with: schtasks /Delete /TN $taskName /F"
+    } else {
+        Write-Warn "Could not create the scheduled task. Run this window as Administrator, or create it by hand in Task Scheduler."
+    }
+}
+
+$root = Get-HmsRoot -Override $Path
+Set-Location -LiteralPath $root
+
+if ($Destination) {
+    $folder = $Destination
+    New-Item -ItemType Directory -Force -Path $folder | Out-Null
+} else {
+    $folder = New-BackupFolder -Root $root
+}
+Write-Step "Backing up to $folder"
+
+$files = @(
+    @{ from = "data\slotly.db";     to = "slotly.db" },
+    @{ from = "data\slotly.db-wal"; to = "slotly.db-wal" },
+    @{ from = "data\slotly.db-shm"; to = "slotly.db-shm" }
+)
+foreach ($f in $files) {
+    $source = Join-Path $root $f.from
+    if (Test-Path -LiteralPath $source) {
+        Copy-Item -LiteralPath $source -Destination (Join-Path $folder $f.to) -Force
+        Write-Info "copied $($f.from)"
+    }
+}
+
+Write-Step "Exporting settings and licence"
+& npx tsx scripts/settings-export.ts (Join-Path $folder "settings.json")
+if ($LASTEXITCODE -ne 0) { Write-Warn "Settings export failed - the database copy is still valid." }
+
+$uploads = Join-Path $root "public\uploads"
+if (Test-Path -LiteralPath $uploads) {
+    Copy-Item -LiteralPath $uploads -Destination (Join-Path $folder "uploads") -Recurse -Force
+}
+
+$manifest = @(
+    "Aybek Ten-Bed Specialy Surgical Hospital - backup",
+    "created : $(Get-Date -Format 'yyyy-MM-dd HH:mm')",
+    "machine : $env:COMPUTERNAME",
+    "path    : $root"
+) -join "`r`n"
+$manifest | Set-Content -LiteralPath (Join-Path $folder "MANIFEST.txt") -Encoding UTF8
+
+$size = [math]::Round((Get-ChildItem -LiteralPath $folder -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 2)
+Write-Ok "Backup complete ($size MB)"
+
+# ------------------------------------------------------------------- pruning
+$backupsRoot = Join-Path $root "backups"
+if ((Test-Path -LiteralPath $backupsRoot) -and -not $Destination) {
+    $old = Get-ChildItem -LiteralPath $backupsRoot -Directory | Sort-Object Name -Descending | Select-Object -Skip $Keep
+    foreach ($o in $old) {
+        Remove-Item -LiteralPath $o.FullName -Recurse -Force
+        Write-Info "pruned old backup $($o.Name)"
+    }
+}
+
+Write-Banner "BACKUP FINISHED"
+Write-Info "Keep a copy on another disk or USB stick - a backup on the same disk does not survive a disk failure."
+Write-Host ""
+Read-Host "Press Enter to close" | Out-Null

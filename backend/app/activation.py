@@ -38,7 +38,9 @@ def verify_license(envelope, public_key, installation_id, now=None):
         binding = payload['installation_id']
         if binding is not None and (not isinstance(binding, str) or binding != installation_id):
             raise ValueError('License belongs to another installation')
-        key = Ed25519PublicKey.from_public_bytes(base64.b64decode(public_key, validate=True))
+        key = (
+            Ed25519PublicKey.from_public_bytes(base64.b64decode(public_key, validate=True))
+        )
         key.verify(base64.b64decode(envelope['signature'], validate=True), canonical(payload))
         return payload
     except (ValueError, TypeError, KeyError, InvalidSignature) as error:

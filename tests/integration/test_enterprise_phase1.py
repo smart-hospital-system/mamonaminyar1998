@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import secrets
 from pathlib import Path
 import uuid
 from unittest.mock import patch
@@ -170,12 +171,13 @@ def test_postgres_import_verification_failure_rolls_back_schema_and_data(postgre
 def test_postgres_runtime_role_can_use_app_but_cannot_create_tables(postgres):
     init_pg(postgres)
     role='ash_runtime_'+uuid.uuid4().hex[:12]
+    password=secrets.token_urlsafe(32)
     with postgres.begin() as connection:
-        connection.exec_driver_sql(f"CREATE ROLE \"{role}\" LOGIN PASSWORD 'test-only-runtime-password-123456'")
+        connection.exec_driver_sql(f"CREATE ROLE \"{role}\" LOGIN PASSWORD '{password}'")
         connection.exec_driver_sql(f'GRANT USAGE ON SCHEMA public TO "{role}"')
         connection.exec_driver_sql(f'GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "{role}"')
         connection.exec_driver_sql(f'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "{role}"')
-    runtime=create_app(postgres.url.set(username=role,password='test-only-runtime-password-123456'))
+    runtime=create_app(postgres.url.set(username=role,password=password))
     try:
         with TestClient(runtime) as client:
             login(client,'owner')

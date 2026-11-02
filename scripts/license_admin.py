@@ -49,7 +49,9 @@ def main():
     else:
         if not 1 <= args.days <= 3650 or not 1 <= len(args.organization) <= 200:
             parser.error('Invalid organization or validity period.')
-        key = serialization.load_pem_private_key(args.private.read_bytes(), password.encode())
+        key = (
+            serialization.load_pem_private_key(args.private.read_bytes(), password.encode())
+        )
         if not isinstance(key, Ed25519PrivateKey):
             parser.error('An Ed25519 key is required.')
         now = int(time.time())

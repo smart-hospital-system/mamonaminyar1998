@@ -29,14 +29,14 @@ jobs:
         image: postgres:17-bookworm
         env:
           POSTGRES_USER: ash_test
-          POSTGRES_PASSWORD: ci-test-only-not-a-deployment-password
+          POSTGRES_PASSWORD: example-ci-test-only-not-a-deployment-password
           POSTGRES_DB: postgres
         ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U ash_test -d postgres"
           --health-interval 5s --health-timeout 5s --health-retries 20
     env:
-      ASH_TEST_DATABASE_URL: postgresql+psycopg://ash_test:ci-test-only-not-a-deployment-password@127.0.0.1:5432/postgres
+      ASH_TEST_DATABASE_URL: postgresql+psycopg://ash_test:example-ci-test-only-not-a-deployment-password@127.0.0.1:5432/postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

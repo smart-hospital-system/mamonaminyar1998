@@ -1,19 +1,54 @@
 {
-  "name": "ash-nexus-workspace",
+  "name": "aybek-hospital",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.5.0-dev.1",
-  "description": "Local-first hospital workspace; no frontend build or CDN required",
+  "description": "Aybek Ten-Bed Specialy Surgical Hospital \u2014 bilingual (English/Dari) hospital information system: OPD, pharmacy, laboratory, radiology, inpatients, theatre, billing, licensing and offline intelligence.",
   "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "deploy": "node scripts/deploy.mjs",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "seed": "tsx scripts/seed.ts",
+    "db:reset": "node scripts/reset-db.mjs",
+    "lint": "next lint",
+    "hms:verify": "tsx scripts/verify-hms.ts",
+    "hms:regimens": "tsx scripts/build-regimens.ts",
+    "hms:store": "tsx scripts/build-store.ts",
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "hms:demo-db": "node scripts/make-demo-db.mjs",
+    "hms:reset": "node scripts/reset-hms.mjs",
     "test": "node --test tests/frontend/*.test.cjs",
     "check": "node --check frontend/app.js && node --check frontend/workspace.js && node --check frontend/professional.js && node --check installer/setup.js && node --check frontend/dashboard.js",
     "build:css": "tailwindcss -i ./frontend/tailwind.input.css -o ./frontend/tailwind.css --minify",
     "watch:css": "tailwindcss -i ./frontend/tailwind.input.css -o ./frontend/tailwind.css --watch",
-    "build": "npm run build:css",
-    "check:css": "node scripts/check_tailwind.cjs"
+    "check:css": "node scripts/check_tailwind.cjs",
+    "ash:build": "npm run build:css"
+  },
+  "dependencies": {
+    "bcryptjs": "3.0.3",
+    "clsx": "2.1.1",
+    "date-fns": "4.4.0",
+    "jose": "6.2.14",
+    "lucide-react": "1.64.0",
+    "next": "15.5.28",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "recharts": "3.10.1",
+    "swr": "2.5.1",
+    "tailwind-merge": "3.3.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "22.15.3",
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "^4.20.6",
+    "typescript": "5.8.3",
     "@tailwindcss/cli": "4.3.3",
-    "jsdom": "26.1.0",
-    "tailwindcss": "4.3.3"
+    "jsdom": "26.1.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
