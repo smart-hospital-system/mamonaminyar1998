@@ -37,7 +37,20 @@ export function RegimenReview({
   noteBody,
 }: {
   bands: BandView[];
-  labels: { medicines: string; share: string; review: string; noFindings: string; patient: string; years: string; sexFemale: string; sexMale: string; blocks: string; cautions: string };
+  labels: {
+    medicines: string;
+    share: string;
+    review: string;
+    noFindings: string;
+    noMedicines: string;
+    noMedicationReview: string;
+    patient: string;
+    years: string;
+    sexFemale: string;
+    sexMale: string;
+    blocks: string;
+    cautions: string;
+  };
   noteTitle: string;
   noteBody: string;
 }) {
@@ -85,22 +98,28 @@ export function RegimenReview({
           </span>
         </div>
 
-        <ul className="mt-2 space-y-1.5">
-          {view.items.map((it, i) => (
-            <li key={i} className="rounded-lg border px-2.5 py-1.5" style={{ borderColor: "var(--hms-border)", background: "var(--hms-surface)" }}>
-              <div className="flex flex-wrap items-baseline justify-between gap-1">
-                <span className="text-[13px] font-medium" style={{ color: "var(--hms-ink)" }}>{it.drug}</span>
-                <span className="text-[11px] tabular-nums" style={{ color: "var(--hms-muted)" }}>{it.shareLabel}</span>
-              </div>
-              <div className="mt-0.5 text-[11px]" style={{ color: "var(--hms-muted)" }}>
-                {it.form} · {it.strength} · {it.dose} · {it.frequency} · {it.route} · {it.quantity} {it.unit}
-              </div>
-              <div className="mt-1 h-1 w-full overflow-hidden rounded-full" style={{ background: "var(--hms-surface-3)" }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, it.sharePct)}%`, background: "var(--hms-brand)" }} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        {view.items.length > 0 ? (
+          <ul className="mt-2 space-y-1.5">
+            {view.items.map((it, i) => (
+              <li key={i} className="rounded-lg border px-2.5 py-1.5" style={{ borderColor: "var(--hms-border)", background: "var(--hms-surface)" }}>
+                <div className="flex flex-wrap items-baseline justify-between gap-1">
+                  <span className="text-[13px] font-medium" style={{ color: "var(--hms-ink)" }}>{it.drug}</span>
+                  <span className="text-[11px] tabular-nums" style={{ color: "var(--hms-muted)" }}>{it.shareLabel}</span>
+                </div>
+                <div className="mt-0.5 text-[11px]" style={{ color: "var(--hms-muted)" }}>
+                  {it.form} · {it.strength} · {it.dose} · {it.frequency} · {it.route} · {it.quantity} {it.unit}
+                </div>
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full" style={{ background: "var(--hms-surface-3)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, it.sharePct)}%`, background: "var(--hms-brand)" }} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-2 rounded-lg border px-2.5 py-2 text-[12px] leading-relaxed" style={{ borderColor: "var(--hms-border)", background: "var(--hms-surface)", color: "var(--hms-muted)" }}>
+            {labels.noMedicines}
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl border p-3" style={{ borderColor: tone.color, background: tone.bg }}>
@@ -114,7 +133,9 @@ export function RegimenReview({
           </span>
         </div>
         {view.findings.length === 0 ? (
-          <p className="mt-1.5 text-[12px]" style={{ color: "var(--hms-ink)" }}>{labels.noFindings}</p>
+          <p className="mt-1.5 text-[12px]" style={{ color: "var(--hms-ink)" }}>
+            {view.items.length === 0 ? labels.noMedicationReview : labels.noFindings}
+          </p>
         ) : (
           <ul className="mt-1.5 space-y-1.5">
             {view.findings.map((f, i) => {

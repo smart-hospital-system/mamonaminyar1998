@@ -1,50 +1,52 @@
-# Age- and sex-stratified demo prescriptions
+# Age- and sex-stratified clinical catalogue examples
 
-**Generated:** 2026-11-02T05:10:03.587Z · **Conditions:** 477 · **Patients:** 2862 · **Prescription lines:** 12096
+**Generated:** 2026-11-02T13:01:20.987Z · **Conditions:** 537 · **Synthetic patient examples:** 3222 · **Prescription examples:** 3012 · **Prescription lines:** 12324
 
-Every condition has one patient per band and per sex: child (< 18), adult (18–70) and older
-adult (71–90), half female and half male. Every prescription contains **at least four
-medicines** and always includes a liquid preparation. Each one is then **checked by the
-system** — age bans, renal adjustment, interactions and duplication.
+Each condition has one synthetic patient example for each sex in each band: child (< 18), adult
+(18–70) and older adult (71–90). Cases with no routine medicine have **no prescription example**;
+procedural or supportive treatment remains in the clinical entry. The original catalogue recipes
+retain their historical 4–6-line teaching format. The ENT chapter opts out of automatic fill-in:
+only medicines that may be indicated are shown, and some ENT cases correctly have none.
 
-| Band | Patients |
+| Band | Synthetic patient examples |
 | --- | --- |
-| < 18 years | 954 |
-| 18–70 years | 954 |
-| 71–90 years | 954 |
+| < 18 years | 1074 |
+| 18–70 years | 1074 |
+| 71–90 years | 1074 |
 
-| Sex | Patients |
+| Sex | Synthetic patient examples |
 | --- | --- |
-| female | 1431 |
-| male | 1431 |
+| female | 1611 |
+| male | 1611 |
 
 | Measure | Result |
 | --- | --- |
-| Medicines per prescription (min / max) | 4 / 6 |
-| Prescriptions with a liquid preparation | 2862 of 2862 (100%) |
-| Child prescriptions with an oral syrup | 954 of 954 (100%) |
-| Prescriptions with an injectable (vial) | 1560 of 2862 (55%) |
-| Prescriptions with a safety finding | 234 of 2862 |
+| Medicines per non-empty prescription example (min / max) | 1 / 6 |
+| Prescription examples with a liquid preparation | 2982 of 3012 (99%) |
+| Child prescription examples with an oral syrup | 978 of 1004 (97%) |
+| Prescription examples with an injectable (vial) | 1600 of 3012 (53%) |
+| Prescription examples with a safety finding | 234 of 3012 |
 | … of those, blocking findings | 0 |
-| Total findings raised | 544 |
+| Total findings raised | 550 |
+| Cases without a medication example | 210 |
 
 ## Files
 
-- `data/disease-regimens.json` — one record per patient, every item, dose, quantity and share
-- `data/disease-regimens.csv` — flat table, one row per prescription line, plus safety counts
+- `data/disease-regimens.json` — six synthetic age/sex records per condition, including no-medication cases
+- `data/disease-regimens.csv` — one row per medicine in a non-empty prescription example
 - `data/disease-regimens.md` — this summary
 
-## The two rules the system enforces
+## Safety and scope
 
-1. **Reference doses, not a prescribing order.** Every entry is a textbook range for teaching.
-   `/hms/diseases` prints this above the regimen, and the review panel runs age, renal,
-   interaction and duplication checks on the prescription you are looking at.
-2. **Injectables only where clinically right.** 55% of these prescriptions carry a vial — admitted,
-   severe or emergency care. A viral cold or a fungal skin infection gets tablets or a syrup,
-   because injecting there would be wrong. Children are the exception in the other direction:
-   100% receive an oral syrup.
+1. **Reference examples, not prescriptions.** Doses are teaching ranges only. The disease page
+   prints the disclaimer and the review panel checks age bands, renal adjustments, interactions
+   and duplication. A clean check does not establish that a medicine is appropriate for a patient.
+2. **Do not add medicines to reach a count.** The ENT chapter can show one indicated medicine or
+   none; procedures, hearing support, observation and urgent referral are described in the entry.
+3. The application is **not a medical device** and is not clinically certified. Follow the
+   national formulary, local antimicrobial policy, patient-specific assessment and specialist advice.
 
 ## Disclaimer
 
-Demonstration and teaching dataset. Confirm every prescription against the national formulary,
-the renal and hepatic adjustment tables and your own judgement before use.
+Synthetic demonstration and teaching dataset. Confirm any medicine against the national formulary,
+renal and hepatic adjustment guidance, allergies and the prescriber's judgement before use.

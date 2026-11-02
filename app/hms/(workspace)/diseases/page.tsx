@@ -56,7 +56,7 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
           title: lang === "fa" ? f.titleFa : f.titleEn,
           detail: lang === "fa" ? f.detailFa : f.detailEn,
         })),
-        verdict: review.verdict,
+        verdict: r.items.length === 0 ? "info" : review.verdict,
       };
     });
 
@@ -253,8 +253,8 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
               <SectionTitle
                 title={tr("What this looks like for this patient", "این تداوی برای این بیمار چگونه است")}
                 subtitle={tr(
-                  "One prescription per age band, checked by the system before you read it",
-                  "برای هر گروه سنی یک نسخه، پیش از خواندن شما توسط سیستم سنجیده شده"
+                  "An illustrative medication plan per age band where a medicine is indicated; checked by the system",
+                  "نمونۀ تداوی دارویی برای هر گروه سنی، تنها در صورت نیاز؛ با بررسی سیستم"
                 )}
               />
               <div className="mt-2">
@@ -269,6 +269,14 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                     noFindings: tr(
                       "No age, renal, interaction or duplication problem found for this band.",
                       "برای این گروه سنی هیچ اشکال سنی، کلیوی، تداخل یا تکرار دوا پیدا نشد."
+                    ),
+                    noMedicines: tr(
+                      "No routine medicine is indicated in this example. Follow the supportive or procedural plan above; do not add a drug just to complete the sample.",
+                      "در این نمونه دوا به‌طور روتین لازم نیست. پلان حمایتی یا عملی بالا را دنبال کنید و تنها برای پُرکردن نمونه دوا اضافه نکنید."
+                    ),
+                    noMedicationReview: tr(
+                      "No medicine is listed, so there was no medicine-safety review to run.",
+                      "هیچ دوایی فهرست نشده است؛ بنابراین بررسی ایمنی دوا اجرا نشده."
                     ),
                     patient: tr("Patient", "بیمار"),
                     years: tr("years", "سال"),
