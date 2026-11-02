@@ -25,9 +25,9 @@ build step and no internet connection involved: only Node.js has to be present.
 
 `data\demo-hospital.db` is a complete demonstration hospital, not an empty shell:
 
-- 537 unique conditions across eleven chapters, in English and Dari
-- 3 012 medication examples already in the register (1 004 per age band), with 12 324 medicine lines; the 210 conditions without routine medicines are not inserted as empty prescriptions
-- 223 formulary references, 1 000 stock items
+- 597 unique conditions across twelve chapters, in English and Dari
+- 3 086 medication examples from 515 conditions already in the register (1 026 child, 1 030 adult and 1 030 older-adult), with 12 408 medicine lines; 496 no-medication examples are not inserted as empty prescriptions
+- 225 formulary references, 1 000 stock items
 - patients, staff, billing history and an audit trail to look at
 
 To start with a **completely empty** hospital instead, delete

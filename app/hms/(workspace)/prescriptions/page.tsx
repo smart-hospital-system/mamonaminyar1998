@@ -8,7 +8,6 @@ import { getLang } from "@/lib/hms/lang-server";
 import { getSection, hAll, hmsReady } from "@/lib/hms/db";
 import { listPrescriptions } from "@/lib/hms/queries";
 import { RX_TEMPLATES } from "@/lib/hms/templates";
-import { DISEASES } from "@/lib/hms/diseases";
 import { PrescriptionRegister } from "./register";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +20,13 @@ export default async function PrescriptionsPage({ searchParams }: { searchParams
   const sp = await searchParams;
   const items = listPrescriptions({ q: sp.q, status: sp.status, patient_id: sp.patient, limit: 120 });
   const theme = getSection<Record<string, unknown>>("theme");
-  // Only conditions with at least one indicated medication example are seeded as
-  // catalogue prescriptions. Non-pharmacological ENT conditions stay in the browser.
+  // Only examples with a non-empty, indicated regimen become catalogue prescriptions.
+  // Conditions without one stay in the disease browser, not as empty register rows.
   const catalogue = Number(
     hAll<{ c: number }>("SELECT COUNT(*) AS c FROM hms_prescriptions WHERE rx_no LIKE 'RX-C-%'")[0]?.c ?? 0
+  );
+  const catalogueConditions = Number(
+    hAll<{ c: number }>("SELECT COUNT(DISTINCT diagnosis) AS c FROM hms_prescriptions WHERE rx_no LIKE 'RX-C-%'")[0]?.c ?? 0
   );
   const canSign = ["admin", "doctor"].includes(user.role);
 
@@ -37,8 +39,8 @@ export default async function PrescriptionsPage({ searchParams }: { searchParams
       />
       <p className="mb-4 text-[12px] text-[var(--hms-muted,#64748b)]">
         {tr(
-          `${digitsOf(lang, catalogue)} catalogue prescription examples from ${digitsOf(lang, DISEASES.length)} conditions with an indicated medicine sit in this register alongside the ${items.length} shown below. Search by name, MRN or diagnosis.`,
-          `${digitsOf(lang, catalogue)} نمونۀ نسخۀ کاتالوگ از ${digitsOf(lang, DISEASES.length)} بیماری که در آن‌ها دوا لازم است در این ثبت آمده است. با نام، MRN یا تشخیص جستجو کنید.`
+          `${digitsOf(lang, catalogue)} catalogue prescription examples from ${digitsOf(lang, catalogueConditions)} conditions with medication examples sit in this register alongside the ${items.length} shown below. Search by name, MRN or diagnosis.`,
+          `${digitsOf(lang, catalogue)} نمونۀ نسخۀ کاتالوگ از ${digitsOf(lang, catalogueConditions)} بیماری که نمونهٔ دوایی دارند در این ثبت آمده است. با نام، MRN یا تشخیص جستجو کنید.`
         )}
       </p>
       <PrescriptionRegister

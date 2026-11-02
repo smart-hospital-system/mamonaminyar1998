@@ -267,6 +267,20 @@ const SPECS: Record<string, Spec> = {
     elderly: A("0.5% eye drops", "1 drop in the affected eye", "Every 4–6 hours", "Ophthalmic"),
     duration: "14 days",
   },
+  olopatadine_ophthalmic: {
+    name: "Olopatadine eye drops", nameFa: "قطرۀ چشمی اولوپاتادین", className: "Topical antihistamine / mast-cell stabiliser",
+    child: c("Drops", "0.1% ophthalmic solution (use only age-approved product)", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    adult: A("0.1% ophthalmic solution", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    elderly: A("0.1% ophthalmic solution", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    duration: "As needed during allergen exposure",
+  },
+  ciprofloxacin_ophthalmic: {
+    name: "Ciprofloxacin eye drops", nameFa: "قطرۀ چشمی سیپروفلوکساسین", className: "Topical fluoroquinolone antimicrobial",
+    child: c("Drops", "0.3% ophthalmic solution", "Specialist-directed dose; do not delay urgent referral", "Condition-specific intensive schedule", "Ophthalmic"),
+    adult: A("0.3% ophthalmic solution", "1 drop in affected eye", "Hourly initially for corneal ulcer, specialist-directed", "Ophthalmic"),
+    elderly: A("0.3% ophthalmic solution", "1 drop in affected eye", "Hourly initially for corneal ulcer, specialist-directed", "Ophthalmic"),
+    duration: "Reassess daily; duration depends on diagnosis and response",
+  },
   budesonide_inh: {
     name: "Budesonide inhaler", nameFa: "بودزوناید استنشاقی", className: "Inhaled corticosteroid",
     child: c("Inhaler", "100 mcg/dose", "1 puff", "Twice daily with spacer"),

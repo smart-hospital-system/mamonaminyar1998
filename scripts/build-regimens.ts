@@ -49,6 +49,17 @@ for (const [diseaseId, recipe] of Object.entries(RECIPES)) {
     if (!Object.prototype.hasOwnProperty.call(DRUGS, drugId)) audit.push(`${diseaseId}: unknown formulary id ${drugId}`);
   }
 }
+const ophthalmicDiseases = DISEASES.filter((d) => d.id.startsWith("OPH-"));
+if (ophthalmicDiseases.length !== 60) audit.push(`ophthalmic chapter has ${ophthalmicDiseases.length} entries; expected 60`);
+for (const [index, d] of ophthalmicDiseases.entries()) {
+  const expectedId = `OPH-${String(index + 1).padStart(3, "0")}`;
+  if (d.id !== expectedId) audit.push(`ophthalmic id sequence: expected ${expectedId}, found ${d.id}`);
+  if (d.category !== "ophthalmic") audit.push(`${d.id}: category must be ophthalmic`);
+  if (!d.nameFa || !d.symptoms.length || !d.diagnosis.length || !d.treatment.length || !d.fa || !d.danger.length || !d.complications.length)
+    audit.push(`${d.id}: missing bilingual clinical content or red flags`);
+  const recipe = RECIPES[d.id];
+  if (!Array.isArray(recipe) && recipe?.autoFill !== false) audit.push(`${d.id}: clinical recipe must not auto-fill unrelated medicines`);
+}
 for (const [drugId, route] of [
   ["saline_nasal", "Nasal"],
   ["beclomethasone_nasal", "Nasal"],
@@ -57,6 +68,8 @@ for (const [drugId, route] of [
   ["ciprofloxacin_otic", "Otic"],
   ["clotrimazole_otic", "Otic"],
   ["lubricating_eye_drops", "Ophthalmic"],
+  ["olopatadine_ophthalmic", "Ophthalmic"],
+  ["ciprofloxacin_ophthalmic", "Ophthalmic"],
 ] as const) {
   const drug = DRUGS[drugId];
   if (!drug || ["child", "adult", "elderly"].some((band) => drug.form[band as keyof typeof drug.form] !== "Drops" || drug.route[band as keyof typeof drug.route] !== route))
@@ -66,6 +79,7 @@ if (audit.length) throw new Error(`Clinical catalogue audit failed:\n- ${audit.j
 
 const records: PatientRecord[] = buildAll();
 const prescriptionRecords = records.filter((r) => r.items.length > 0);
+const medicatedConditions = new Set(prescriptionRecords.map((r) => r.diseaseId)).size;
 const noMedicationCases = records.length - prescriptionRecords.length;
 const problems = validate(records);
 
@@ -83,6 +97,7 @@ writeFileSync(
       bands: BANDS.map((b) => ({ band: b.band, label: b.label, labelFa: b.labelFa })),
       totals: {
         diseases: DISEASES.length,
+        medicatedConditions,
         chapters: CHAPTERS.length,
         clinicalCategories: new Set(DISEASES.map((d) => d.category)).size,
         formularyMedicines: Object.keys(DRUGS).length,
@@ -149,6 +164,7 @@ ${bySex.map((s) => `| ${s.sex} | ${s.count} |`).join("\n")}
 
 | Measure | Result |
 | --- | --- |
+| Conditions with at least one medication example | ${medicatedConditions} of ${DISEASES.length} |
 | Medicines per non-empty prescription example (min / max) | ${Math.min(...itemCounts)} / ${Math.max(...itemCounts)} |
 | Prescription examples with a liquid preparation | ${liquid} of ${prescriptionRecords.length} (${Math.round((liquid / prescriptionRecords.length) * 100)}%) |
 | Child prescription examples with an oral syrup | ${childSyrup} of ${child.length} (${Math.round((childSyrup / child.length) * 100)}%) |
