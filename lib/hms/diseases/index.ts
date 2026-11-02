@@ -8,6 +8,7 @@ import { DERMATOLOGY } from "./ch-dermatology";
 import { ENDOCRINE } from "./ch-endocrine";
 import { GASTROINTESTINAL } from "./ch-gastrointestinal";
 import { INFECTIOUS } from "./ch-infectious";
+import { MUSCULOSKELETAL } from "./ch-musculoskeletal";
 import { NEUROLOGICAL } from "./ch-neurological";
 import { RENAL } from "./ch-renal";
 import { RESPIRATORY } from "./ch-respiratory";
@@ -23,4 +24,5 @@ export const CHAPTERS: string[] = [
   ENDOCRINE,
   RENAL,
   DERMATOLOGY,
+  MUSCULOSKELETAL,
 ];

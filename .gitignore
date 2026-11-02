@@ -57,6 +57,6 @@ aybek-hms/SERIALS.txt
 public/uploads/
 .DS_Store
 
-# Cloudflare Workers tooling (status Worker only — see wrangler.jsonc)
-.wrangler/
-.dev.vars
+# Turn artefacts: diff dumps and patch files are never hospital source
+*.patch
+*.diff
