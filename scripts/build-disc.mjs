@@ -21,8 +21,8 @@
  * no developer to run npm install. `next build` with `output: "standalone"` copies
  * the server plus only the modules it imports, so the disc works with a plain
  * Node.js install. The database that ships (HOSPITAL/data/demo-hospital.db) is a
- * copy of this machine's hospital including the whole clinical catalogue, so the
- * first start shows 477 conditions and 2862 prescriptions with no seeding step.
+ * copy of this machine's hospital including the current clinical catalogue, so
+ * the first start needs no internet or seeding step.
  *
  * Everything is written fresh each run; nothing is appended to an old disc folder.
  */
@@ -67,14 +67,37 @@ if (!fs.existsSync(demoDb)) {
   die("data/demo-hospital.db is missing. Run `npm run hms:demo-db` with the hospital stopped.");
 }
 
-/* ---- the database that ships must actually carry the catalogue, or the disc
-        promises 477 conditions and delivers an empty register. ---- */
-let demoStats = { conditions: 0, prescriptions: 0, patients: 0, medicines: 0 };
+/* ---- Read the generated catalogue manifest and verify the shipped DB has
+        exactly that many medication examples (conditions without routine
+        medicines deliberately do not become empty prescription rows). ---- */
+let catalogueStats;
+try {
+  const generated = JSON.parse(fs.readFileSync(path.join(root, "data", "disease-regimens.json"), "utf8"));
+  catalogueStats = {
+    conditions: Number(generated.totals?.diseases ?? 0),
+    chapters: Number(generated.totals?.chapters ?? 0),
+    prescriptions: Number(generated.totals?.prescriptionExamples ?? 0),
+    formulary: Number(generated.totals?.formularyMedicines ?? 0),
+  };
+  if (!catalogueStats.conditions || !catalogueStats.prescriptions || !catalogueStats.formulary) {
+    die("Generated catalogue totals are missing. Run `npm run hms:regimens` first.");
+  }
+} catch (e) {
+  die(`Could not read data/disease-regimens.json: ${e.message}`);
+}
+let demoStats = {
+  ...catalogueStats,
+  prescriptionConditions: 0,
+  patients: 0,
+  medicines: 0,
+  prescriptions: 0,
+};
 try {
   const db = new DatabaseSync(demoDb, { readOnly: true });
   const one = (sql) => Number(db.prepare(sql).get()?.c ?? 0);
   demoStats = {
-    conditions: one("SELECT COUNT(DISTINCT diagnosis) AS c FROM hms_prescriptions WHERE rx_no LIKE 'RX-C-%'"),
+    ...demoStats,
+    prescriptionConditions: one("SELECT COUNT(DISTINCT diagnosis) AS c FROM hms_prescriptions WHERE rx_no LIKE 'RX-C-%'"),
     prescriptions: one("SELECT COUNT(*) AS c FROM hms_prescriptions WHERE rx_no LIKE 'RX-C-%'"),
     patients: one("SELECT COUNT(*) AS c FROM hms_patients"),
     medicines: one("SELECT COUNT(*) AS c FROM hms_medicines"),
@@ -83,13 +106,17 @@ try {
 } catch (e) {
   die(`Could not read data/demo-hospital.db: ${e.message}`);
 }
-if (demoStats.prescriptions < 1000) {
+if (demoStats.prescriptions !== catalogueStats.prescriptions) {
   die(
-    `The demo database only holds ${demoStats.prescriptions} catalogue prescriptions. ` +
-      "Run `npm run hms:catalogue`, then `npm run hms:demo-db`, then build the disc again."
+    `The demo database has ${demoStats.prescriptions} catalogue prescription rows; ` +
+      `the generated data expects ${catalogueStats.prescriptions}. Run ` +
+      "`npm run hms:catalogue`, then `npm run hms:demo-db`, then build the disc again."
   );
 }
-ok(`demo database: ${demoStats.conditions} conditions · ${demoStats.prescriptions} prescriptions · ${demoStats.medicines} medicines`);
+if (demoStats.prescriptions < 1000) {
+  die("The demo database has fewer than 1000 catalogue prescriptions; check the clinical seeder.");
+}
+ok(`demo database: ${demoStats.conditions} conditions · ${demoStats.prescriptions} prescription examples · ${demoStats.formulary} formulary medicines`);
 
 fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(out, { recursive: true });
@@ -196,8 +223,8 @@ HOW TO INSTALL  (10-15 minutes, no internet needed)
 
 WHAT YOU GET
 
-  477 conditions (10 chapters), 2862 prescriptions already in the register,
-  220 formulary medicines, 1000 stock items, 21 screens, bilingual
+  ${demoStats.conditions} conditions (${demoStats.chapters} chapters), ${demoStats.prescriptions} medication examples already in the register,
+  ${demoStats.formulary} formulary medicines, 1000 stock items, 21 screens, bilingual
   English and Dari, ten printed prescription papers, twelve themes.
 
 YOUR DATA
@@ -501,10 +528,13 @@ ${Object.entries(byFolder)
   ${"TOTAL".padEnd(28)}${String(allFiles.length).padStart(6)}${mb(totalBytes).padStart(13)}
 
 CLINICAL CATALOGUE IN THE SHIPPED DATABASE (data/demo-hospital.db)
-  conditions                ${demoStats.conditions}
-  prescriptions             ${demoStats.prescriptions}
-  patients                  ${demoStats.patients}
-  pharmacy medicines        ${demoStats.medicines}
+  conditions in catalogue   ${demoStats.conditions}
+  chapters                  ${demoStats.chapters}
+  conditions with example   ${demoStats.prescriptionConditions}
+  medication examples       ${demoStats.prescriptions}
+  formulary reference       ${demoStats.formulary}
+  patients in demo hospital ${demoStats.patients}
+  pharmacy stock medicines  ${demoStats.medicines}
 
 VERIFY A COPY OF THIS DISC
   Linux / macOS     sha256sum -c MANIFEST-SHA256

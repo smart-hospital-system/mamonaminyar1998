@@ -1,16 +1,17 @@
 /**
  * seed-catalogue.ts — put the clinical catalogue into the hospital database.
  *
- * The disease/regimen engine has always produced a dataset (data/disease-regimens
- * .json: 2862 prescriptions for 477 conditions) but nothing ever read it: the
- * register at /hms/prescriptions only held the ten hand-written demo scripts
- * from lib/hms/seed.ts. This script closes that gap. It writes, idempotently:
+ * The disease/regimen engine produces synthetic examples from the bilingual
+ * disease catalogue. The register at /hms/prescriptions also contains the
+ * hand-written demo scripts from lib/hms/seed.ts. This script adds only cases
+ * with at least one clinically indicated medicine; conditions managed without
+ * routine medicines remain in the disease browser and are not fake prescriptions.
  *
  *   hms_patients        one record per generated prescription  (id ct-####, MRN CT-####)
  *   hms_prescriptions   one signed prescription per record      (id crx-####, RX-C-####)
- *   hms_rx_items        4 to 6 lines per prescription, the same lines the engine
- *                       validated for age, renal function, duplication and
- *                       interaction safety
+ *   hms_rx_items        clinically indicated lines from the same engine the
+ *                       screen uses; a condition with no routine medicine gets
+ *                       no synthetic prescription row
  *
  * Everything is derived from the same engine the screen uses, so the register,
  * the printed prescription and data/disease-regimens.json can never disagree.
@@ -50,7 +51,9 @@ if (!doctor) {
 }
 
 /* ------------------------------------------------------------------ the records */
-const records = buildAll();
+const allExamples = buildAll();
+const noMedicationCases = allExamples.filter((r) => r.items.length === 0).length;
+const records = allExamples.filter((r) => r.items.length > 0);
 const today = new Date();
 const iso = (d: Date) => d.toISOString();
 
@@ -83,7 +86,7 @@ try {
     const patientId = `ct-${seq}`;
     const rxId = `crx-${seq}`;
     // Spread the register over the last 18 months so the "recent" ordering is
-    // meaningful instead of 2862 rows sharing one timestamp.
+    // meaningful instead of every generated row sharing one timestamp.
     const created = new Date(today.getTime() - ((index * 7) % 540) * 86400000 - (index % 24) * 3600000);
     const dob = new Date(created.getTime() - r.age * 365.25 * 86400000);
     const sexLabel = r.sex === "female" ? "female" : "male";
@@ -169,6 +172,7 @@ const perBand = BANDS.map((b) => {
 });
 
 console.log(`conditions in catalogue : ${DISEASES.length}`);
+console.log(`cases without a medication example (not seeded as prescriptions): ${noMedicationCases}`);
 console.log(`catalogue prescriptions : ${catalogueRx}  (${written} written this run)`);
 console.log(`catalogue rx lines      : ${lines}`);
 console.log(`bands                   : ${perBand.join("  ·  ")}`);

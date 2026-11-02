@@ -1,15 +1,42 @@
 /**
  * Treatment recipes — 4 to 6 formulary drugs per condition.
  *
- * Each list must contain at least four entries (the generator refuses anything
- * shorter) and at least one preparation that exists as a syrup, suspension,
- * vial, nebule or drop, so that every band — child, adult, elderly — receives a
- * liquid or injectable medicine alongside the tablets.
+ * The older synthetic teaching recipes keep their historical four-line and
+ * liquid-preparation floor. New clinical examples may opt out of that floor
+ * when fewer medicines, or no routine medicine, is the evidence-based choice;
+ * the engine must never add unrelated drugs just to fill a prescription.
  *
- * The first drug is the definitive therapy; the others are adjunct, supportive
- * or prophylactic. Doses come from the formulary band table, never from here.
+ * Doses come from the formulary band table, never from here. Every recipe is a
+ * teaching example, not an instruction to prescribe all listed medicines.
  */
-export type Recipe = string[] | { default: string[]; child?: string[]; adult?: string[]; elderly?: string[] };
+export type Recipe =
+  | string[]
+  | {
+      default: string[];
+      child?: string[];
+      adult?: string[];
+      elderly?: string[];
+      /** Legacy recipes auto-fill to four lines and a liquid; new clinical plans can opt out. */
+      autoFill?: boolean;
+      minItems?: number;
+      requireLiquid?: boolean;
+      requireChildSyrup?: boolean;
+    };
+
+type RecipeBands = Extract<Recipe, { default: string[] }>;
+
+/** A clinically sparse example: do not add unrelated drugs just to reach a line count. */
+const clinicalRecipe = (
+  items: string[],
+  bands: Partial<Pick<RecipeBands, "child" | "adult" | "elderly">> = {}
+): RecipeBands => ({
+  default: items,
+  ...bands,
+  autoFill: false,
+  minItems: 0,
+  requireLiquid: false,
+  requireChildSyrup: false,
+});
 
 /**
  * A recipe may be a plain list (same drugs in every band) or an object with a
@@ -47,7 +74,6 @@ export const RECIPES: Record<string, Recipe> = {
   "RES-026": ["oxygen", "prednisolone", "omeprazole", "salbutamol"],
   "RES-027": ["oxygen", "paracetamol", "dexamethasone", "omeprazole"],
   "RES-028": ["oxygen", "ceftriaxone", "paracetamol", "tetanus_toxoid"],
-  "RES-029": ["oxygen", "beclomethasone_nasal", "cetirizine", "salbutamol"],
   "RES-030": ["oxygen", "hydrocortisone", "salbutamol_neb", "ringer"],
   "RES-031": ["amox_clav", "metronidazole", "oxygen", "ors"],
   "RES-032": ["azithromycin", "paracetamol", "oxygen", "ambroxol"],
@@ -85,7 +111,6 @@ export const RECIPES: Record<string, Recipe> = {
   "SEA-022": ["ors", "ondansetron", "zinc", "ringer"],
   "SEA-023": ["oseltamivir", "paracetamol", "ors", "chlorpheniramine"],
   "SEA-024": ["amox_clav", "paracetamol", "ibuprofen", "tetanus_toxoid"],
-  "SEA-025": ["penicillin_v", "paracetamol", "ibuprofen", "amoxicillin_syrup_note"],
   "SEA-026": ["paracetamol", "tetanus_toxoid", "ceftriaxone", "ibuprofen"],
   "SEA-027": ["oxygen", "paracetamol", "dextrose", "ondansetron"],
   "SEA-028": ["prednisolone", "oxygen", "salbutamol", "amoxicillin_syrup_note"],
@@ -102,26 +127,20 @@ export const RECIPES: Record<string, Recipe> = {
   "INF-007": ["tetanus_toxoid", "metronidazole", "dexamethasone", "diazepam"],
   "INF-008": ["ceftriaxone", "dexamethasone", "paracetamol", "oxygen"],
   "INF-009": ["ceftriaxone", "vancomycin", "dexamethasone", "paracetamol"],
-  "INF-010": ["acyclovir", "paracetamol", "ringer", "ondansetron"],
-  "INF-011": ["acyclovir", "ceftriaxone", "dexamethasone", "oxygen"],
   "INF-012": ["ors", "omeprazole", "folic_acid", "ondansetron"],
   "INF-013": ["ors", "omeprazole", "folic_acid", "ondansetron"],
   "INF-014": ["ringer", "paracetamol", "ondansetron", "oxygen"],
   "INF-015": ["paracetamol", "cetirizine", "ors", "amoxicillin_syrup_note"],
   "INF-016": ["vitamin_a", "paracetamol", "amoxicillin", "ors"],
   "INF-017": ["paracetamol", "cetirizine", "ors", "vitamin_a"],
-  "INF-018": ["acyclovir", "paracetamol", "cetirizine", "amoxicillin_syrup_note"],
-  "INF-019": ["acyclovir", "paracetamol", "ibuprofen", "amoxicillin_syrup_note"],
   "INF-020": ["folic_acid", "omeprazole", "paracetamol", "ors"],
   "INF-021": ["anti_tb_fdc", "pyridoxine", "omeprazole", "folic_acid"],
-  "INF-022": ["fluconazole", "nystatin", "omeprazole", "paracetamol"],
   "INF-023": ["amphotericin_b", "ceftriaxone", "paracetamol", "ringer"],
   "INF-024": ["gentamicin", "ciprofloxacin", "paracetamol", "ors"],
   "INF-025": { default: ["doxycycline", "gentamicin", "paracetamol", "omeprazole"], child: ["co_trimoxazole", "gentamicin", "paracetamol", "omeprazole"] },
   "INF-026": ["rabies_vaccine", "rabies_ig", "tetanus_toxoid", "amox_clav"],
   "INF-027": ["ors", "omeprazole", "folic_acid", "ondansetron"],
   "INF-028": ["paracetamol", "ibuprofen", "ors", "cetirizine"],
-  "INF-029": ["leprosy_mdt", "paracetamol", "ferrous", "clotrimazole"],
   "INF-030": ["terbinafine", "clotrimazole", "cetirizine", "paracetamol"],
   // ---- gastrointestinal chapter (55) ---------------------------------------
   "GIT-001": ["omeprazole", "domperidone", "sucralfate", "lactulose"],
@@ -226,7 +245,6 @@ export const RECIPES: Record<string, Recipe> = {
   "CAR-043": ["amlodipine", "magnesium", "paracetamol", "oxygen"],
   "CAR-044": ["amlodipine", "paracetamol", "oxygen", "atropine"],
   "CAR-045": ["aspirin", "atorvastatin", "losartan", "oxygen"],
-  "CAR-046": ["heparin", "aspirin", "atorvastatin", "oxygen"],
 
   // ---- neurological --------------------------------------------------------
   "NEU-001": ["paracetamol", "metoclopramide", "sumatriptan", "propranolol", "amitriptyline"],
@@ -549,4 +567,68 @@ export const RECIPES: Record<string, Recipe> = {
   "MSK-053": ["paracetamol", "cholecalciferol", "calcium_carbonate", "diclofenac_gel"],
   "MSK-054": ["methocarbamol", "paracetamol", "naproxen", "diclofenac_gel"],
   "MSK-055": ["ibuprofen", "paracetamol", "diclofenac_gel", "omeprazole"],
+
+  // ---- ear, nose, throat and head & neck -------------------------------
+  // These examples intentionally contain only medicines that may be indicated.
+  // Procedural and non-pharmacological conditions have no fabricated drug list.
+  "ENT-001": clinicalRecipe(["olive_oil_otic"]),
+  "ENT-002": clinicalRecipe(["ciprofloxacin_otic", "paracetamol"]),
+  "ENT-003": clinicalRecipe(["ceftazidime", "ciprofloxacin_otic", "paracetamol"]),
+  "ENT-004": clinicalRecipe(["amoxicillin", "paracetamol"]),
+  "ENT-005": clinicalRecipe([]),
+  "ENT-006": clinicalRecipe(["ciprofloxacin_otic"]),
+  "ENT-007": clinicalRecipe([]),
+  "ENT-008": clinicalRecipe(["ceftriaxone"]),
+  "ENT-009": clinicalRecipe([]),
+  "ENT-010": clinicalRecipe(["clotrimazole_otic"]),
+  "ENT-011": clinicalRecipe([]),
+  "ENT-012": clinicalRecipe(["ceftazidime", "paracetamol"]),
+  "ENT-013": clinicalRecipe([]),
+  "ENT-014": clinicalRecipe(["paracetamol"]),
+  "ENT-015": clinicalRecipe(["saline_nasal"]),
+  "ENT-016": clinicalRecipe([]),
+  "ENT-017": clinicalRecipe([]),
+  "ENT-018": clinicalRecipe([]),
+  "ENT-019": clinicalRecipe(["prednisolone"]),
+  "ENT-020": clinicalRecipe([]),
+  "ENT-021": clinicalRecipe([]),
+  "ENT-022": clinicalRecipe([]),
+  "ENT-023": clinicalRecipe([]),
+  "ENT-024": clinicalRecipe([]),
+  "ENT-025": clinicalRecipe([]),
+  "ENT-026": clinicalRecipe(["acyclovir", "prednisolone", "lubricating_eye_drops"]),
+  "ENT-027": clinicalRecipe([]),
+  "ENT-028": clinicalRecipe(["paracetamol"]),
+  "ENT-029": clinicalRecipe([]),
+  "ENT-030": clinicalRecipe(["saline_nasal"]),
+  "ENT-031": clinicalRecipe(["saline_nasal", "beclomethasone_nasal"]),
+  "ENT-032": clinicalRecipe(["saline_nasal", "beclomethasone_nasal"]),
+  "ENT-033": clinicalRecipe(["saline_nasal", "ipratropium_nasal"]),
+  "ENT-034": clinicalRecipe(["mupirocin"]),
+  "ENT-035": clinicalRecipe([]),
+  "ENT-036": clinicalRecipe([]),
+  "ENT-037": clinicalRecipe([]),
+  "ENT-038": clinicalRecipe(["amphotericin_b"]),
+  "ENT-039": clinicalRecipe([]),
+  "ENT-040": clinicalRecipe([]),
+  "ENT-041": clinicalRecipe([]),
+  "ENT-042": clinicalRecipe(["beclomethasone_nasal"]),
+  "ENT-043": clinicalRecipe(["amox_clav", "paracetamol"]),
+  "ENT-044": clinicalRecipe(["ceftriaxone"]),
+  "ENT-045": clinicalRecipe(["ceftriaxone", "metronidazole"]),
+  "ENT-046": clinicalRecipe([]),
+  "ENT-047": clinicalRecipe(["paracetamol"]),
+  "ENT-048": clinicalRecipe([]),
+  "ENT-049": clinicalRecipe([]),
+  "ENT-050": clinicalRecipe([]),
+  "ENT-051": clinicalRecipe([]),
+  "ENT-052": clinicalRecipe([]),
+  "ENT-053": clinicalRecipe([]),
+  "ENT-054": clinicalRecipe([]),
+  "ENT-055": clinicalRecipe([]),
+  "ENT-056": clinicalRecipe([]),
+  "ENT-057": clinicalRecipe([]),
+  "ENT-058": clinicalRecipe([]),
+  "ENT-059": clinicalRecipe(["amox_clav", "paracetamol"]),
+  "ENT-060": clinicalRecipe([]),
 };

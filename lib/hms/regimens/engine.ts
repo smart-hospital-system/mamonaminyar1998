@@ -166,6 +166,7 @@ export function buildForDisease(diseaseId: string): PatientRecord[] {
   if (index < 0) return [];
   const disease = DISEASES[index];
   const raw = RECIPES[diseaseId];
+  if (!raw) throw new Error(`Missing regimen recipe for ${diseaseId}`);
   const out: PatientRecord[] = [];
   let seq = index * 6;
 
@@ -178,25 +179,30 @@ export function buildForDisease(diseaseId: string): PatientRecord[] {
       const family = FAMILY[Math.floor(perSex / pool.length) % FAMILY.length];
       const age = b.min + ((seq * 7) % (b.max - b.min + 1));
 
-      const recipe = Array.isArray(raw) ? raw : raw ? raw[b.band] ?? raw.default : [];
+      const recipe = Array.isArray(raw) ? raw : raw[b.band] ?? raw.default;
       const items = recipe.map((id) => itemFor(id, b.band));
+      const autoFill = Array.isArray(raw) || raw.autoFill !== false;
 
-      // Every prescription carries a liquid preparation; children never get
-      // tablets only, so plain paracetamol is swapped for the syrup.
-      const needsSyrup = b.band === "child" && !items.some((i) => ["Syrup", "Suspension"].includes(i.form));
-      if (needsSyrup || !items.some((i) => isLiquidPrep(i.form))) {
-        const plain = items.findIndex((i) => i.drugId === "paracetamol");
-        const syrup = itemFor("paracetamol_syrup", b.band);
-        if (plain >= 0) items[plain] = syrup;
-        else if (items.length < 6) items.push(syrup);
-        else items[items.length - 1] = syrup;
+      // Legacy teaching recipes keep their historical liquid/syrup floor.
+      // Clinical examples opt out when extra medicines would not be indicated.
+      if (autoFill) {
+        const needsSyrup = b.band === "child" && !items.some((i) => ["Syrup", "Suspension"].includes(i.form));
+        if (needsSyrup || !items.some((i) => isLiquidPrep(i.form))) {
+          const plain = items.findIndex((i) => i.drugId === "paracetamol");
+          const syrup = itemFor("paracetamol_syrup", b.band);
+          if (plain >= 0) items[plain] = syrup;
+          else if (items.length < 6) items.push(syrup);
+          else items[items.length - 1] = syrup;
+        }
       }
 
-      const total = items.reduce((n, i) => n + i.quantity, 0) || 1;
-      for (const i of items) i.sharePct = Math.round((i.quantity / total) * 1000) / 10;
-      const before = Math.round(items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
-      const last = items[items.length - 1];
-      last.sharePct = Math.round((last.sharePct + (100 - before)) * 10) / 10;
+      if (items.length > 0) {
+        const total = items.reduce((n, i) => n + i.quantity, 0) || 1;
+        for (const i of items) i.sharePct = Math.round((i.quantity / total) * 1000) / 10;
+        const before = Math.round(items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
+        const last = items[items.length - 1];
+        last.sharePct = Math.round((last.sharePct + (100 - before)) * 10) / 10;
+      }
 
       out.push({
         patientId: `dp-${String(seq).padStart(4, "0")}`,
@@ -228,12 +234,17 @@ export function validate(records: PatientRecord[]): string[] {
   const problems: string[] = [];
   for (const r of records) {
     const tag = `${r.diseaseId}/${r.band}/${r.sex}`;
-    if (r.items.length < 4) problems.push(`${tag}: only ${r.items.length} drugs`);
-    if (!r.items.some((i) => isLiquidPrep(i.form))) problems.push(`${tag}: no liquid or vial`);
-    if (r.band === "child" && !r.items.some((i) => ["Syrup", "Suspension"].includes(i.form)))
+    const rule = RECIPES[r.diseaseId];
+    const minItems = !Array.isArray(rule) && rule?.minItems !== undefined ? rule.minItems : 4;
+    const requireLiquid = !Array.isArray(rule) && rule?.requireLiquid !== undefined ? rule.requireLiquid : true;
+    const requireChildSyrup = !Array.isArray(rule) && rule?.requireChildSyrup !== undefined ? rule.requireChildSyrup : true;
+    if (r.items.length < minItems) problems.push(`${tag}: only ${r.items.length} medicines (minimum ${minItems})`);
+    if (r.items.length > 6) problems.push(`${tag}: ${r.items.length} medicines exceeds the six-item limit`);
+    if (requireLiquid && !r.items.some((i) => isLiquidPrep(i.form))) problems.push(`${tag}: no liquid or vial`);
+    if (requireChildSyrup && r.band === "child" && !r.items.some((i) => ["Syrup", "Suspension"].includes(i.form)))
       problems.push(`${tag}: no oral syrup for a child`);
     const sum = Math.round(r.items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
-    if (Math.abs(sum - 100) > 0.05) problems.push(`${tag}: shares total ${sum}%`);
+    if (r.items.length > 0 && Math.abs(sum - 100) > 0.05) problems.push(`${tag}: shares total ${sum}%`);
   }
   return problems;
 }
