@@ -59,6 +59,26 @@ if (fs.existsSync(dbPath)) {
   warn("No database and no demo copy found. The first request will create and seed an empty hospital.");
 }
 
+/* ------------------------------------------------- 2b. clinical catalogue rows */
+// The disease catalogue ships as source and data, not as database rows: 477
+// conditions and 2862 safety-checked regimens live in lib/hms so the repository
+// stays small. The prescription register reads the database, so on a first run
+// the catalogue is written into it once. The seeder is idempotent and only
+// touches rows it owns (MRN CT-####, RX-C-####).
+const probe = spawnSync("node", ["scripts/catalogue-count.mjs"], { cwd: root, encoding: "utf8" });
+const have = Number((probe.stdout ?? "").trim() || 0);
+if (!have) {
+  log("Writing the clinical catalogue into the register (this runs once)…");
+  const seed = spawnSync("npx", ["tsx", "scripts/seed-catalogue.ts"], {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (seed.status !== 0) {
+    warn("The catalogue seeder did not finish — the hospital still starts, and `npm run hms:catalogue` can be run later.");
+  }
+}
+
 /* -------------------------------------------------------------------- 3. build */
 const buildId = path.join(root, ".next", "BUILD_ID");
 const needBuild = !fs.existsSync(buildId);

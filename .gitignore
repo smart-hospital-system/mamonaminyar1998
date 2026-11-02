@@ -124,3 +124,6 @@ imports/
 
 # Preserve the explicitly tracked Next.js synthetic demo exception.
 !/data/demo-hospital.db
+
+# Licence signing key — generated on the hospital machine, never committed
+data/license.key
