@@ -4,6 +4,7 @@
  * search index, category counts and statistics all pick it up automatically.
  */
 import { CARDIOVASCULAR } from "./ch-cardiovascular";
+import { DERMATOLOGY } from "./ch-dermatology";
 import { ENDOCRINE } from "./ch-endocrine";
 import { GASTROINTESTINAL } from "./ch-gastrointestinal";
 import { INFECTIOUS } from "./ch-infectious";
@@ -21,4 +22,5 @@ export const CHAPTERS: string[] = [
   NEUROLOGICAL,
   ENDOCRINE,
   RENAL,
+  DERMATOLOGY,
 ];
