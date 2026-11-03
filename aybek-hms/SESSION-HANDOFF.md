@@ -128,7 +128,7 @@ problems               none
 | `npm run release:iso` | پس از افزودن PED و OBG دوباره اجرا نشده؛ ISO قبلی ۵۹۷ بیماری داشت و برای نسخهٔ تازه باید بازسازی شود |
 | تغییرهای PED، OBG و قالب بازبینی | روی شاخهٔ فعال `arena/91ced722-mamonaminyar1998`؛ آزمون‌های محلی موفق، هنوز commit/PR تازه نشده‌اند |
 
-بازبینی خارجی چشم، ENT، اطفال و OBG هنوز انجام نشده است. PR #10 ادغام شده، اما این ادغام تأیید بالینی نیست. `aybek-hms/docs/CLINICAL-REVIEW-STATUS-FA.md` وضعیت فعلی را ثبت می‌کند و `aybek-hms/docs/CLINICAL-REVIEW-TEMPLATE-FA.md` فقط قالب ثبت بازبینی واقعی است، نه گواهی. ISO قبلی با SHA-256 `53ff17f4b99f7daeebf2733d7a614cfc9e71261873153ddc1a1b54daa2fc17e4` پیش از فصل‌های PED و OBG ساخته شده و MSI آفلاین Node.js هنوز در `TOOLS/` نیست؛ پس آن ISO را نسخهٔ ۷۱۷ بیماری تلقی نکنید.
+بازبینی خارجی چشم، ENT، اطفال و OBG هنوز انجام نشده است. PR #10 ادغام شده، اما این ادغام تأیید بالینی نیست. `aybek-hms/docs/CLINICAL-REVIEW-STATUS-FA.md` وضعیت فعلی را ثبت می‌کند، `aybek-hms/docs/CLINICAL-REVIEW-FORM-FA.md` فرم چاپی برای ثبت بازبینی واقعی است، و `aybek-hms/docs/CLINICAL-REVIEW-TEMPLATE-FA.md` گردش‌کار و چک‌لیست را توضیح می‌دهد؛ هیچ‌کدام به‌خودی‌خود گواهی یا مجوز بالینی نیستند. ISO قبلی با SHA-256 `53ff17f4b99f7daeebf2733d7a614cfc9e71261873153ddc1a1b54daa2fc17e4` پیش از فصل‌های PED و OBG ساخته شده و MSI آفلاین Node.js هنوز در `TOOLS/` نیست؛ پس آن ISO را نسخهٔ ۷۱۷ بیماری تلقی نکنید.
 
 ---
 

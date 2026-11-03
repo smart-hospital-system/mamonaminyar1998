@@ -60,4 +60,5 @@ anything, replaces the program files, and leaves `data\slotly.db` alone.
 This disc is not a medical device: the knowledge base and the safety checks help a
 doctor, they do not replace one. ENT, ophthalmic, paediatric and obstetric/gynaecology
 chapters have not received external clinical approval; see `CLINICAL-REVIEW-STATUS-FA.md` for
-current status and `CLINICAL-REVIEW-TEMPLATE-FA.md` to record a real specialist review.
+current status, `CLINICAL-REVIEW-FORM-FA.md` for a printable reviewer form, and
+`CLINICAL-REVIEW-TEMPLATE-FA.md` for the detailed review workflow.
