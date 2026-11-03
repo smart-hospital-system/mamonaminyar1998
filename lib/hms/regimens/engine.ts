@@ -160,7 +160,7 @@ function itemFor(drugId: string, band: DoseBand): Item {
   };
 }
 
-/** The six prescriptions for one condition, in band → sex order. */
+/** Synthetic patient examples for the applicable bands, in band → sex order. */
 export function buildForDisease(diseaseId: string): PatientRecord[] {
   const index = DISEASES.findIndex((d) => d.id === diseaseId);
   if (index < 0) return [];
@@ -171,13 +171,21 @@ export function buildForDisease(diseaseId: string): PatientRecord[] {
   let seq = index * 6;
 
   for (const b of BANDS) {
+    if (!Array.isArray(raw) && raw.applicableBands && !raw.applicableBands.includes(b.band)) continue;
     for (const sex of ["female", "male"] as const) {
       seq += 1;
+      if (!Array.isArray(raw) && raw.applicableSexes && !raw.applicableSexes.includes(sex)) continue;
       const pool = sex === "female" ? FEMALE : MALE;
       const perSex = Math.floor((seq - 1) / 2);
       const first = pool[perSex % pool.length];
       const family = FAMILY[Math.floor(perSex / pool.length) % FAMILY.length];
-      const age = b.min + ((seq * 7) % (b.max - b.min + 1));
+      const ageRange = !Array.isArray(raw) ? raw.exampleAgeRange?.[b.band] : undefined;
+      const minAge = ageRange?.min ?? b.min;
+      const maxAge = ageRange?.max ?? b.max;
+      if (minAge < b.min || maxAge > b.max || minAge > maxAge) {
+        throw new Error(`Invalid synthetic age range for ${disease.id}/${b.band}: ${minAge}-${maxAge}`);
+      }
+      const age = minAge + ((seq * 7) % (maxAge - minAge + 1));
 
       const recipe = Array.isArray(raw) ? raw : raw[b.band] ?? raw.default;
       const items = recipe.map((id) => itemFor(id, b.band));

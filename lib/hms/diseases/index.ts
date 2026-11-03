@@ -10,6 +10,8 @@ import { GASTROINTESTINAL } from "./ch-gastrointestinal";
 import { INFECTIOUS } from "./ch-infectious";
 import { ENT } from "./ch-ent";
 import { OPHTHALMIC } from "./ch-ophthalmic";
+import { PAEDIATRIC } from "./ch-paediatric";
+import { OBSTETRICS_GYNAECOLOGY } from "./ch-obgyn";
 import { MUSCULOSKELETAL } from "./ch-musculoskeletal";
 import { NEUROLOGICAL } from "./ch-neurological";
 import { RENAL } from "./ch-renal";
@@ -29,4 +31,6 @@ export const CHAPTERS: string[] = [
   RENAL,
   DERMATOLOGY,
   MUSCULOSKELETAL,
+  PAEDIATRIC,
+  OBSTETRICS_GYNAECOLOGY,
 ];

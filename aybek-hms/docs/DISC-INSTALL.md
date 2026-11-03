@@ -21,12 +21,19 @@ build step and no internet connection involved: only Node.js has to be present.
 | `C:\AybekHMS\START-HOSPITAL.bat` | the everyday start file |
 | `HOSPITAL\` on the disc | the same folder, before installation |
 
-## What is inside the shipped database
+## Clinical catalogue and demonstration database
+
+The current source includes **717 English/Dari condition entries across fourteen chapters**.
+The generated teaching export has 3 815 synthetic examples. The `PED` chapter contributes 120
+child-only examples (ages 2–17); the `OBG` chapter adds 113 female-only, age-bounded examples,
+including adolescent cases. Both chapters have no prefilled medicines. Neonatal and under-two age
+groups are outside the demo regimen engine. The previously built ISO predates both new chapters
+and must be regenerated from the current source before distributing this update.
 
 `data\demo-hospital.db` is a complete demonstration hospital, not an empty shell:
 
-- 597 unique conditions across twelve chapters, in English and Dari
-- 3 086 medication examples from 515 conditions already in the register (1 026 child, 1 030 adult and 1 030 older-adult), with 12 408 medicine lines; 496 no-medication examples are not inserted as empty prescriptions
+- 3 086 medication examples from 515 conditions in the register (1 026 child, 1 030 adult and 1 030 older-adult), with 12 408 medicine lines
+- 729 no-medication examples are not inserted as empty prescriptions
 - 225 formulary references, 1 000 stock items
 - patients, staff, billing history and an audit trail to look at
 
@@ -51,4 +58,7 @@ anything, replaces the program files, and leaves `data\slotly.db` alone.
   `set PORT=3000` to `set PORT=3001`, then open <http://localhost:3001>.
 
 This disc is not a medical device: the knowledge base and the safety checks help a
-doctor, they do not replace one.
+doctor, they do not replace one. ENT, ophthalmic, paediatric and obstetric/gynaecology
+chapters have not received external clinical approval; see `CLINICAL-REVIEW-STATUS-FA.md` for
+current status, `CLINICAL-REVIEW-FORM-FA.md` for a printable reviewer form, and
+`CLINICAL-REVIEW-TEMPLATE-FA.md` for the detailed review workflow.

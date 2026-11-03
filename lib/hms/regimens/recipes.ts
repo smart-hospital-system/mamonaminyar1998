@@ -1,5 +1,5 @@
 /**
- * Treatment recipes — 4 to 6 formulary drugs per condition.
+ * Treatment recipes — legacy 4–6-line teaching examples plus sparse clinical recipes.
  *
  * The older synthetic teaching recipes keep their historical four-line and
  * liquid-preparation floor. New clinical examples may opt out of that floor
@@ -21,6 +21,12 @@ export type Recipe =
       minItems?: number;
       requireLiquid?: boolean;
       requireChildSyrup?: boolean;
+      /** Restrict a synthetic example to clinically applicable age bands. */
+      applicableBands?: ("child" | "adult" | "elderly")[];
+      /** Restrict examples to the sex relevant to a condition, without inventing mismatched cases. */
+      applicableSexes?: ("female" | "male")[];
+      /** Keep synthetic ages within the condition's plausible band, without asserting a dose. */
+      exampleAgeRange?: Partial<Record<"child" | "adult" | "elderly", { min: number; max: number }>>;
     };
 
 type RecipeBands = Extract<Recipe, { default: string[] }>;
@@ -36,6 +42,24 @@ const clinicalRecipe = (
   minItems: 0,
   requireLiquid: false,
   requireChildSyrup: false,
+});
+
+/** Paediatric diagnoses have child-only synthetic cases and no automatic medicines. */
+const paediatricRecipe = (minAge = 2, maxAge = 17): RecipeBands => ({
+  ...clinicalRecipe([]),
+  applicableBands: ["child"],
+  exampleAgeRange: { child: { min: minAge, max: maxAge } },
+});
+
+/** Reproductive-health examples are female-only, age-bounded and have no prefilled medicines. */
+const reproductiveRecipe = (
+  applicableBands: ("child" | "adult" | "elderly")[],
+  exampleAgeRange: Partial<Record<"child" | "adult" | "elderly", { min: number; max: number }>>
+): RecipeBands => ({
+  ...clinicalRecipe([]),
+  applicableBands,
+  applicableSexes: ["female"],
+  exampleAgeRange,
 });
 
 /**
@@ -695,4 +719,131 @@ export const RECIPES: Record<string, Recipe> = {
   "OPH-058": clinicalRecipe([]),
   "OPH-059": clinicalRecipe([]),
   "OPH-060": clinicalRecipe([]),
+
+  // ---- paediatric conditions -----------------------------------------------
+  // Medicines are not prefilled: weight, exact age, diagnosis and formulation must
+  // be verified by a clinician. Synthetic examples are limited to child band.
+  "PED-001": paediatricRecipe(2, 17),
+  "PED-002": paediatricRecipe(5, 17),
+  "PED-003": paediatricRecipe(2, 4),
+  "PED-004": paediatricRecipe(5, 17),
+  "PED-005": paediatricRecipe(2, 17),
+  "PED-006": paediatricRecipe(2, 17),
+  "PED-007": paediatricRecipe(2, 17),
+  "PED-008": paediatricRecipe(2, 17),
+  "PED-009": paediatricRecipe(2, 17),
+  "PED-010": paediatricRecipe(2, 17),
+  "PED-011": paediatricRecipe(2, 17),
+  "PED-012": paediatricRecipe(2, 17),
+  "PED-013": paediatricRecipe(2, 17),
+  "PED-014": paediatricRecipe(2, 17),
+  "PED-015": paediatricRecipe(2, 17),
+  "PED-016": paediatricRecipe(2, 17),
+  "PED-017": paediatricRecipe(2, 17),
+  "PED-018": paediatricRecipe(2, 17),
+  "PED-019": paediatricRecipe(2, 17),
+  "PED-020": paediatricRecipe(2, 17),
+  "PED-021": paediatricRecipe(2, 17),
+  "PED-022": paediatricRecipe(2, 17),
+  "PED-023": paediatricRecipe(2, 17),
+  "PED-024": paediatricRecipe(2, 17),
+  "PED-025": paediatricRecipe(2, 17),
+  "PED-026": paediatricRecipe(2, 17),
+  "PED-027": paediatricRecipe(2, 17),
+  "PED-028": paediatricRecipe(2, 8),
+  "PED-029": paediatricRecipe(2, 12),
+  "PED-030": paediatricRecipe(2, 8),
+  "PED-031": paediatricRecipe(2, 10),
+  "PED-032": paediatricRecipe(2, 8),
+  "PED-033": paediatricRecipe(2, 8),
+  "PED-034": paediatricRecipe(4, 12),
+  "PED-035": paediatricRecipe(8, 17),
+  "PED-036": paediatricRecipe(8, 15),
+  "PED-037": paediatricRecipe(2, 5),
+  "PED-038": paediatricRecipe(10, 17),
+  "PED-039": paediatricRecipe(8, 17),
+  "PED-040": paediatricRecipe(8, 17),
+  "PED-041": paediatricRecipe(2, 10),
+  "PED-042": paediatricRecipe(8, 17),
+  "PED-043": paediatricRecipe(2, 3),
+  "PED-044": paediatricRecipe(4, 15),
+  "PED-045": paediatricRecipe(3, 15),
+  "PED-046": paediatricRecipe(10, 17),
+  "PED-047": paediatricRecipe(2, 12),
+  "PED-048": paediatricRecipe(2, 17),
+  "PED-049": paediatricRecipe(5, 17),
+  "PED-050": paediatricRecipe(2, 17),
+  "PED-051": paediatricRecipe(2, 14),
+  "PED-052": paediatricRecipe(2, 17),
+  "PED-053": paediatricRecipe(2, 17),
+  "PED-054": paediatricRecipe(2, 17),
+  "PED-055": paediatricRecipe(2, 17),
+  "PED-056": paediatricRecipe(2, 17),
+  "PED-057": paediatricRecipe(2, 8),
+  "PED-058": paediatricRecipe(2, 17),
+  "PED-059": paediatricRecipe(2, 17),
+  "PED-060": paediatricRecipe(2, 17),
+
+  // ---- obstetrics and gynaecology ------------------------------------------
+  // Female-only, condition-age-bounded examples with no automatic medicines.
+  "OBG-001": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-002": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-003": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-004": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-005": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-006": reproductiveRecipe(["adult"], { adult: { min: 20, max: 45 } }),
+  "OBG-007": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-008": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-009": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-010": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-011": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-012": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-013": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-014": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-015": reproductiveRecipe(["child", "adult"], { child: { min: 16, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-016": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-017": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-018": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-019": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-020": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-021": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-022": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-023": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-024": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-025": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-026": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-027": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-028": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-029": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-030": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-031": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-032": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-033": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-034": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-035": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 49 } }),
+  "OBG-036": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 49 } }),
+  "OBG-037": reproductiveRecipe(["adult", "elderly"], { adult: { min: 18, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-038": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 25 } }),
+  "OBG-039": reproductiveRecipe(["adult"], { adult: { min: 18, max: 50 } }),
+  "OBG-040": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 49 } }),
+  "OBG-041": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 45 } }),
+  "OBG-042": reproductiveRecipe(["adult"], { adult: { min: 30, max: 55 } }),
+  "OBG-043": reproductiveRecipe(["adult", "elderly"], { adult: { min: 25, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-044": reproductiveRecipe(["adult", "elderly"], { adult: { min: 30, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-045": reproductiveRecipe(["adult", "elderly"], { adult: { min: 30, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-046": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 50 } }),
+  "OBG-047": reproductiveRecipe(["child", "adult"], { child: { min: 12, max: 17 }, adult: { min: 18, max: 40 } }),
+  "OBG-048": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 49 } }),
+  "OBG-049": reproductiveRecipe(["child", "adult"], { child: { min: 15, max: 17 }, adult: { min: 18, max: 49 } }),
+  "OBG-050": reproductiveRecipe(["adult"], { adult: { min: 18, max: 50 } }),
+  "OBG-051": reproductiveRecipe(["adult"], { adult: { min: 18, max: 50 } }),
+  "OBG-052": reproductiveRecipe(["adult", "elderly"], { adult: { min: 35, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-053": reproductiveRecipe(["adult"], { adult: { min: 18, max: 45 } }),
+  "OBG-054": reproductiveRecipe(["adult", "elderly"], { adult: { min: 40, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-055": reproductiveRecipe(["adult", "elderly"], { adult: { min: 45, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-056": reproductiveRecipe(["adult"], { adult: { min: 21, max: 70 } }),
+  "OBG-057": reproductiveRecipe(["adult", "elderly"], { adult: { min: 30, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-058": reproductiveRecipe(["adult", "elderly"], { adult: { min: 40, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-059": reproductiveRecipe(["adult", "elderly"], { adult: { min: 45, max: 70 }, elderly: { min: 71, max: 90 } }),
+  "OBG-060": reproductiveRecipe(["adult", "elderly"], { adult: { min: 30, max: 70 }, elderly: { min: 71, max: 90 } }),
 };

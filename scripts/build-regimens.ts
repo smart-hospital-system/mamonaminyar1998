@@ -10,7 +10,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { DISEASES } from "../lib/hms/diseases";
 import { CHAPTERS } from "../lib/hms/diseases/index";
-import { BANDS, buildAll, isLiquidPrep, validate, type PatientRecord } from "../lib/hms/regimens/engine";
+import { BANDS, buildAll, buildForDisease, isLiquidPrep, validate, type PatientRecord } from "../lib/hms/regimens/engine";
 import { DRUGS } from "../lib/hms/regimens/formulary";
 import { RECIPES, type Recipe } from "../lib/hms/regimens/recipes";
 import { reviewRegimen } from "../lib/hms/regimens/safety";
@@ -60,6 +60,57 @@ for (const [index, d] of ophthalmicDiseases.entries()) {
   const recipe = RECIPES[d.id];
   if (!Array.isArray(recipe) && recipe?.autoFill !== false) audit.push(`${d.id}: clinical recipe must not auto-fill unrelated medicines`);
 }
+const paediatricDiseases = DISEASES.filter((d) => d.id.startsWith("PED-"));
+if (paediatricDiseases.length !== 60) audit.push(`paediatric chapter has ${paediatricDiseases.length} entries; expected 60`);
+for (const [index, d] of paediatricDiseases.entries()) {
+  const expectedId = `PED-${String(index + 1).padStart(3, "0")}`;
+  if (d.id !== expectedId) audit.push(`paediatric id sequence: expected ${expectedId}, found ${d.id}`);
+  if (d.category !== "paediatric") audit.push(`${d.id}: category must be paediatric`);
+  if (!d.nameFa || !d.symptoms.length || !d.diagnosis.length || !d.treatment.length || !d.fa || !d.danger.length || !d.complications.length)
+    audit.push(`${d.id}: missing bilingual clinical content or red flags`);
+  const recipe = RECIPES[d.id];
+  if (Array.isArray(recipe) || recipe?.autoFill !== false) audit.push(`${d.id}: paediatric recipe must not auto-fill medicines`);
+  if (!Array.isArray(recipe) && (recipe.applicableBands?.join(",") !== "child"))
+    audit.push(`${d.id}: synthetic regimen examples must be restricted to the child band`);
+  if (!Array.isArray(recipe)) {
+    const ageRange = recipe.exampleAgeRange?.child;
+    if (!ageRange || ageRange.min < 2 || ageRange.max > 17 || ageRange.min > ageRange.max)
+      audit.push(`${d.id}: expected a valid child-only synthetic age range within 2–17`);
+  }
+  if (!Array.isArray(recipe) && [recipe.default, recipe.child ?? [], recipe.adult ?? [], recipe.elderly ?? []].some((items) => items.length > 0))
+    audit.push(`${d.id}: weight-specific paediatric medicines must not be prefilled`);
+}
+const obgynDiseases = DISEASES.filter((d) => d.id.startsWith("OBG-"));
+if (obgynDiseases.length !== 60) audit.push(`obstetrics and gynaecology chapter has ${obgynDiseases.length} entries; expected 60`);
+const obgynIcd10 = new Set<string>();
+for (const [index, d] of obgynDiseases.entries()) {
+  const expectedId = `OBG-${String(index + 1).padStart(3, "0")}`;
+  if (d.id !== expectedId) audit.push(`OBG id sequence: expected ${expectedId}, found ${d.id}`);
+  const expectedCategory = index < 34 ? "obstetric" : "gynaecology";
+  if (d.category !== expectedCategory) audit.push(`${d.id}: category must be ${expectedCategory}`);
+  if (!d.nameFa || !d.symptoms.length || !d.diagnosis.length || !d.treatment.length || !d.fa || !d.danger.length || !d.complications.length)
+    audit.push(`${d.id}: missing bilingual clinical content or red flags`);
+  if (obgynIcd10.has(d.icd10)) audit.push(`${d.id}: duplicate ICD-10 code within OBG chapter: ${d.icd10}`);
+  obgynIcd10.add(d.icd10);
+  if (DISEASES.some((other) => !other.id.startsWith("OBG-") && other.icd10 === d.icd10))
+    audit.push(`${d.id}: ICD-10 code ${d.icd10} overlaps another chapter`);
+  const recipe = RECIPES[d.id];
+  if (Array.isArray(recipe) || recipe?.autoFill !== false) audit.push(`${d.id}: reproductive-health recipe must not auto-fill medicines`);
+  if (Array.isArray(recipe) || recipe.applicableSexes?.join(",") !== "female")
+    audit.push(`${d.id}: synthetic cases must be female-only`);
+  if (Array.isArray(recipe) || !recipe.applicableBands?.length)
+    audit.push(`${d.id}: synthetic cases must list applicable age bands`);
+  if (!Array.isArray(recipe)) {
+    if ([recipe.default, recipe.child ?? [], recipe.adult ?? [], recipe.elderly ?? []].some((items) => items.length > 0))
+      audit.push(`${d.id}: reproductive-health examples must not prefill medicines`);
+    for (const band of recipe.applicableBands ?? []) {
+      const bandRange = BANDS.find((entry) => entry.band === band);
+      const ageRange = recipe.exampleAgeRange?.[band];
+      if (!bandRange || !ageRange || ageRange.min < bandRange.min || ageRange.max > bandRange.max || ageRange.min > ageRange.max)
+        audit.push(`${d.id}: expected a valid age range within the ${band} band`);
+    }
+  }
+}
 for (const [drugId, route] of [
   ["saline_nasal", "Nasal"],
   ["beclomethasone_nasal", "Nasal"],
@@ -82,6 +133,30 @@ const prescriptionRecords = records.filter((r) => r.items.length > 0);
 const medicatedConditions = new Set(prescriptionRecords.map((r) => r.diseaseId)).size;
 const noMedicationCases = records.length - prescriptionRecords.length;
 const problems = validate(records);
+for (const d of paediatricDiseases) {
+  const examples = buildForDisease(d.id);
+  const recipe = RECIPES[d.id];
+  const ageRange = !Array.isArray(recipe) ? recipe.exampleAgeRange?.child : undefined;
+  if (
+    examples.length !== 2 ||
+    !ageRange ||
+    examples.some((r) => r.band !== "child" || r.items.length !== 0 || r.age < ageRange.min || r.age > ageRange.max)
+  )
+    problems.push(`${d.id}: expected two age-matched, child-only synthetic cases with no prefilled medicines`);
+}
+for (const d of obgynDiseases) {
+  const examples = buildForDisease(d.id);
+  const recipe = RECIPES[d.id];
+  const expectedBands = !Array.isArray(recipe) ? recipe.applicableBands ?? [] : [];
+  if (
+    examples.length !== expectedBands.length ||
+    examples.some((r) => {
+      const ageRange = !Array.isArray(recipe) ? recipe.exampleAgeRange?.[r.band] : undefined;
+      return r.sex !== "female" || r.items.length !== 0 || !ageRange || r.age < ageRange.min || r.age > ageRange.max;
+    })
+  )
+    problems.push(`${d.id}: expected one female-only, age-matched, no-medication example per applicable band`);
+}
 
 mkdirSync("data", { recursive: true });
 
@@ -148,11 +223,15 @@ writeFileSync(
 
 **Generated:** ${generatedAt} · **Conditions:** ${DISEASES.length} · **Synthetic patient examples:** ${records.length} · **Prescription examples:** ${prescriptionRecords.length} · **Prescription lines:** ${lines}
 
-Each condition has one synthetic patient example for each sex in each band: child (< 18), adult
-(18–70) and older adult (71–90). Cases with no routine medicine have **no prescription example**;
-procedural or supportive treatment remains in the clinical entry. The original catalogue recipes
-retain their historical 4–6-line teaching format. The ENT chapter opts out of automatic fill-in:
-only medicines that may be indicated are shown, and some ENT cases correctly have none.
+Each condition has synthetic patient examples only in its applicable age bands: child (2–17),
+adult (18–70) and older adult (71–90). The paediatric chapter is restricted to child-band examples;
+children under 2 and neonatal dosing are outside this demo engine. Its cases are age-bounded and do
+not prefill medicines because safe choices depend on weight, age, diagnosis and formulation.
+Obstetric and gynaecology cases are female-only, age-bounded, and have no prefilled medicines.
+Other cases with no routine medicine have **no prescription example**; procedural or supportive
+treatment remains in the clinical entry. The original catalogue recipes retain their historical
+4–6-line teaching format. ENT, ophthalmic, paediatric and obstetric/gynaecology recipes opt out of
+automatic fill-in where extra drugs would be inappropriate.
 
 | Band | Synthetic patient examples |
 | --- | --- |
@@ -176,7 +255,7 @@ ${bySex.map((s) => `| ${s.sex} | ${s.count} |`).join("\n")}
 
 ## Files
 
-- \`data/disease-regimens.json\` — six synthetic age/sex records per condition, including no-medication cases
+- \`data/disease-regimens.json\` — synthetic age/sex records for applicable bands, including child-only paediatric cases and no-medication cases
 - \`data/disease-regimens.csv\` — one row per medicine in a non-empty prescription example
 - \`data/disease-regimens.md\` — this summary
 
@@ -185,8 +264,9 @@ ${bySex.map((s) => `| ${s.sex} | ${s.count} |`).join("\n")}
 1. **Reference examples, not prescriptions.** Doses are teaching ranges only. The disease page
    prints the disclaimer and the review panel checks age bands, renal adjustments, interactions
    and duplication. A clean check does not establish that a medicine is appropriate for a patient.
-2. **Do not add medicines to reach a count.** The ENT chapter can show one indicated medicine or
-   none; procedures, hearing support, observation and urgent referral are described in the entry.
+2. **Do not add medicines to reach a count.** ENT and ophthalmic examples show only medicines that
+   may be indicated. Paediatric examples are child-only and intentionally have no prefilled drugs;
+   weight-based decisions, supportive care, procedures and referral stay in the clinical entry.
 3. The application is **not a medical device** and is not clinically certified. Follow the
    national formulary, local antimicrobial policy, patient-specific assessment and specialist advice.
 
