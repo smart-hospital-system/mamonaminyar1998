@@ -186,7 +186,7 @@ def make_slide_2(prs):
     set_bg(slide, C["pale"])
     header(slide, "01  /  HOSPITAL OS MODEL",
            "10-Level Hospital OS Architecture",
-           "A target-state map from telemetry ingestion to decision routing—not a claim that a 10-layer runtime is deployed.", 2)
+           "A target-state map from telemetry ingestion to decision routing—not a claim that a 10-layer runtime is deployed; physician, lab and pharmacy workflows stay sectioned.", 2)
 
     cards = [
         {"x":0.62, "accent":C["cyan"], "tint":C["blue_pale"], "levels":"LEVELS 1–3", "title":"Data Ingestion",
@@ -223,6 +223,17 @@ def make_slide_2(prs):
         conn = slide.shapes.add_connector(1, Inches(x), Inches(4.28), Inches(x + 0.2), Inches(4.28))
         conn.line.color.rgb = rgb("94A3B8")
         conn.line.width = Pt(1.5)
+
+    # Departmental workflow strip inspired by the supplied dashboard mock-up.
+    # These are section boundaries, not claims of clinical approval or live data.
+    sections = [
+        (0.88, C["blue_pale"], C["cyan"], "DOCTOR  ·  CLINIC WORKFLOW"),
+        (4.94, C["green_pale"], C["green"], "LABORATORY  ·  RESULTS WORKFLOW"),
+        (9.00, C["amber_pale"], C["amber"], "PHARMACY  ·  DISPENSING WORKFLOW"),
+    ]
+    for sx, fill, fg, label in sections:
+        pill(slide, sx, 6.77, 3.45, 0.25, label, fill, fg, 7.0)
+
     footer(slide, 2, note="TARGET MODEL  ·  LAYERS REQUIRE VALIDATION BEFORE IMPLEMENTATION")
     return slide
 
@@ -231,13 +242,13 @@ def make_slide_3(prs):
     slide = prs.slides.add_slide(prs.slide_layouts[6])
     set_bg(slide, C["white"])
     header(slide, "02  /  FRONTEND REFERENCE",
-           "Reactive Smart Cards for Rapid Triage",
-           "A proposed Angular Signals component pattern; the current Aybek HMS UI is built with Next.js / React.", 3)
+           "Smart Cards within Sectioned Workflows",
+           "An Angular Signals proposal for separate physician, laboratory and pharmacy workspaces; current Aybek HMS UI is Next.js / React.", 3)
 
-    # Left explanation column.
+    # Left explanation column, reflecting the department boundaries in the supplied mock-up.
     blocks = [
-        ("01", "Fine-grained updates", "Computed severity follows the alert input; avoid refreshing unrelated cards."),
-        ("02", "Isolated local state", "Snooze and rationale expansion stay local instead of polluting a global store."),
+        ("01", "Fine-grained updates", "Severity follows this alert only; the physician remains responsible for review."),
+        ("02", "Separate department flows", "Physician, laboratory and pharmacy actions stay in their own sections."),
         ("03", "Latency target, not SLA", "Sub-10 ms is a benchmark goal; profile on ward hardware before making a claim."),
     ]
     for i, (n, title, body) in enumerate(blocks):
@@ -329,9 +340,9 @@ def make_slide_5(prs):
     text(slide, 0.73, 0.55, 9.5, 0.2, "NEXT GATE  ·  BEFORE A WARD PILOT", size=8.8, color=C["sky"], bold=True)
     text(slide, 0.7, 0.98, 10.7, 0.96, "Clinical review first.\nThen a controlled ISO pilot.",
          size=28, color=C["white"], bold=True)
-    text(slide, 0.73, 2.16, 10.9, 0.36,
-         "The platform is not cleared for clinical production; close the human-review and deployment gaps first.",
-         size=11.3, color="CBD5E1")
+    text(slide, 0.73, 2.16, 10.9, 0.42,
+         "Physician, lab and pharmacy workflows remain sectioned. The dashboard concept uses no live patient data; clinical release remains pending.",
+         size=10.7, color="CBD5E1")
 
     steps = [
         ("01", "Review exact version", "Specialists inspect the commit and record findings in the review form."),
