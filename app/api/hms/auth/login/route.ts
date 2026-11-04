@@ -13,13 +13,10 @@ import { checkThrottle, recordFailure, recordSuccess, throttleKey } from "@/lib/
 export const POST = route(async (req) => {
   hmsReady();
   const p = await body<{ email?: string; password?: string }>(req);
-  if (!p.email || !p.password) return json({ error: "Email and password are required." }, 422);
+  if (typeof p.email !== "string" || typeof p.password !== "string" || !p.email.trim() || !p.password || p.email.length > 254 || p.password.length > 200) return json({ error: "Email and password are required." }, 422);
 
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "local";
-  const key = throttleKey(p.email, ip);
+  // Account-scoped: spoofed proxy headers cannot reset the login counter.
+  const key = throttleKey(p.email, "account");
 
   const gate = checkThrottle(key);
   if (gate.blocked) {

@@ -33,8 +33,9 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
   const results = searchDiseases(q, cat || undefined, 60);
   const selected: Disease | undefined = sp.id ? diseaseById(sp.id) : results[0];
 
-  // The prescriptions for this condition, reviewed live by the safety engine.
-  const bandViews: BandView[] = (selected ? buildForDisease(selected.id) : [])
+  // Unvalidated teaching fixtures are opt-in; a limited rule screen is not clinical approval.
+  const teachingEnabled = process.env.AYBEK_ENABLE_TEACHING_REGIMENS === "1";
+  const bandViews: BandView[] = (selected && teachingEnabled ? buildForDisease(selected.id) : [])
     .filter((r) => r.sex === "female")
     .map((r) => {
       const review = reviewRegimen(r.items, { band: r.band, age: r.age, lang });
@@ -251,14 +252,14 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
 
             <Panel>
               <SectionTitle
-                title={tr("What this looks like for this patient", "این تداوی برای این بیمار چگونه است")}
+                title={tr("Teaching examples — not a patient prescription", "نمونه‌های آموزشی؛ نه نسخهٔ مریض")}
                 subtitle={tr(
-                  "One prescription per age band, checked by the system before you read it",
-                  "برای هر گروه سنی یک نسخه، پیش از خواندن شما توسط سیستم سنجیده شده"
+                  "Unvalidated teaching examples only — not a prescribing approval",
+                  "صرف نمونهٔ آموزشی اعتبارسنجی‌نشده؛ نه تأیید نسخه‌نویسی"
                 )}
               />
               <div className="mt-2">
-                <RegimenReview
+                {bandViews.length ? <RegimenReview
                   bands={bandViews}
                   noteTitle={note.title}
                   noteBody={note.body}
@@ -267,8 +268,8 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                     share: tr("Share", "سهم"),
                     review: tr("System review", "بازبینی سیستم"),
                     noFindings: tr(
-                      "No age, renal, interaction or duplication problem found for this band.",
-                      "برای این گروه سنی هیچ اشکال سنی، کلیوی، تداخل یا تکرار دوا پیدا نشد."
+                      "This limited rule screen is not clinical validation and cannot establish safe dosing or renal suitability.",
+                      "این بررسی محدود اعتبارسنجی بالینی نیست و دوز مصون یا سازگاری با عملکرد کلیه را تأیید نمی‌کند."
                     ),
                     patient: tr("Patient", "بیمار"),
                     years: tr("years", "سال"),
@@ -277,7 +278,9 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                     blocks: tr("blocking", "بازدارنده"),
                     cautions: tr("to check", "نیازمند بررسی"),
                   }}
-                />
+                /> : <p role="note" className="rounded border border-amber-300 p-3">
+                  {tr("Automatic age-band drug examples are disabled pending clinical validation. A drug count, syrup, vial or injection is never a universal treatment requirement.", "نمونه‌های خودکار دوایی بر اساس گروه سنی تا اعتبارسنجی بالینی غیرفعال‌اند. تعداد ثابت دوا، شربت، ویال یا تزریق شرط همگانی تداوی نیست.")}
+                </p>}
               </div>
             </Panel>
           </div>

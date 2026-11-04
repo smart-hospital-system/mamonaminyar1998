@@ -21,7 +21,7 @@ param(
     [string]$Path,
     [ValidateSet("auto", "dev", "prod")]
     [string]$Mode = "auto",
-    [int]$Port = 3000,
+    [ValidateRange(1,65535)][int]$Port = 3000,
     [switch]$NoBrowser
 )
 
@@ -31,7 +31,7 @@ Write-Banner "AYBEK HOSPITAL - STEP 4: START THE SYSTEM"
 
 $root = Get-HmsRoot -Override $Path
 Set-Location -LiteralPath $root
-Assert-Node -MinimumMajor 20 | Out-Null
+Assert-Node -MinimumMajor 22 | Out-Null
 
 if (-not (Test-Path -LiteralPath (Join-Path $root "node_modules\next"))) {
     Stop-WithMessage "The packages are not installed yet." "Run .\scripts\install\02-install.ps1 first."
@@ -44,13 +44,8 @@ $buildId = Join-Path $root ".next\BUILD_ID"
 if ($Mode -eq "auto") { $Mode = if (Test-Path -LiteralPath $buildId) { "prod" } else { "dev" } }
 
 if (-not (Test-PortFree -Port $Port)) {
-    Write-Warn "Port $Port is busy - another copy is probably running."
-    if (Confirm-Action "Open the browser on http://localhost:$Port instead of starting a second copy?" -DefaultYes) {
-        if (-not $NoBrowser) { Open-HmsUrl -Path "/hms/login" -Port $Port }
-        exit 0
-    }
-    $Port = $Port + 1
-    Write-Info "Starting on port $Port instead."
+    Stop-WithMessage "Port $Port is already occupied; no second server or unknown page was opened." "Verify the existing process, or choose another free port explicitly with -Port."
+
 }
 
 $env:NODE_OPTIONS = "--max-old-space-size=4096"
@@ -61,7 +56,7 @@ if ($Mode -eq "prod") {
         Stop-WithMessage "There is no production build in .next yet." "Run .\scripts\install\05-build.ps1, or start in development mode: .\scripts\install\04-start.ps1 -Mode dev"
     }
     Write-Step "Starting the production server on port $Port"
-    $command = "npm run start -- -p $Port"
+    $command = "npm run deploy"
 } else {
     Write-Step "Starting the development server on port $Port (first page takes ~20 s)"
     $command = "npm run dev -- -p $Port"

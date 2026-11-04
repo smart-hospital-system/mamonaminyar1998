@@ -1,97 +1,32 @@
 <#
 .SYNOPSIS
-  03 - Build (or rebuild) the demonstration hospital database.
-
+  03 - Create a NEW isolated synthetic hospital, never reset an existing one.
 .DESCRIPTION
-  Creates data\slotly.db with the complete demo hospital: 9 staff logins,
-  26 patients, 10 beds, 32 medicines, dozens of prescriptions, laboratory and
-  imaging orders, theatre cases, invoices, alarms and the 10 prescription
-  templates. Prints the login list at the end.
-
-  WARNING: rebuilding deletes the existing database. The script makes a backup
-  first and asks for confirmation unless -Force is supplied.
-
-.EXAMPLE
-  .\scripts\install\03-seed.ps1
-  .\scripts\install\03-seed.ps1 -Force
+  Honors SLOTLY_DB_PATH and .env.local through the Node helper. An existing
+  database is preserved without opening it. No raw copy of a live WAL database,
+  implicit reset, settings overwrite or destructive reseed is performed.
+  Force/KeepSettings parameters remain accepted for compatibility but never
+  authorize destruction. Separate demo reset tools require explicit opt-in.
 #>
-
 param(
     [switch]$NoPause,
     [string]$Path,
     [switch]$Force,
     [switch]$KeepSettings
 )
-
 . "$PSScriptRoot\_common.ps1"
-
-Write-Banner "AYBEK HOSPITAL - STEP 3: BUILD THE DATABASE"
-
+Write-Banner "AYBEK HOSPITAL - STEP 3: SAFE FIRST INSTALL"
 $root = Get-HmsRoot -Override $Path
 Set-Location -LiteralPath $root
-Assert-Node -MinimumMajor 20 | Out-Null
-
-$db = Join-Path $root "data\slotly.db"
-if ((Test-Path -LiteralPath $db) -and -not $Force) {
-    Write-Warn "A database already exists ($([math]::Round((Get-Item $db).Length/1MB,2)) MB)."
-    if (-not (Confirm-Action "Rebuild it from scratch? All entered data would be lost.")) {
-        Write-Info "Nothing was changed."
-        if (-not $NoPause) { Read-Host "Press Enter to close" | Out-Null }
-        exit 0
-    }
+Assert-Node -MinimumMajor 22 | Out-Null
+if ($Force -or $KeepSettings) {
+    Write-Warn "Existing records are always preserved. Force/KeepSettings do not reset or replace a database."
 }
-
-# ------------------------------------------------------------------- backup
-if (Test-Path -LiteralPath $db) {
-    $folder = New-BackupFolder -Root $root
-    Copy-Item -LiteralPath $db -Destination (Join-Path $folder "slotly.db") -Force
-    Write-Ok "Existing database backed up to $folder"
+& node scripts/init-next-demo.mjs
+if ($LASTEXITCODE -ne 0) {
+    Stop-WithMessage "Safe demo initialization failed." "Check the configured path and permissions. No existing hospital was reset."
 }
-
-# ------------------------------------------------------------------- settings
-$settingsCopy = $null
-if ($KeepSettings) {
-    $settingsCopy = Join-Path $env:TEMP "aybek-settings-$([Guid]::NewGuid().ToString('N').Substring(0,6)).json"
-    Write-Step "Preserving hospital identity and licence settings"
-    & npx tsx scripts/settings-export.ts $settingsCopy
-    if (Test-Path -LiteralPath $settingsCopy) { Write-Ok "Settings saved to $settingsCopy" }
-}
-
-# --------------------------------------------------------------------- seed
-Write-Step "Clearing old database files"
-& node scripts/reset-db.mjs
-if ($LASTEXITCODE -ne 0) { Stop-WithMessage "Could not clear the old database." "Close the running hospital server (Ctrl+C) and run this script again." }
-
-Write-Step "Seeding the demonstration hospital (this takes about 20 seconds)"
-& npm run seed
-if ($LASTEXITCODE -ne 0) { Stop-WithMessage "Seeding failed." "Run 'npm run seed' manually to see the full error message." }
-
-Write-Step "Verifying the records"
-& npx tsx scripts/verify-hms.ts
-$verify = $LASTEXITCODE
-
-if ($KeepSettings -and $settingsCopy -and (Test-Path -LiteralPath $settingsCopy)) {
-    Write-Step "Re-applying the saved hospital identity"
-    & npx tsx scripts/settings-import.ts $settingsCopy
-    Write-Ok "Identity and licence restored (patients are the fresh demonstration set)"
-}
-
-Write-Banner "STEP 3 COMPLETE"
-Write-Host ""
-Write-Host "  DEMONSTRATION LOGINS (password for every account: mamonaminyar)" -ForegroundColor Cyan
-Write-Host "  ---------------------------------------------------------------"
-Write-Host "  doctor@aybek.hospital    Dr. Mamon Aminyar   owner / administrator"
-Write-Host "  arash@aybek.hospital     Dr. Arash Shirazi   OPD physician"
-Write-Host "  evelyn@aybek.hospital    Dr. Evelyn Reed     OPD physician"
-Write-Host "  yusuf@aybek.hospital     Dr. Yusuf Karimi    consultant surgeon"
-Write-Host "  pharmacy@aybek.hospital     Zahra Ahmadi         pharmacist"
-Write-Host "  lab@aybek.hospital     Samir Hadi         laboratory"
-Write-Host "  laila@aybek.hospital     Dr. Laila Noor       radiology"
-Write-Host "  nurse@aybek.hospital     Nadia Sultani        nursing"
-Write-Host "  reception@aybek.hospital      Reza Amiri           reception"
-Write-Host ""
-if ($verify -ne 0) { Write-Warn "The verification reported empty tables - check the output above." }
+Write-Ok "First-install check completed; any existing database was preserved."
+Write-Warn "This is unvalidated development software. Demo account passwords are public; change them before any real records."
 Write-Info "Next: step 4 - start the hospital"
-Write-Host "      .\scripts\install\04-start.ps1" -ForegroundColor Cyan
-Write-Host ""
 if (-not $NoPause) { Read-Host "Press Enter to close" | Out-Null }

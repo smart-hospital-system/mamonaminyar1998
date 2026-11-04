@@ -70,7 +70,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     [hashToken(token)]
   );
   if (!row) return null;
-  if (new Date(row.expires_at).getTime() < Date.now()) {
+  if (!Number.isFinite(Date.parse(row.expires_at)) || Date.parse(row.expires_at) <= Date.now()) {
     run("DELETE FROM sessions WHERE token = ?", [hashToken(token)]);
     return null;
   }

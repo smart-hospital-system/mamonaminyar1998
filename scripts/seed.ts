@@ -1,3 +1,8 @@
+
+if (process.env.AYBEK_ENABLE_DEMO_ACTIONS !== "1" || !process.argv.includes("--confirm-destroy")) {
+  console.error("Refused: destructive demo operation requires AYBEK_ENABLE_DEMO_ACTIONS=1 and --confirm-destroy. Stop the app and verify a backup first.");
+  process.exit(1);
+}
 /**
  * Reset and reseed the Slotly database with six months of realistic demo activity.
  * Usage: npm run seed

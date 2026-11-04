@@ -1,3 +1,4 @@
+import { demoActionsEnabled } from "@/lib/request-security";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/login-form";
 import { Skeleton } from "@/components/ui/primitives";
@@ -115,10 +116,12 @@ export default function LoginPage() {
               </div>
             }
           >
-            <LoginForm />
+            <LoginForm demoEnabled={demoActionsEnabled()} />
           </Suspense>
         </div>
       </div>
     </div>
   );
 }
+
+export const dynamic = "force-dynamic";

@@ -45,6 +45,9 @@ jobs:
       - name: Scan tracked files for committed credentials
         run: npm run check:secrets
 
+      - name: Next.js security, transaction and destructive-tool regression tests
+        run: npm run test:next
+
       - name: Type-check
         run: npx tsc --noEmit
 
@@ -62,5 +65,7 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: "1"
 
-      - name: Verify the hospital schema and demo data
-        run: npm run hms:verify
+      - name: Verify an isolated synthetic hospital (never the shipped DB)
+        run: node scripts/init-next-demo.mjs && npm run hms:verify
+        env:
+          SLOTLY_DB_PATH: ${{ runner.temp }}/aybek-ci-synthetic.db

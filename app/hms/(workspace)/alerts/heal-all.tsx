@@ -14,7 +14,7 @@ export function HealAll({ count }: { count: number }) {
     const res = await fetch("/api/hms/alerts", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "heal-all" }) });
     const data = await res.json();
     setBusy(false);
-    setResult(`${(data.healed ?? []).filter((h: { ok: boolean }) => h.ok).length} repaired automatically`);
+    setResult(`${(data.healed ?? []).filter((h: { ok: boolean }) => h.ok).length} housekeeping actions completed`);
     router.refresh();
   }
 
@@ -22,7 +22,7 @@ export function HealAll({ count }: { count: number }) {
     <span className="flex items-center gap-1.5">
       <button className="hms-btn hms-btn-sm hms-btn-primary" onClick={run} disabled={busy || count === 0}>
         {busy ? <Loader2 size={11} className="animate-spin" /> : <Wrench size={11} />}
-        Repair all{count ? ` (${count})` : ""}
+        Safe housekeeping{count ? ` (${count})` : ""}
       </button>
       {result && <span className="text-[0.6rem]" style={{ color: "var(--hms-faint)" }}>{result}</span>}
     </span>

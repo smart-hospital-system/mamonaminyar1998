@@ -30,7 +30,12 @@ export const POST = route(async (req) => {
     case "triage":
       return json({ result: triage(p.vitals ?? {}) });
     case "doses":
-      return json({ result: suggestDoses(Number(p.weight ?? 70), Number(p.age ?? 30)) });
+      await requireHmsApi(["admin", "doctor", "pharmacist"]);
+      if (typeof p.weight !== "number" || !Number.isFinite(p.weight) || p.weight <= 0 || p.weight > 500 ||
+          typeof p.age !== "number" || !Number.isFinite(p.age) || p.age < 0 || p.age > 120) {
+        return json({ error: "Provide measured weight (kg) and age; no default patient measurements are assumed." }, 422);
+      }
+      return json({ result: suggestDoses(p.weight, p.age), unvalidated: true, requires_clinician_review: true });
     case "note":
       return json({ result: draftNote(p.diagnosis ?? "", p.vitals) });
     case "template": {

@@ -52,6 +52,12 @@ function normalise(
     const path = `${section}.${key}`;
     const fallback = template[key];
 
+    if (section === "alerts" && key === "auto_heal") {
+      if (isTruthy(raw)) return { ok: false, error: "Autonomous clinical repair is not supported." };
+      out[key] = false;
+      continue;
+    }
+
     if (fallback === undefined) {
       // Unknown keys are refused rather than stored: the settings table should
       // never collect keys nobody reads.

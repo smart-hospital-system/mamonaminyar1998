@@ -24,26 +24,18 @@ const DIGITS = "34679";
 
 const pick = (alphabet: string) => alphabet[crypto.randomInt(alphabet.length)];
 
-/**
- * A code in four blocks, e.g. `KETU-9MRA-3XWP-76BN`.
- *
- * Consonant/vowel alternation makes it pronounceable ("ke-tu") so a pharmacist
- * can read it to a colleague without spelling every letter, while the digits
- * keep it out of any dictionary. 16 characters over a 28-symbol alphabet is
- * roughly 76 bits — far beyond anything that can be guessed.
+/** Twenty independent cryptographically random characters, displayed in four groups.
+ * Separators add no entropy. Reject no-digit samples so generated passwords meet
+ * the server's mixed-character policy without predictable replacement positions.
  */
 export function strongCode() {
-  const blocks: string[] = [];
-  for (let b = 0; b < 4; b++) {
-    let block = "";
-    for (let i = 0; i < 4; i++) {
-      block += i % 2 === 0 ? pick(CONSONANTS) : pick(VOWELS);
-    }
-    // Replace the last letter with a digit in every second block.
-    if (b % 2 === 1) block = block.slice(0, 3) + pick(DIGITS);
-    blocks.push(block);
+  const alphabet = CONSONANTS + VOWELS + DIGITS;
+  while (true) {
+    const raw = Array.from({ length: 20 }, () => pick(alphabet)).join("");
+    if (!/[0-9]/.test(raw)) continue;
+    const code = raw.match(/.{5}/g)!.join("-");
+    if (scoreCode(code).acceptable) return code;
   }
-  return blocks.join("-");
 }
 
 /** A short numeric PIN for a shared ward tablet (six digits, still rate-limited). */
@@ -64,6 +56,7 @@ export function strongPin() {
 const attempts = new Map<string, { count: number; first: number; until: number }>();
 const WINDOW_MS = 15 * 60 * 1000;
 const FREE_ATTEMPTS = 5;
+const MAX_TRACKED_ATTEMPTS = 4096;
 
 export function throttleKey(email: string, ip: string) {
   return `${email.trim().toLowerCase()}|${ip}`;
@@ -87,6 +80,13 @@ export function recordFailure(key: string) {
   const now = Date.now();
   const row = attempts.get(key);
   if (!row || now - row.first > WINDOW_MS) {
+    for (const [oldKey, old] of attempts) {
+      if (now - old.first > WINDOW_MS && old.until <= now) attempts.delete(oldKey);
+    }
+    if (!attempts.has(key) && attempts.size >= MAX_TRACKED_ATTEMPTS) {
+      const oldest = attempts.keys().next().value;
+      if (oldest !== undefined) attempts.delete(oldest);
+    }
     attempts.set(key, { count: 1, first: now, until: 0 });
     return checkThrottle(key);
   }

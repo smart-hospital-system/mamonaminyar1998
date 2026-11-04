@@ -1,10 +1,13 @@
+import { demoActionsEnabled } from "@/lib/request-security";
 import { get, run } from "@/lib/db";
 import { createSession } from "@/lib/auth";
 import { body, fail, json, route } from "@/lib/api";
 
 /** One-click demo sign-in per role (handy for reviewing RBAC). */
 export const POST = route(async (req) => {
+  if (!demoActionsEnabled()) return fail("Passwordless demo login is disabled.", 403);
   const { role } = await body<{ role?: string }>(req);
+  if (role !== undefined && !["owner", "manager", "staff"].includes(role)) return fail("Unknown demo role.", 422);
   const user = get<{ id: string; email: string; name: string; role: string; active: number }>(
     role ? "SELECT * FROM users WHERE role = ? AND active = 1 LIMIT 1" : "SELECT * FROM users ORDER BY created_at LIMIT 1",
     role ? [role] : []

@@ -1,3 +1,7 @@
+if (process.env.AYBEK_ENABLE_TEACHING_REGIMENS !== "1" || !process.argv.includes("--teaching-only")) {
+  console.error("Refused: unvalidated teaching-only export requires AYBEK_ENABLE_TEACHING_REGIMENS=1 and --teaching-only. Not a prescribing authority.");
+  process.exit(1);
+}
 /**
  * build-regimens.ts — writes the age- and sex-stratified demo prescriptions.
  *
@@ -5,34 +9,43 @@
  * (/hms/diseases) and this file can never disagree. This script only writes the
  * three deliverables and refuses to finish if the dataset breaks a rule.
  *
- * Run: npm run hms:regimens
+ * Teaching review only: explicit opt-in, --teaching-only and --output-dir NEW_DIRECTORY required.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { resolve, join, dirname } from "node:path";
 import { DISEASES } from "../lib/hms/diseases";
 import { BANDS, buildAll, isLiquidPrep, validate, type PatientRecord } from "../lib/hms/regimens/engine";
 import { reviewRegimen } from "../lib/hms/regimens/safety";
 
+const outputArg = process.argv.indexOf("--output-dir");
+const destination = outputArg < 0 ? "" : process.argv[outputArg + 1];
+if (!destination || destination.startsWith("--")) throw new Error("--output-dir NEW_DIRECTORY is required; existing datasets are never overwritten");
+const outputDir = resolve(destination);
+if (existsSync(outputDir)) throw new Error("Output directory must not already exist");
 const records: PatientRecord[] = buildAll();
 const problems = validate(records);
 
-mkdirSync("data", { recursive: true });
+if (problems.length) throw new Error(`Structural validation failed before export: ${problems.join("; ")}`);
+mkdirSync(dirname(outputDir), { recursive: true });
+mkdirSync(outputDir);
 
 const generatedAt = new Date().toISOString();
 writeFileSync(
-  "data/disease-regimens.json",
+  join(outputDir, "disease-regimens.json"),
   JSON.stringify(
     {
       generatedAt,
       source: "Aybek Ten-Bed Specialy Surgical Hospital — clinical catalogue",
       disclaimer:
-        "Demonstration and teaching dataset. Doses are standard textbook ranges, not a prescribing authority. Confirm against the national formulary, renal/hepatic adjustment and the prescriber's judgement.",
+        "Demonstration and teaching dataset. Legacy example doses are unvalidated, not a prescribing authority. Confirm against the national formulary, renal/hepatic adjustment and the prescriber's judgement.",
       bands: BANDS.map((b) => ({ band: b.band, label: b.label, labelFa: b.labelFa })),
       totals: { diseases: DISEASES.length, patients: records.length, prescriptions: records.length },
       patients: records,
     },
     null,
     1
-  )
+  ),
+  { flag: "wx" }
 );
 
 const header = ["patient_id", "rx_no", "name", "name_fa", "sex", "age", "band", "disease_id", "disease", "disease_fa", "icd10", "category", "item_no", "drug", "drug_fa", "class", "form", "strength", "dose", "frequency", "route", "duration_days", "quantity", "unit", "share_pct", "safety_blocks", "safety_cautions"];
@@ -48,7 +61,7 @@ for (const r of records) {
     rows.push([r.patientId, r.rxNo, r.name, r.nameFa, r.sex, r.age, r.band, r.diseaseId, r.disease, r.diseaseFa, r.icd10, r.category, idx + 1, it.drug, it.drugFa, it.className, it.form, it.strength, it.dose, it.frequency, it.route, it.durationDays, it.quantity, it.unit, it.sharePct, review.blocks, review.cautions].map(esc).join(","));
   });
 }
-writeFileSync("data/disease-regimens.csv", rows.join("\n") + "\n");
+writeFileSync(join(outputDir, "disease-regimens.csv"), rows.join("\n") + "\n", { flag: "wx" });
 
 const byBand = BANDS.map((b) => ({ band: b.band, label: b.label, count: records.filter((r) => r.band === b.band).length }));
 const bySex = ["female", "male"].map((s) => ({ sex: s, count: records.filter((r) => r.sex === s).length }));
@@ -66,15 +79,15 @@ const withCaution = reviews.filter((r) => r.cautions > 0).length;
 const flagged = reviews.reduce((n, r) => n + r.findings.length, 0);
 
 writeFileSync(
-  "data/disease-regimens.md",
+  join(outputDir, "disease-regimens.md"),
   `# Age- and sex-stratified demo prescriptions
 
 **Generated:** ${generatedAt} · **Conditions:** ${DISEASES.length} · **Patients:** ${records.length} · **Prescription lines:** ${lines}
 
 Every condition has one patient per band and per sex: child (< 18), adult (18–70) and older
-adult (71–90), half female and half male. Every prescription contains **at least four
-medicines** and always includes a liquid preparation. Each one is then **checked by the
-system** — age bans, renal adjustment, interactions and duplication.
+adult (71–90), half female and half male. These are **unvalidated teaching fixtures**, not
+patient-specific treatment plans. No minimum drug count, liquid or injectable is required.
+The limited rule screen does not certify dosing, indication, renal suitability or completeness.
 
 | Band | Patients |
 | --- | --- |
@@ -90,31 +103,29 @@ ${bySex.map((s) => `| ${s.sex} | ${s.count} |`).join("\n")}
 | Prescriptions with a liquid preparation | ${liquid} of ${records.length} (${Math.round((liquid / records.length) * 100)}%) |
 | Child prescriptions with an oral syrup | ${childSyrup} of ${child.length} (${Math.round((childSyrup / child.length) * 100)}%) |
 | Prescriptions with an injectable (vial) | ${vial} of ${records.length} (${Math.round((vial / records.length) * 100)}%) |
-| Prescriptions with a safety finding | ${withBlock + withCaution} of ${records.length} |
+| Prescriptions with a safety finding | ${reviews.filter((r) => r.blocks > 0 || r.cautions > 0).length} of ${records.length} |
 | … of those, blocking findings | ${withBlock} |
 | Total findings raised | ${flagged} |
 
 ## Files
 
-- \`data/disease-regimens.json\` — one record per patient, every item, dose, quantity and share
-- \`data/disease-regimens.csv\` — flat table, one row per prescription line, plus safety counts
-- \`data/disease-regimens.md\` — this summary
+- \`disease-regimens.json\` — one record per patient, every item, dose, quantity and share
+- \`disease-regimens.csv\` — flat table, one row per prescription line, plus safety counts
+- \`disease-regimens.md\` — this summary
 
-## The two rules the system enforces
+## Limitations
 
-1. **Reference doses, not a prescribing order.** Every entry is a textbook range for teaching.
-   \`/hms/diseases\` prints this above the regimen, and the review panel runs age, renal,
-   interaction and duplication checks on the prescription you are looking at.
-2. **Injectables only where clinically right.** ${Math.round((vial / records.length) * 100)}% of these prescriptions carry a vial — admitted,
-   severe or emergency care. A viral cold or a fungal skin infection gets tablets or a syrup,
-   because injecting there would be wrong. Children are the exception in the other direction:
-   ${Math.round((childSyrup / child.length) * 100)}% receive an oral syrup.
+The examples and fixed age bands require independent specialist validation. The rule screen
+cannot establish safe prescribing; absence of a flag is not approval. A child dose requires
+actual clinical context and measured inputs, not an invented age/weight example.
+No drug, syrup, vial or injection is universally required.
 
 ## Disclaimer
 
 Demonstration and teaching dataset. Confirm every prescription against the national formulary,
 the renal and hepatic adjustment tables and your own judgement before use.
-`
+`,
+  { flag: "wx" }
 );
 
 console.log(`patients: ${records.length}  lines: ${lines}`);

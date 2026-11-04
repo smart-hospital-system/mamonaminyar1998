@@ -1,13 +1,8 @@
 /**
- * Treatment recipes — 4 to 6 formulary drugs per condition.
- *
- * Each list must contain at least four entries (the generator refuses anything
- * shorter) and at least one preparation that exists as a syrup, suspension,
- * vial, nebule or drop, so that every band — child, adult, elderly — receives a
- * liquid or injectable medicine alongside the tablets.
- *
- * The first drug is the definitive therapy; the others are adjunct, supportive
- * or prophylactic. Doses come from the formulary band table, never from here.
+ * Unvalidated legacy teaching recipes, not patient-specific prescribing guidance.
+ * Existing lists are preserved for specialist review. No minimum drug count,
+ * syrup, vial or injection requirement is imposed by the generator.
+ * Do not use this catalogue to select treatment without independent clinical validation.
  */
 export type Recipe = string[] | { default: string[]; child?: string[]; adult?: string[]; elderly?: string[] };
 

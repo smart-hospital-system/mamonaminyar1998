@@ -1,23 +1,22 @@
-import { json, route } from "@/lib/api";
+import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
-import { scoreCode, strongCode, strongPin } from "@/lib/hms/security";
+import { strongCode, strongPin } from "@/lib/hms/security";
 
 /**
- * GET  /api/hms/security?code=…   score a proposed code
- * POST /api/hms/security          mint a new strong code (admin only)
+ * GET  /api/hms/security           disabled: passwords must not appear in URLs
+ * POST /api/hms/security          mint a new strong code (authenticated staff)
  *
  * Generation happens on the server so the randomness never depends on the
  * browser, and so the owner console and any future kiosk share one rule set.
  */
-export const GET = route(async (req) => {
+export const GET = route(async () => {
   await requireHmsApi();
-  const code = new URL(req.url).searchParams.get("code") ?? "";
-  return json({ strength: scoreCode(code) });
+  return json({ error: "Score passwords locally with the client strength meter; never send passwords in URLs." }, 405);
 });
 
 export const POST = route(async (req) => {
-  const user = await requireHmsApi(["admin"]);
-  const payload = (await req.json().catch(() => ({}))) as { kind?: string };
+  const user = await requireHmsApi();
+  const payload = await body<{ kind?: string }>(req);
   if (payload.kind === "pin") return json({ code: strongPin(), kind: "pin", by: user.id });
   return json({ code: strongCode(), kind: "code", by: user.id });
 });
