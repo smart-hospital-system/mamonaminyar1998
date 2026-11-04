@@ -83,7 +83,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Validate generated catalogue and regimen safety
-        run: npm run hms:regimens
+        run: npm run hms:regimens -- --check
 
       - name: Type-check
         run: npm run typecheck
@@ -91,8 +91,13 @@ jobs:
       - name: Run application tests
         run: npm test
 
+      - name: Run Next.js route and security regression tests
+        run: npm run test:next
+
       - name: Verify hospital database schema
-        run: npm run hms:verify
+        run: node scripts/init-next-demo.mjs && npm run hms:verify
+        env:
+          SLOTLY_DB_PATH: ${{ runner.temp }}/aybek-clinical-ci-synthetic.db
 
       - name: Build the hospital application
         run: npm run build

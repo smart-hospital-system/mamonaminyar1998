@@ -90,7 +90,7 @@ export function scoreCode(code: string): Strength {
     hints: hints.slice(0, 3),
     // The server enforces this floor when a code is set for someone.
     // The floor enforced by the server: long, mixed, and not a short common word.
-    acceptable: c.length >= 12 && classes >= 3 && !(commonHit && c.length < 16),
+    acceptable: c.length >= 12 && classes >= 3 && unique >= 8 && score >= 65 && !(commonHit && c.length < 16),
   };
 }
 

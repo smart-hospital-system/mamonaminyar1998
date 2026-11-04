@@ -19,7 +19,7 @@ export const POST = route(async (req) => {
   const user = await requireHmsApi();
   const url = new URL(req.url);
   const scanNow = url.searchParams.get("scan") === "1";
-  const p = scanNow ? {} : await body<{ action?: string; id?: string; note?: string }>(req).catch(() => ({}));
+  const p = scanNow ? {} : await body<{ action?: string; id?: string; note?: string }>(req);
   const action = (p as { action?: string }).action ?? (scanNow ? "scan" : "list");
 
   if (action === "scan") {
@@ -30,24 +30,28 @@ export const POST = route(async (req) => {
   }
 
   if (action === "acknowledge" && (p as { id?: string }).id) {
+    await requireHmsApi(["admin", "doctor", "nurse", "pharmacist", "lab", "radiology"]);
     acknowledge((p as { id: string }).id, user.name);
     hAudit(user, "acknowledged", "alert", (p as { id: string }).id, "Acknowledged a monitor alarm");
     return json({ ok: true, health: healthSummary() });
   }
 
   if (action === "resolve" && (p as { id?: string }).id) {
+    await requireHmsApi(["admin", "doctor", "nurse", "pharmacist", "lab", "radiology"]);
     resolve((p as { id: string }).id, (p as { note?: string }).note ?? "Resolved by staff", user.name);
     hAudit(user, "resolved", "alert", (p as { id: string }).id, "Resolved a monitor alarm manually");
     return json({ ok: true, health: healthSummary() });
   }
 
   if (action === "heal" && (p as { id?: string }).id) {
+    await requireHmsApi(["admin"]);
     const result = autoHeal((p as { id: string }).id, user.name);
     hAudit(user, "auto-healed", "alert", (p as { id: string }).id, result.message);
     return json({ ...result, health: healthSummary(), alerts: openAlerts() });
   }
 
   if (action === "heal-all") {
+    await requireHmsApi(["admin"]);
     const healed: { id: string; ok: boolean; message: string }[] = [];
     for (const a of openAlerts().filter((x) => x.auto_fixable)) healed.push({ id: a.id, ...autoHeal(a.id, user.name) });
     hAudit(user, "auto-healed", "alert", "batch", `Auto-healed ${healed.filter((h) => h.ok).length} alarm(s)`);

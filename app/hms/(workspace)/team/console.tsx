@@ -45,12 +45,16 @@ export function TeamConsole({ users, meId, isAdmin }: { users: U[]; meId: string
   async function call(path: string, method: string, payload: unknown, key: string) {
     setBusy(key);
     setMsg(null);
-    const res = await fetch(path, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
-    const data = await res.json();
-    setBusy(null);
-    setMsg({ tone: res.ok ? "ok" : "bad", text: res.ok ? tx("Saved.", "ذخیره شد.") : data.error ?? tx("Could not save.", "ذخیره نشد.") });
-    if (res.ok) router.refresh();
-    return res.ok;
+    try {
+      const res = await fetch(path, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await res.json();
+      setMsg({ tone: res.ok ? "ok" : "bad", text: res.ok ? tx("Saved.", "ذخیره شد.") : data.error ?? tx("Could not save.", "ذخیره نشد.") });
+      if (res.ok) router.refresh();
+      return res.ok;
+    } catch {
+      setMsg({ tone: "bad", text: tx("Server unreachable. Nothing was confirmed; check status before retrying.", "سرور در دسترس نیست. انجام تغییر تأیید نشده؛ پیش از تکرار وضعیت را بررسی کنید.") });
+      return false;
+    } finally { setBusy(null); }
   }
 
   async function addUser(e: React.FormEvent) {

@@ -100,12 +100,14 @@ export function HmsShell({
   user,
   hospital,
   health,
+  monitor = { enabled: true, intervalMinutes: 30 },
   licence,
   children,
 }: {
   user: HmsNavUser;
   hospital: { name: string; name_short: string; accent: string; local: string };
   health: { score: number; critical: number; warning: number; open: number };
+  monitor?: { enabled: boolean; intervalMinutes: number };
   licence: { status: string; daysLeft: number; plan: string };
   children: React.ReactNode;
 }) {
@@ -117,7 +119,8 @@ export function HmsShell({
   const [bellOpen, setBellOpen] = useState(false);
   const [palette, setPalette] = useState(false);
   const [alerts, setAlerts] = useState<AlertLite[]>([]);
-  const [sound, setSound] = useState(true);
+  const [sound, setSound] = useState(false);
+  const [monitorUnavailable, setMonitorUnavailable] = useState(false);
   const [busy, setBusy] = useState(false);
   const [counts, setCounts] = useState({ rx: 0, lab: 0, alerts: health.open });
   const beeped = useRef<Set<string>>(new Set());
@@ -161,22 +164,24 @@ export function HmsShell({
       try {
         if (scan) setBusy(true);
         const res = await fetch(`/api/hms/alerts${scan ? "?scan=1" : ""}`, { method: scan ? "POST" : "GET" });
+        if (!res.ok) throw new Error("Health endpoint unavailable");
         const data = await res.json();
+        setMonitorUnavailable(false);
         const list: AlertLite[] = data.alerts ?? [];
         setAlerts(list);
         setCounts((c) => ({ ...c, alerts: list.length, rx: data.counts?.rx ?? c.rx, lab: data.counts?.lab ?? c.lab }));
-        const fresh = list.filter((a) => a.severity === "critical" && !beeped.current.has(a.id));
-        if (fresh.length) {
+        const fresh = list.filter((a) => a.severity === "critical" && (scan || !beeped.current.has(a.id)));
+        if (fresh.length && sound) {
           fresh.forEach((a) => beeped.current.add(a.id));
           beep();
         }
       } catch {
-        /* offline is fine */
+        setMonitorUnavailable(true);
       } finally {
         setBusy(false);
       }
     },
-    [beep]
+    [beep, sound]
   );
 
   // Initial load + 30 minute heartbeat (matches the server-side escalation window).
@@ -185,9 +190,10 @@ export function HmsShell({
   }, [loadAlerts]);
 
   useEffect(() => {
-    const timer = setInterval(() => loadAlerts(true), 30 * 60 * 1000);
+    if (!monitor.enabled) return;
+    const timer = setInterval(() => loadAlerts(true), monitor.intervalMinutes * 60 * 1000);
     return () => clearInterval(timer);
-  }, [loadAlerts]);
+  }, [loadAlerts, monitor.enabled, monitor.intervalMinutes]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -463,7 +469,7 @@ export function HmsShell({
           </div>
         </header>
 
-        <main className="flex-1 px-3 py-3.5 sm:px-4 sm:py-4">{children}</main>
+        <main className="flex-1 px-3 py-3.5 sm:px-4 sm:py-4">{monitorUnavailable && <p role="alert" className="mb-3 rounded border border-red-400 p-3 print:hidden">Health monitor unreachable — current health is unknown. / بررسی سلامت در دسترس نیست؛ وضعیت فعلی نامعلوم است.</p>}{children}</main>
 
         <footer className="border-t px-4 py-2 text-[0.6rem]" style={{ borderColor: "var(--hms-border)", color: "var(--hms-faint)" }}>
           {hospital.name} · {licence.plan} · {t("shell.footer")} · {t("shell.footerHealth")}{" "}

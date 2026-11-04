@@ -1,3 +1,7 @@
+if (process.env.AYBEK_ENABLE_DEMO_ACTIONS !== "1" || process.env.AYBEK_ENABLE_TEACHING_REGIMENS !== "1" || !process.argv.includes("--confirm-destroy")) {
+  console.error("Refused: synthetic catalogue reset requires both demo/teaching opt-ins and --confirm-destroy. Never run against patient records.");
+  process.exit(1);
+}
 /**
  * seed-catalogue.ts — put the clinical catalogue into the hospital database.
  *

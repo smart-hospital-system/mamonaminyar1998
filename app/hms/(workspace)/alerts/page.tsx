@@ -12,7 +12,7 @@ import { HealAll } from "./heal-all";
 export const dynamic = "force-dynamic";
 
 export default async function AlertsPage() {
-  await requireHmsPage();
+  const user = await requireHmsPage();
   await hmsReady();
   const lang = await getLang();
   const tr = (en: string, fa: string, vars?: Record<string, string | number>) => tx(lang, en, fa, vars);
@@ -39,7 +39,7 @@ export default async function AlertsPage() {
             </p>
             <div className="mt-2 flex gap-1.5">
               <ScanButton />
-              <HealAll count={fixable} />
+              {user.role === "admin" && <HealAll count={fixable} />}
             </div>
           </div>
         </Panel>
@@ -47,7 +47,7 @@ export default async function AlertsPage() {
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {[
             { icon: Siren, k: tr("Critical", "بحرانی"), v: health.critical, note: tr("Immediate action", "اقدام فوری") },
-            { icon: Wrench, k: tr("Auto-fixable", "قابل تعمیر خودکار"), v: fixable, note: tr("One tap repair", "تعمیر با یک کلیک") },
+            { icon: Wrench, k: tr("Safe housekeeping", "نگهداری غیرطبی"), v: fixable, note: tr("Administrator review", "بازبینی مدیر") },
             { icon: AlarmClock, k: tr("Open", "باز"), v: open.length, note: tr("On the board", "در فهرست") },
             { icon: ShieldCheck, k: tr("Resolved", "حل‌شده"), v: closed.length, note: tr("With audit note", "با یادداشت حسابرسی") },
           ].map((s) => (
@@ -67,7 +67,7 @@ export default async function AlertsPage() {
         <Panel>
           <SectionTitle
             title={tr("Open alarms", "هشدارهای باز")}
-            subtitle={tr("Every alarm names the department, explains why it fired and, where possible, repairs itself.", "هر هشدار دیپارتمنت را نام می‌برد، دلیل برخاستن آن را توضیح می‌دهد و در صورت امکان خود را تعمیر می‌کند.")}
+            subtitle={tr("Every alarm names the department and explains the finding. Clinical corrections require authorized manual review.", "هر هشدار بخش و دلیل مشکل را نشان می‌دهد. اصلاح سوابق طبی نیازمند بازبینی دستی مسئول مجاز است.")}
             icon={<Siren size={14} />}
           />
           <div className="mt-2.5"><AlertList alerts={open} /></div>
@@ -80,8 +80,8 @@ export default async function AlertsPage() {
               {[
                 [tr("0 min", "۰ دقیقه"), tr("The scan compares every table against the hospital's rules (orphans, duplicates, bed conflicts, expiry, unsigned prescriptions, overdue results).", "اسکن هر جدول را با قواعد شفاخانه مقایسه می‌کند (رکوردهای بی‌صاحب، تکراری‌ها، تضاد بستر، تاریخ‌گذشته، نسخه‌های امضانشده، نتایج معوق).")],
                 [tr("0 min", "۰ دقیقه"), tr("The responsible department and the central console are notified. Critical alarms play an audible chime in the workspace.", "دیپارتمنت مسئول و کنسول مرکزی اطلاع می‌یابند. هشدارهای بحرانی در محیط کار صدای اخطار می‌دهند.")],
-                [tr("48 h", "۴۸ ساعت"), tr("If nobody acknowledges or resolves the alarm, the monitor applies the best repair it knows: reassign the record, quarantine expired stock, void the duplicate, or escalate to the medical director.", "اگر کسی هشدار را تأیید یا حل نکند، مانیتور بهترین تعمیر ممکن را انجام می‌دهد: بازتخصیص رکورد، قرنطینهٔ دواهای تاریخ‌گذشته، باطل کردن تکراری یا ارجاع به رئیس طبی.")],
-                [tr("After repair", "پس از تعمیر"), tr("The action is written to the audit trail with the exact change, so any decision can be reviewed later.", "اقدام با تغییر دقیق در سابقهٔ حسابرسی نوشته می‌شود تا هر تصمیم بعداً قابل بازبینی باشد.")],
+                [tr("48 h", "۴۸ ساعت"), tr("If the configured deadline expires (48 hours by default), the monitor escalates severity for manual review. It never relinks patients, changes MRNs, assigns beds or destroys stock.", "با پایان مهلت تعیین‌شده، پیش‌فرض ۴۸ ساعت، هشدار برای بازبینی دستی بحرانی می‌شود. ارتباط مریض، شمارهٔ پرونده، بستر و موجودی دوا خودکار تغییر نمی‌کند.")],
+                [tr("After review", "پس از بازبینی"), tr("The action is written to the audit trail with the exact change, so any decision can be reviewed later.", "اقدام با تغییر دقیق در سابقهٔ حسابرسی نوشته می‌شود تا هر تصمیم بعداً قابل بازبینی باشد.")],
               ].map(([when, what]) => (
                 <li key={when} className="flex gap-2">
                   <span className="mt-0.5 h-fit shrink-0 rounded px-1.5 py-0.5 text-[0.58rem] font-bold" style={{ background: "var(--hms-brand-soft)", color: "var(--hms-brand-ink)" }}>{when}</span>

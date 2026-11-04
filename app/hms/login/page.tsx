@@ -1,3 +1,4 @@
+import { demoActionsEnabled } from "@/lib/request-security";
 import { Cross, HeartPulse, Pill, Scissors, ShieldCheck, Stethoscope } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getHmsUser } from "@/lib/hms/auth";
@@ -74,7 +75,7 @@ export default async function HmsLoginPage() {
 
       {/* form side */}
       <div className="flex items-center justify-center px-5 py-10" style={{ background: "var(--surface-2)" }}>
-        <LoginForm hospital={name} local={local} plan={lic.plan} status={lic.status} daysLeft={lic.daysLeft} lang={lang} />
+        <LoginForm demoEnabled={demoActionsEnabled()} hospital={name} local={local} plan={lic.plan} status={lic.status} daysLeft={lic.daysLeft} lang={lang} />
       </div>
     </div>
   );

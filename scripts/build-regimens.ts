@@ -1,3 +1,8 @@
+const checkOnly = process.argv.includes("--check");
+if (!checkOnly && (process.env.AYBEK_ENABLE_TEACHING_REGIMENS !== "1" || !process.argv.includes("--teaching-only"))) {
+  console.error("Refused: unvalidated teaching-only export requires AYBEK_ENABLE_TEACHING_REGIMENS=1 and --teaching-only. Use --check for read-only structural validation.");
+  process.exit(1);
+}
 /**
  * build-regimens.ts — writes the age- and sex-stratified demo prescriptions.
  *
@@ -7,7 +12,8 @@
  *
  * Run: npm run hms:regimens
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { resolve, join, dirname, basename } from "node:path";
 import { DISEASES } from "../lib/hms/diseases";
 import { CHAPTERS } from "../lib/hms/diseases/index";
 import { BANDS, buildAll, buildForDisease, isLiquidPrep, validate, type PatientRecord } from "../lib/hms/regimens/engine";
@@ -15,6 +21,13 @@ import { DRUGS } from "../lib/hms/regimens/formulary";
 import { RECIPES, type Recipe } from "../lib/hms/regimens/recipes";
 import { reviewRegimen } from "../lib/hms/regimens/safety";
 
+const arg = process.argv.indexOf("--output-dir");
+const destination = arg < 0 ? "" : process.argv[arg + 1];
+if (!checkOnly && (!destination || destination.startsWith("--"))) throw new Error("--output-dir NEW_DIRECTORY is required");
+const outputDir = destination ? resolve(destination) : "";
+if (!checkOnly && existsSync(outputDir)) throw new Error("Output directory must not already exist");
+const documents = new Map<string, string>();
+const stageDocument = (name: string, content: string) => { documents.set(basename(name), content); };
 const audit: string[] = [];
 const ids = new Set<string>();
 const names = new Set<string>();
@@ -158,10 +171,10 @@ for (const d of obgynDiseases) {
     problems.push(`${d.id}: expected one female-only, age-matched, no-medication example per applicable band`);
 }
 
-mkdirSync("data", { recursive: true });
+
 
 const generatedAt = new Date().toISOString();
-writeFileSync(
+stageDocument(
   "data/disease-regimens.json",
   JSON.stringify(
     {
@@ -200,7 +213,7 @@ for (const r of records) {
     rows.push([r.patientId, r.rxNo, r.name, r.nameFa, r.sex, r.age, r.band, r.diseaseId, r.disease, r.diseaseFa, r.icd10, r.category, idx + 1, it.drug, it.drugFa, it.className, it.form, it.strength, it.dose, it.frequency, it.route, it.durationDays, it.quantity, it.unit, it.sharePct, review.blocks, review.cautions].map(esc).join(","));
   });
 }
-writeFileSync("data/disease-regimens.csv", rows.join("\n") + "\n");
+stageDocument("data/disease-regimens.csv", rows.join("\n") + "\n");
 
 const byBand = BANDS.map((b) => ({ band: b.band, label: b.label, count: records.filter((r) => r.band === b.band).length }));
 const bySex = ["female", "male"].map((s) => ({ sex: s, count: records.filter((r) => r.sex === s).length }));
@@ -217,7 +230,7 @@ const withCaution = reviews.filter((r) => r.cautions > 0).length;
 const flagged = reviews.reduce((n, r) => n + r.findings.length, 0);
 if (withBlock > 0) problems.push(`${withBlock} prescription examples contain blocking safety findings`);
 
-writeFileSync(
+stageDocument(
   "data/disease-regimens.md",
   `# Age- and sex-stratified clinical catalogue examples
 
@@ -229,9 +242,9 @@ children under 2 and neonatal dosing are outside this demo engine. Its cases are
 not prefill medicines because safe choices depend on weight, age, diagnosis and formulation.
 Obstetric and gynaecology cases are female-only, age-bounded, and have no prefilled medicines.
 Other cases with no routine medicine have **no prescription example**; procedural or supportive
-treatment remains in the clinical entry. The original catalogue recipes retain their historical
-4–6-line teaching format. ENT, ophthalmic, paediatric and obstetric/gynaecology recipes opt out of
-automatic fill-in where extra drugs would be inappropriate.
+treatment remains in the clinical entry. All legacy and new examples are unvalidated teaching fixtures. No medicine, minimum count,
+liquid, syrup, vial or injection is added to fill a template. The limited rule screen cannot
+certify dosing, clinical indication or patient-specific renal suitability.
 
 | Band | Synthetic patient examples |
 | --- | --- |
@@ -248,7 +261,7 @@ ${bySex.map((s) => `| ${s.sex} | ${s.count} |`).join("\n")}
 | Prescription examples with a liquid preparation | ${liquid} of ${prescriptionRecords.length} (${Math.round((liquid / prescriptionRecords.length) * 100)}%) |
 | Child prescription examples with an oral syrup | ${childSyrup} of ${child.length} (${Math.round((childSyrup / child.length) * 100)}%) |
 | Prescription examples with an injectable (vial) | ${vial} of ${prescriptionRecords.length} (${Math.round((vial / prescriptionRecords.length) * 100)}%) |
-| Prescription examples with a safety finding | ${withBlock + withCaution} of ${prescriptionRecords.length} |
+| Prescription examples with a safety finding | ${reviews.filter((r) => r.blocks > 0 || r.cautions > 0).length} of ${prescriptionRecords.length} |
 | … of those, blocking findings | ${withBlock} |
 | Total findings raised | ${flagged} |
 | Cases without a medication example | ${noMedicationCases} |
@@ -285,4 +298,11 @@ console.log(`sex: ${bySex.map((s) => `${s.sex}=${s.count}`).join("  ")}`);
 console.log(`vial: ${Math.round((vial / prescriptionRecords.length) * 100)}%   liquid: ${Math.round((liquid / prescriptionRecords.length) * 100)}%   child syrup: ${childSyrup}/${child.length}`);
 console.log(`safety: ${withBlock} blocking, ${withCaution} caution, ${flagged} findings total`);
 console.log(`problems: ${problems.length ? problems.join("; ") : "none"}`);
-if (problems.length) process.exitCode = 1;
+if (problems.length) throw new Error(`Validation failed before export: ${problems.join("; ")}`);
+if (checkOnly) {
+  console.log("Read-only structural validation complete. No files or databases changed; this is not clinical approval.");
+} else {
+  mkdirSync(dirname(outputDir), { recursive: true });
+  mkdirSync(outputDir);
+  for (const [name, content] of documents) writeFileSync(join(outputDir, name), content, { flag: "wx" });
+}

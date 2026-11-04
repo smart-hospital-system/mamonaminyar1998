@@ -2,18 +2,19 @@
 
 # Aybek Ten-Bed Specialy Surgical Hospital
 
-**شفاخانه ده بستر جراحی ایبک** — a complete, bilingual (English / دری) hospital information
-system that runs on one ordinary computer, with no internet connection required.
+**شفاخانه ده بستر جراحی ایبک** — a bilingual (English / دری) hospital information
+system under development. Local runtime works offline after its dependencies are installed.
+See [the repair audit](docs/REPAIR_AUDIT_2026-11-02_FA.md) for tested fixes and important limitations.
 
 Owner: **Dr. Mamon Aminyar** · Built with **Next.js 15 (App Router) · React 19 · TypeScript ·
 Tailwind CSS v4 · SQLite (`node:sqlite`)**
 
 Twenty-one screens cover the whole hospital: OPD consultations and prescriptions, pharmacy
 dispensing and stock, laboratory and radiology workflows, ten beds and theatre, billing and
-receipts, staff and roles, licences and serials, a health monitor that scans every 30 minutes,
+receipts, staff and roles, licences and serials, a browser-driven health monitor (30-minute default while open),
 an audit trail, ten prescription papers and twelve interface themes.
 
-Around that sit four things that make it usable in a real ten-bed hospital:
+Additional tools available for evaluation (not clinical certification):
 
 - **Ask Aybek** — ask a question in English or Dari ("how much came in today?", "what is low on
   stock?") and get an answer computed from this hospital's own records. Deterministic, offline.
@@ -32,30 +33,44 @@ documentation. Dari renders right-to-left throughout.
 ```bash
 git clone https://github.com/smart-hospital-system/mamonaminyar1998.git aybek-hospital
 cd aybek-hospital
-npm install
+npm ci
 npm run deploy
 ```
 
-`npm run deploy` checks the Node version, installs the demonstration hospital if no database
-exists yet, builds the app when the build is missing, and serves it on `0.0.0.0:3000` so a ward
-phone or tablet can reach it.
+**Requires Node.js 22.13 or newer** (`node:sqlite`). `npm run deploy` reads `.env.local`,
+validates the port/path, preserves an existing database, installs a synthetic demonstration copy
+only if the target is absent, rebuilds missing/stale application sources, and serves on
+`0.0.0.0:3000`. Published demo credentials must never be exposed to the public internet.
+Set `SLOTLY_DB_PATH` in `.env.local` to select a separate SQLite file; use an isolated demo first.
 
 Open <http://localhost:3000/hms/login> and sign in with `doctor@aybek.hospital` / `mamonaminyar`,
 then open **Start here** in the sidebar and change the code before real patients are entered.
 
 | Command | What it does |
 |---|---|
-| `npm run deploy` | one-shot: check Node, seed if empty, build if needed, serve on port 3000 |
+| `npm run deploy` | check Node/config, preserve existing DB, initialize missing demo, rebuild stale sources, serve (default 3000) |
 | `npm run dev` | development server with hot reload |
 | `npm run build` / `npm start` | production build, then serve an existing build |
 | `PORT=3100 npm run deploy` | the same, on another port |
-| `npm run hms:verify` | health report across all 19 hospital tables |
-| `npm run hms:reset` | drop and rebuild the demonstration hospital (destructive) |
-| `npm run hms:demo-db` | refresh `data/demo-hospital.db`, the copy that ships on the disc |
+| `npm run hms:verify` | read-only SQLite structure/count report (does not seed or repair) |
+| `npm run hms:reset` / `npm run db:reset` / `npm run seed` | destructive demo tools; refused by default, never use on patient data |
+| `npm run hms:demo-db -- --output .data/NEW-demo.db` | generate a NEW synthetic DB; never overwrite a target or copy the configured hospital |
+| `node scripts/init-next-demo.mjs` | Windows first-install helper; preserve any existing DB unopened |
+| `node scripts/sqlite-maintenance.mjs backup --output backups/NEW.db` | SQLite-consistent database snapshot, including committed WAL data; no pruning |
+| `node scripts/sqlite-maintenance.mjs restore --source backups/NEW.db --output .data/NEW-restored.db` | verified NEW copy, invalidate restored sessions; never replace the current DB |
+| `npm run test:next` | Next.js security/transaction/tool regression tests |
 
-**On Windows, without a terminal:** copy the disc (or the zip) and double-click `START-HERE.bat`.
+**On Windows, without a terminal:** copy the disc (or the zip) and double-click `aybek-hms\START-HERE.bat` (Next.js only).
 The step-by-step Persian guide is `aybek-hms/docs/شروع-از-صفر.md` (English: `DOCS/START-FROM-ZERO-FA.md`
 on the disc, `USER-GUIDE.md` for the English user guide).
+
+### Current repair source bundle
+
+`releases/repair-2026-11-02/Aybek-Hospital-Repaired-Source-2026-11-02.zip` is a
+**source-only** delivery, with a per-file manifest and a separate SHA-256 checksum.
+It excludes live databases, private environments, uploads, historical ZIPs and installed
+runtimes/dependencies. It is **not** a complete offline installer or a clinically validated
+release. Read `docs/REPAIR_AUDIT_2026-11-02_FA.md` before evaluation.
 
 ### Demonstration accounts
 
@@ -73,10 +88,26 @@ Password for every account below: `mamonaminyar`. Change them in **Team** before
 | Nurse | `laila@aybek.hospital` |
 | Reception | `reception@aybek.hospital` |
 
-Try it without any risk: **Settings → Data & backup** can rebuild the demo hospital at any time
-(type `RESET`), and downloads a full JSON backup before you do.
+**Destructive operations are not risk-free.** Passwordless demo login and reset APIs are disabled
+by default. `AYBEK_ENABLE_DEMO_ACTIONS=1` enables them only for an isolated disposable demo;
+destructive CLI tools additionally require `--confirm-destroy`. A JSON export is not a tested
+SQLite disaster-recovery backup. Stop the server and verify a recoverable backup before any
+authorized maintenance; do not use reset/reseed tools on real records.
 
-### Delivered media
+Legacy Windows whole-folder USB export is disabled because it copied databases, uploads and
+private environment secrets. It must not be mistaken for a reviewed source-only distribution.
+Database snapshots do not include uploads or private `.env.local` licence keys; protect and
+back up those separately. Restore never cuts over automatically.
+
+The monitor never rewrites patient records, assigns beds or destroys stock automatically.
+Only explicitly approved administrative housekeeping is supported. Audible alerts require
+browser/session opt-in and do not provide monitoring when all browsers are closed.
+
+Automatic age-band drug examples are disabled pending clinical validation. No fixed drug count,
+syrup, vial or injection is required. The optional teaching catalogue and dose-rule screens
+are not prescribing approval, and actual patient measurements must not be invented.
+
+### Historical delivered media (immutable snapshots)
 
 | File | Size | For |
 |---|---|---|
@@ -93,7 +124,7 @@ The repository began life as **Slotly**, a booking platform for small service bu
 half is still here and still builds — `/book` for customers, `/dashboard` for the front desk —
 sharing the same SQLite file but with its own tables and its own seed (`npm run seed`,
 owner `mamon.aminyar650432@gmail.com` / `mamonaminyar`). The hospital lives under `/hms` and is
-seeded independently (`npm run hms:verify`). You can ignore the booking half entirely; nothing in
+initialized independently by the hospital data layer. `npm run hms:verify` is read-only and refuses an absent database. You can ignore the booking half entirely; nothing in
 the hospital depends on it.
 
 The sections below document that original platform.
@@ -104,7 +135,7 @@ The sections below document that original platform.
 
 ### Authentication & security
 - Email + password sign-in with **bcrypt** hashed passwords
-- "Continue with Google" (demo-mode account link) and per-role demo sign-in
+- Google OAuth is not implemented (API returns 501); passwordless role demos are disabled by default
 - **httpOnly, SameSite session cookies** — sessions stored hashed (SHA-256) in SQLite with expiry
 - **Role-based access control** across three roles: Owner, Manager, Staff
 - Server-side page guards and per-endpoint permission checks (`requireUser([...roles])`)
@@ -246,7 +277,7 @@ of where the server runs.
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `POST` | `/api/auth/login` | credentials or Google (demo) sign-in |
+| `POST` | `/api/auth/login` | credentials sign-in; Google provider returns 501 |
 | `POST` | `/api/auth/demo` | one-click role sign-in |
 | `GET/POST` | `/api/bookings` | list with filters / create (supports recurring) |
 | `PATCH/DELETE` | `/api/bookings/:id` | edit, status transitions, delete |
@@ -262,7 +293,7 @@ of where the server runs.
 | `GET` | `/api/ai/forecast` · `/api/ai/insights` · `/api/ai/followups` | premium intelligence |
 | `GET/POST` | `/api/public/booking` | public availability + booking creation |
 | `GET` | `/api/demo/backup` | JSON export of every table |
-| `GET` | `/api/hms/backup` | Admin-only JSON backup of all 19 hospital tables + settings + licence |
+| `GET` | `/api/hms/backup` | Admin-only JSON backup of all hospital tables + settings + licence |
 | `POST` | `/api/hms/backup` | `{ action: "reset-demo", confirm: "RESET" }` rebuilds the demo hospital |
 
 ---
@@ -322,10 +353,12 @@ it invalidates every licence signed with the old one.
 ## Notes
 
 - Prices are in SGD and GST defaults to 9% (configurable in Settings → Payments).
-- Google sign-in is intentionally simulated for this demo build so the workspace can be explored
-  without OAuth credentials; the session handling is the same as a real provider flow.
-- The workspace reseeds itself only when the database is empty, so your changes persist across
-  restarts. Use Settings → Data & backup → Rebuild demo data (type `RESET`) to start fresh.
+- Google sign-in is unavailable; no fake provider login grants a session.
+- Existing databases are preserved at installation. Normal startup can create missing application
+  tables and initialize a pristine demo. Hospital records without staff accounts stop implicit
+  demo seeding and require manual access-recovery review. Test upgrades on a verified copy first.
+- Previously delivered ISO/ZIP media are historical snapshots and do **not** contain this audit
+  patch. The repaired source checkout is separate from those immutable artifacts.
 
 ## Bilingual by design — English / دری
 

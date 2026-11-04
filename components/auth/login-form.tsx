@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
+import { safeReturnPath } from "@/lib/request-security";
 import { ArrowRight, Check, Eye, EyeOff, Lock, Mail, ShieldCheck, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -10,17 +11,17 @@ import { useState } from "react";
 const DEMO_EMAIL = "mamon.aminyar650432@gmail.com";
 const DEMO_PASSWORD = "mamonaminyar";
 
-export function LoginForm() {
+export function LoginForm({ demoEnabled = false }: { demoEnabled?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const toast = useToast();
-  const [email, setEmail] = useState(DEMO_EMAIL);
-  const [password, setPassword] = useState(DEMO_PASSWORD);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState<"credentials" | "google" | string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const next = params.get("next") || "/dashboard";
+  const next = safeReturnPath(params.get("next"));
 
   async function signIn(kind: "credentials" | "google", payload?: Record<string, string>) {
     setLoading(kind);
@@ -103,7 +104,7 @@ export function LoginForm() {
             </label>
             <button
               type="button"
-              onClick={() => toast.info("Password reset", "In this demo, use the credentials shown below.")}
+              onClick={() => toast.info("Password reset", "Contact the local administrator. No external reset service is configured.")}
               className="mb-1 text-[0.7rem] font-medium text-brand hover:underline"
             >
               Forgot password?
@@ -144,31 +145,7 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <div className="my-5 flex items-center gap-3">
-        <div className="h-px flex-1 bg-line" />
-        <span className="text-[0.68rem] uppercase tracking-wider text-faint">or continue with</span>
-        <div className="h-px flex-1 bg-line" />
-      </div>
-
-      <button
-        onClick={() => signIn("google")}
-        disabled={!!loading}
-        className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-surface text-[0.8125rem] font-medium transition hover:bg-surface-3 disabled:opacity-60"
-      >
-        {loading === "google" ? (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-line border-t-brand" />
-        ) : (
-          <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-            <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.4 3.62v3h3.87c2.26-2.09 3.58-5.17 3.58-8.81z" />
-            <path fill="#34A853" d="M12 24c3.24 0 5.96-1.08 7.94-2.92l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.13 0-5.78-2.11-6.73-4.95H1.28v3.1A12 12 0 0 0 12 24z" />
-            <path fill="#FBBC05" d="M5.27 14.28a7.2 7.2 0 0 1 0-4.56v-3.1H1.28a12 12 0 0 0 0 10.76l3.99-3.1z" />
-            <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.61 4.59 1.8l3.44-3.44A12 12 0 0 0 1.28 6.62l3.99 3.1C6.22 6.88 8.87 4.75 12 4.75z" />
-          </svg>
-        )}
-        Continue with Google
-      </button>
-
-      <div className="mt-6 rounded-xl border border-line bg-surface-2 p-3">
+      {demoEnabled && <div className="mt-6 rounded-xl border border-line bg-surface-2 p-3">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-faint">Demo access</p>
           <span className="text-[0.62rem] text-faint">no signup needed</span>
@@ -197,16 +174,16 @@ export function LoginForm() {
         <p className="mt-2 text-[0.65rem] leading-relaxed text-faint">
           Owner sees everything · Manager runs the floor · Staff see their own diary only.
         </p>
-      </div>
+      </div>}
 
       <div className="mt-5 space-y-2 text-[0.68rem] text-faint">
         <p className="flex items-center gap-1.5">
           <ShieldCheck size={12} className="text-emerald-500" />
           Protected by role-based access control and secure httpOnly sessions.
         </p>
-        <p className={cn("rounded-lg bg-surface-2 px-2.5 py-2 font-mono text-[0.66rem] text-muted")}>
+        {demoEnabled && <p className={cn("rounded-lg bg-surface-2 px-2.5 py-2 font-mono text-[0.66rem] text-muted")}>
           {DEMO_EMAIL} · {DEMO_PASSWORD}
-        </p>
+        </p>}
       </div>
     </div>
   );

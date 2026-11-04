@@ -8,7 +8,6 @@ declare global {
   var __slotlyDb: DatabaseSync | undefined;
 }
 
-const DB_PATH = process.env.SLOTLY_DB_PATH || path.join(process.cwd(), "data", "slotly.db");
 
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
@@ -257,6 +256,8 @@ CREATE TABLE IF NOT EXISTS settings (
 `;
 
 function init(): DatabaseSync {
+  // Resolve only at first connection, after configuration/test isolation is set.
+  const DB_PATH = process.env.SLOTLY_DB_PATH || path.join(process.cwd(), "data", "slotly.db");
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   const db = new DatabaseSync(DB_PATH);
   db.exec(SCHEMA);

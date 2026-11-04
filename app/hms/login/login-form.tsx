@@ -21,6 +21,7 @@ const DEMO: { email: string; label: string; roleEn: string; roleFa: string }[] =
 
 export function LoginForm({
   hospital,
+  demoEnabled = false,
   local,
   plan,
   status,
@@ -28,6 +29,7 @@ export function LoginForm({
   lang,
 }: {
   hospital: string;
+  demoEnabled?: boolean;
   local: string;
   plan: string;
   status: string;
@@ -36,8 +38,8 @@ export function LoginForm({
 }) {
   const router = useRouter();
   const tr = (key: string, vars?: Record<string, string | number>) => t(lang, key, vars);
-  const [email, setEmail] = useState("doctor@aybek.hospital");
-  const [password, setPassword] = useState("mamonaminyar");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +152,7 @@ export function LoginForm({
         </button>
       </form>
 
-      <div className="mt-4 rounded-lg px-3 py-2.5 text-[0.68rem]" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+      {demoEnabled && <div className="mt-4 rounded-lg px-3 py-2.5 text-[0.68rem]" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
         <div className="flex items-center justify-between">
           <span className="font-semibold">{tr("login.demo")}</span>
           <button type="button" onClick={() => setShowDemo((s) => !s)} className="text-[0.66rem] font-semibold" style={{ color: "var(--brand)" }}>
@@ -181,7 +183,7 @@ export function LoginForm({
             </p>
           </div>
         )}
-      </div>
+      </div>}
 
       <p className="mt-4 text-center text-[0.64rem]">
         <a href="/login" className="font-semibold" style={{ color: "var(--brand)" }}>{tr("login.switchSalon")} ↗</a>
