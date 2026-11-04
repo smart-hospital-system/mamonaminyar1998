@@ -123,6 +123,9 @@ export function reviewRegimen(
   for (const item of items) {
     for (const rule of BAND_BANS) {
       if (rule.band !== ctx.band || !rule.match.test(item.drug)) continue;
+      // The paediatric fluoroquinolone caution is for systemic exposure; ear
+      // and eye drops have low systemic absorption and are selected for local use.
+      if (rule.rule === "Fluoroquinolone in a child" && /^(otic|ophthalmic)$/i.test(item.route.trim())) continue;
       push({
         severity: rule.severity,
         drug: item.drug,

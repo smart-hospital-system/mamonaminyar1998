@@ -14,7 +14,7 @@ test("all destructive demo commands refuse before touching files without explici
     const file = path.join(dir, "sentinel.db");
     fs.writeFileSync(file, "synthetic sentinel, not a database");
     const before = digest(file);
-    for (const script of ["scripts/reset-db.mjs", "scripts/reset-hms.mjs", "scripts/seed.ts"]) {
+    for (const script of ["scripts/reset-db.mjs", "scripts/reset-hms.mjs", "scripts/seed.ts", "scripts/seed-catalogue.ts"]) {
       const env: NodeJS.ProcessEnv = { ...process.env, SLOTLY_DB_PATH: file }; delete env.AYBEK_ENABLE_DEMO_ACTIONS;
       const args = script.endsWith(".ts") ? ["--import", "tsx", script] : [script];
       const result = spawnSync(process.execPath, args, { env, encoding: "utf8" });

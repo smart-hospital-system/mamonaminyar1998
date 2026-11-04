@@ -57,7 +57,7 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
           title: lang === "fa" ? f.titleFa : f.titleEn,
           detail: lang === "fa" ? f.detailFa : f.detailEn,
         })),
-        verdict: review.verdict,
+        verdict: r.items.length === 0 ? "info" : review.verdict,
       };
     });
 
@@ -270,6 +270,14 @@ export default async function DiseasesPage({ searchParams }: { searchParams: Pro
                     noFindings: tr(
                       "This limited rule screen is not clinical validation and cannot establish safe dosing or renal suitability.",
                       "این بررسی محدود اعتبارسنجی بالینی نیست و دوز مصون یا سازگاری با عملکرد کلیه را تأیید نمی‌کند."
+                    ),
+                    noMedicines: tr(
+                      "No medicine is prefilled in this example. Follow the supportive, procedural or specialist-directed plan above; do not add a drug just to complete the sample.",
+                      "در این نمونه دوا به‌صورت پیش‌فرض درج نشده است. پلان حمایتی، عملی یا پلان متخصص را دنبال کنید و تنها برای پُرکردن نمونه دوا اضافه نکنید."
+                    ),
+                    noMedicationReview: tr(
+                      "No medicine is listed, so there was no medicine-safety review to run.",
+                      "هیچ دوایی فهرست نشده است؛ بنابراین بررسی ایمنی دوا اجرا نشده."
                     ),
                     patient: tr("Patient", "بیمار"),
                     years: tr("years", "سال"),

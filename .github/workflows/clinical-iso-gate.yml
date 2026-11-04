@@ -1,0 +1,136 @@
+name: Clinical ISO Gate & Compliance Guardrail
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+# The label is a human sign-off marker, not automated proof of clinical validity.
+# Protect main/master by requiring the "Validate Clinical Sign-Off & Rebuild ISO" status check.
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: clinical-iso-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-clinical-gate:
+    name: Validate Clinical Sign-Off & Rebuild ISO
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Enforce Clinical Sign-Off & Label Check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pullNumber = context.payload.pull_request.number;
+            const { data: pull } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pullNumber,
+            });
+            const labels = new Set((pull.labels ?? []).map((label) => label.name));
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pullNumber,
+              per_page: 100,
+            });
+
+            // Match the real source locations in this repository; generic
+            // catalogue/** or clinical/** paths do not exist here.
+            const clinicalPath = (filename) =>
+              filename.startsWith('lib/hms/diseases/') ||
+              filename === 'lib/hms/diseases.ts' ||
+              filename.startsWith('lib/hms/regimens/') ||
+              filename.startsWith('app/hms/') ||
+              filename.startsWith('data/disease-regimens.') ||
+              filename === 'data/demo-hospital.db' ||
+              filename === 'scripts/build-regimens.ts' ||
+              filename === 'scripts/seed-catalogue.ts' ||
+              filename.startsWith('aybek-hms/docs/CLINICAL-REVIEW-');
+
+            const clinicalFiles = files.filter((file) =>
+              clinicalPath(file.filename) ||
+              (file.previous_filename && clinicalPath(file.previous_filename))
+            );
+            core.info(`Pull Request #${pullNumber}: ${files.length} changed files; ${clinicalFiles.length} clinical/review files.`);
+
+            if (clinicalFiles.length > 0 && !labels.has('clinical-approved')) {
+              core.setFailed(
+                'Blocked: this PR changes clinical/catalogue files but lacks the required "clinical-approved" label. Apply the label only after documented specialist review of the exact version.'
+              );
+            } else if (clinicalFiles.length > 0) {
+              core.info('Clinical changes detected and the clinical-approved label is present.');
+            } else {
+              core.info('No clinical/catalogue changes detected; clinical sign-off label is not required.');
+            }
+
+      - name: Check out the repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Validate generated catalogue and regimen safety
+        run: npm run hms:regimens -- --check
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Run application tests
+        run: npm test
+
+      - name: Verify hospital database schema
+        run: node scripts/init-next-demo.mjs && npm run hms:verify
+        env:
+          SLOTLY_DB_PATH: ${{ runner.temp }}/aybek-clinical-ci-synthetic.db
+
+      - name: Build the hospital application
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Build the delivery disc and ISO
+        run: npm run release:iso
+
+      - name: Verify the generated ISO9660 descriptors
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'dist/Aybek-Hospital-HMS-v7.iso';
+          if (!fs.existsSync(path)) throw new Error(`ISO was not created: ${path}`);
+          const { size } = fs.statSync(path);
+          const sectorSize = 2048;
+          if (size < 19 * sectorSize || size % sectorSize !== 0) {
+            throw new Error(`Invalid ISO size (${size} bytes); expected complete 2048-byte sectors.`);
+          }
+          const fd = fs.openSync(path, 'r');
+          try {
+            for (const [sector, expectedType, label] of [
+              [16, 1, 'primary volume descriptor'],
+              [17, 2, 'Joliet supplementary descriptor'],
+              [18, 255, 'volume descriptor terminator'],
+            ]) {
+              const block = Buffer.alloc(sectorSize);
+              const bytesRead = fs.readSync(fd, block, 0, sectorSize, sector * sectorSize);
+              if (bytesRead !== sectorSize || block[0] !== expectedType ||
+                  block.subarray(1, 6).toString('ascii') !== 'CD001' || block[6] !== 1) {
+                throw new Error(`ISO is missing a valid ${label} at sector ${sector}.`);
+              }
+            }
+          } finally {
+            fs.closeSync(fd);
+          }
+          console.log(`ISO structure verified: ${path} (${(size / 1024 / 1024).toFixed(1)} MB).`);
+          NODE

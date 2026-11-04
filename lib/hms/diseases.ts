@@ -33,6 +33,7 @@ export type DiseaseCategory =
   | "dermatology"
   | "musculoskeletal"
   | "obstetric"
+  | "gynaecology"
   | "paediatric"
   | "psychiatric"
   | "surgical"
@@ -69,6 +70,7 @@ export const CATEGORY_LABEL: Record<DiseaseCategory, { en: string; fa: string }>
   dermatology: { en: "Skin", fa: "پوستی" },
   musculoskeletal: { en: "Bones & joints", fa: "استخوان و مفاصل" },
   obstetric: { en: "Pregnancy & childbirth", fa: "حاملگی و ولادت" },
+  gynaecology: { en: "Gynaecology", fa: "نسایی" },
   paediatric: { en: "Child health", fa: "صحتمندی طفل" },
   psychiatric: { en: "Mental health", fa: "صحتدروانی" },
   surgical: { en: "Surgery", fa: "جراحی" },

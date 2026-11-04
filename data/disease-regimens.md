@@ -1,50 +1,58 @@
-# Age- and sex-stratified demo prescriptions
+# Age- and sex-stratified clinical catalogue examples
 
-**Generated:** 2026-11-02T05:10:03.587Z · **Conditions:** 477 · **Patients:** 2862 · **Prescription lines:** 12096
+**Generated:** 2026-11-02T22:56:07.209Z · **Conditions:** 717 · **Synthetic patient examples:** 3815 · **Prescription examples:** 3086 · **Prescription lines:** 12408
 
-Every condition has one patient per band and per sex: child (< 18), adult (18–70) and older
-adult (71–90), half female and half male. Every prescription contains **at least four
-medicines** and always includes a liquid preparation. Each one is then **checked by the
-system** — age bans, renal adjustment, interactions and duplication.
+Each condition has synthetic patient examples only in its applicable age bands: child (2–17),
+adult (18–70) and older adult (71–90). The paediatric chapter is restricted to child-band examples;
+children under 2 and neonatal dosing are outside this demo engine. Its cases are age-bounded and do
+not prefill medicines because safe choices depend on weight, age, diagnosis and formulation.
+Obstetric and gynaecology cases are female-only, age-bounded, and have no prefilled medicines.
+Other cases with no routine medicine have **no prescription example**; procedural or supportive
+treatment remains in the clinical entry. The original catalogue recipes retain their historical
+4–6-line teaching format. ENT, ophthalmic, paediatric and obstetric/gynaecology recipes opt out of
+automatic fill-in where extra drugs would be inappropriate.
 
-| Band | Patients |
+| Band | Synthetic patient examples |
 | --- | --- |
-| < 18 years | 954 |
-| 18–70 years | 954 |
-| 71–90 years | 954 |
+| < 18 years | 1356 |
+| 18–70 years | 1254 |
+| 71–90 years | 1205 |
 
-| Sex | Patients |
+| Sex | Synthetic patient examples |
 | --- | --- |
-| female | 1431 |
-| male | 1431 |
+| female | 1964 |
+| male | 1851 |
 
 | Measure | Result |
 | --- | --- |
-| Medicines per prescription (min / max) | 4 / 6 |
-| Prescriptions with a liquid preparation | 2862 of 2862 (100%) |
-| Child prescriptions with an oral syrup | 954 of 954 (100%) |
-| Prescriptions with an injectable (vial) | 1560 of 2862 (55%) |
-| Prescriptions with a safety finding | 234 of 2862 |
+| Conditions with at least one medication example | 515 of 717 |
+| Medicines per non-empty prescription example (min / max) | 1 / 6 |
+| Prescription examples with a liquid preparation | 3042 of 3086 (99%) |
+| Child prescription examples with an oral syrup | 984 of 1026 (96%) |
+| Prescription examples with an injectable (vial) | 1604 of 3086 (52%) |
+| Prescription examples with a safety finding | 234 of 3086 |
 | … of those, blocking findings | 0 |
-| Total findings raised | 544 |
+| Total findings raised | 550 |
+| Cases without a medication example | 729 |
 
 ## Files
 
-- `data/disease-regimens.json` — one record per patient, every item, dose, quantity and share
-- `data/disease-regimens.csv` — flat table, one row per prescription line, plus safety counts
+- `data/disease-regimens.json` — synthetic age/sex records for applicable bands, including child-only paediatric cases and no-medication cases
+- `data/disease-regimens.csv` — one row per medicine in a non-empty prescription example
 - `data/disease-regimens.md` — this summary
 
-## The two rules the system enforces
+## Safety and scope
 
-1. **Reference doses, not a prescribing order.** Every entry is a textbook range for teaching.
-   `/hms/diseases` prints this above the regimen, and the review panel runs age, renal,
-   interaction and duplication checks on the prescription you are looking at.
-2. **Injectables only where clinically right.** 55% of these prescriptions carry a vial — admitted,
-   severe or emergency care. A viral cold or a fungal skin infection gets tablets or a syrup,
-   because injecting there would be wrong. Children are the exception in the other direction:
-   100% receive an oral syrup.
+1. **Reference examples, not prescriptions.** Doses are teaching ranges only. The disease page
+   prints the disclaimer and the review panel checks age bands, renal adjustments, interactions
+   and duplication. A clean check does not establish that a medicine is appropriate for a patient.
+2. **Do not add medicines to reach a count.** ENT and ophthalmic examples show only medicines that
+   may be indicated. Paediatric examples are child-only and intentionally have no prefilled drugs;
+   weight-based decisions, supportive care, procedures and referral stay in the clinical entry.
+3. The application is **not a medical device** and is not clinically certified. Follow the
+   national formulary, local antimicrobial policy, patient-specific assessment and specialist advice.
 
 ## Disclaimer
 
-Demonstration and teaching dataset. Confirm every prescription against the national formulary,
-the renal and hepatic adjustment tables and your own judgement before use.
+Synthetic demonstration and teaching dataset. Confirm any medicine against the national formulary,
+renal and hepatic adjustment guidance, allergies and the prescriber's judgement before use.

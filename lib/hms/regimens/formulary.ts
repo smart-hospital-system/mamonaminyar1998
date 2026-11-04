@@ -248,10 +248,38 @@ const SPECS: Record<string, Spec> = {
   },
   beclomethasone_nasal: {
     name: "Beclomethasone nasal spray", nameFa: "اسپری بینی بکلومیتازون", className: "Nasal corticosteroid",
-    child: c("Drops", "50 mcg/dose", "1 spray each nostril", "Twice daily"),
-    adult: A("50 mcg/dose", "2 sprays each nostril", "Twice daily"),
-    elderly: A("50 mcg/dose", "1 spray each nostril", "Twice daily"),
+    child: c("Drops", "50 mcg/dose nasal spray", "1 spray each nostril", "Twice daily", "Nasal"),
+    adult: A("50 mcg/dose nasal spray", "2 sprays each nostril", "Twice daily", "Nasal"),
+    elderly: A("50 mcg/dose nasal spray", "1 spray each nostril", "Twice daily", "Nasal"),
     duration: "28 days",
+  },
+  ipratropium_nasal: {
+    name: "Ipratropium nasal spray", nameFa: "اسپری بینی ایپراتروپیوم", className: "Anticholinergic nasal spray",
+    child: c("Drops", "0.03% nasal spray", "1 spray each nostril", "Every 8 hours", "Nasal"),
+    adult: A("0.03% nasal spray", "2 sprays each nostril", "Every 8 hours", "Nasal"),
+    elderly: A("0.03% nasal spray", "2 sprays each nostril", "Every 8 hours, avoid contact with eyes", "Nasal"),
+    duration: "14 days",
+  },
+  lubricating_eye_drops: {
+    name: "Carboxymethylcellulose lubricating eye drops", nameFa: "قطرۀ چشمی روان‌کنندۀ کربوکسی‌متیل‌سلولوز", className: "Ocular lubricant",
+    child: c("Drops", "0.5% solution", "1 drop in the affected eye", "Every 4–6 hours", "Ophthalmic"),
+    adult: A("0.5% eye drops", "1 drop in the affected eye", "Every 4–6 hours", "Ophthalmic"),
+    elderly: A("0.5% eye drops", "1 drop in the affected eye", "Every 4–6 hours", "Ophthalmic"),
+    duration: "14 days",
+  },
+  olopatadine_ophthalmic: {
+    name: "Olopatadine eye drops", nameFa: "قطرۀ چشمی اولوپاتادین", className: "Topical antihistamine / mast-cell stabiliser",
+    child: c("Drops", "0.1% ophthalmic solution (use only age-approved product)", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    adult: A("0.1% ophthalmic solution", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    elderly: A("0.1% ophthalmic solution", "1 drop in each affected eye", "Twice daily", "Ophthalmic"),
+    duration: "As needed during allergen exposure",
+  },
+  ciprofloxacin_ophthalmic: {
+    name: "Ciprofloxacin eye drops", nameFa: "قطرۀ چشمی سیپروفلوکساسین", className: "Topical fluoroquinolone antimicrobial",
+    child: c("Drops", "0.3% ophthalmic solution", "Specialist-directed dose; do not delay urgent referral", "Condition-specific intensive schedule", "Ophthalmic"),
+    adult: A("0.3% ophthalmic solution", "1 drop in affected eye", "Hourly initially for corneal ulcer, specialist-directed", "Ophthalmic"),
+    elderly: A("0.3% ophthalmic solution", "1 drop in affected eye", "Hourly initially for corneal ulcer, specialist-directed", "Ophthalmic"),
+    duration: "Reassess daily; duration depends on diagnosis and response",
   },
   budesonide_inh: {
     name: "Budesonide inhaler", nameFa: "بودزوناید استنشاقی", className: "Inhaled corticosteroid",
@@ -262,10 +290,38 @@ const SPECS: Record<string, Spec> = {
   },
   amoxicillin_syrup_note: {
     name: "Saline nasal drops", nameFa: "قطرهٔ نمکی بینی", className: "Supportive",
-    child: c("Drops", "0.9% saline", "2 drops each nostril", "Three times daily"),
-    adult: A("0.9% saline spray", "2 sprays each nostril", "Three times daily"),
-    elderly: A("0.9% saline spray", "2 sprays each nostril", "Three times daily"),
+    child: c("Drops", "0.9% saline", "2 drops each nostril", "Three times daily", "Nasal"),
+    adult: A("0.9% saline spray", "2 sprays each nostril", "Three times daily", "Nasal"),
+    elderly: A("0.9% saline spray", "2 sprays each nostril", "Three times daily", "Nasal"),
     duration: "7 days",
+  },
+  saline_nasal: {
+    name: "Isotonic saline nasal irrigation", nameFa: "شست‌وشوی بینی با محلول نمکی", className: "Supportive — nasal irrigation",
+    child: c("Drops", "0.9% saline", "2 drops each nostril", "Three times daily", "Nasal"),
+    adult: A("0.9% saline spray", "2 sprays each nostril", "Three times daily", "Nasal"),
+    elderly: A("0.9% saline spray", "2 sprays each nostril", "Three times daily", "Nasal"),
+    duration: "14 days",
+  },
+  olive_oil_otic: {
+    name: "Olive oil ear drops", nameFa: "قطرهٔ روغن زیتون برای گوش", className: "Cerumen softener",
+    child: c("Drops", "sterile ear drops", "2–3 drops in the affected ear", "Twice daily", "Otic"),
+    adult: A("sterile ear drops", "2–3 drops in the affected ear", "Twice daily", "Otic"),
+    elderly: A("sterile ear drops", "2–3 drops in the affected ear", "Twice daily", "Otic"),
+    duration: "7 days",
+  },
+  ciprofloxacin_otic: {
+    name: "Ciprofloxacin ear drops", nameFa: "قطرهٔ سیپروفلوکساسین گوش", className: "Topical fluoroquinolone antibiotic",
+    child: c("Drops", "0.3% solution", "3–4 drops in the affected ear", "Every 12 hours", "Otic"),
+    adult: A("0.3% ear drops", "3–4 drops in the affected ear", "Every 12 hours", "Otic"),
+    elderly: A("0.3% ear drops", "3–4 drops in the affected ear", "Every 12 hours", "Otic"),
+    duration: "7 days",
+  },
+  clotrimazole_otic: {
+    name: "Clotrimazole ear drops", nameFa: "قطرهٔ کلوتریمازول گوش", className: "Topical antifungal",
+    child: c("Drops", "1% solution", "2–3 drops in the affected ear", "Every 8 hours", "Otic"),
+    adult: A("1% ear drops", "2–3 drops in the affected ear", "Every 8 hours", "Otic"),
+    elderly: A("1% ear drops", "2–3 drops in the affected ear", "Every 8 hours", "Otic"),
+    duration: "14 days",
   },
   ferrous: {
     name: "Ferrous sulphate", nameFa: "فروس سلفات", className: "Supplement — iron",
@@ -1620,6 +1676,9 @@ export const DRUGS: Record<string, Drug> = Object.fromEntries(
 /** Form follows the route when one is stated, otherwise it is read from the strength text. */
 function formFor(route: string | undefined, strength: string): Form {
   const r = (route ?? "oral").toLowerCase();
+  // Nasal, otic and ophthalmic preparations are drops even though their route
+  // is not oral; treating them as vials would misstate the dispensed product.
+  if (/nasal|otic|ophthalmic/.test(r) && /drop|spray|solution/i.test(strength)) return "Drops";
   if (r !== "oral") return "Vial";
   return guessForm(strength);
 }
@@ -1631,6 +1690,8 @@ function routeFor(form: Form, declared: string | undefined): string {
   if (form === "Cream" || form === "Ointment") return "Topical";
   if (form === "Suppository") return "Rectal";
   if (form === "Drops" && /nose|nasal/i.test(declared ?? "")) return "Nasal";
+  if (form === "Drops" && /ear|otic/i.test(declared ?? "")) return "Otic";
+  if (form === "Drops" && /eye|ophthalmic/i.test(declared ?? "")) return "Ophthalmic";
   return declared ?? "Oral";
 }
 

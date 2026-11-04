@@ -160,25 +160,34 @@ function itemFor(drugId: string, band: DoseBand): Item {
   };
 }
 
-/** The six prescriptions for one condition, in band → sex order. */
+/** Synthetic patient examples for the applicable bands, in band → sex order. */
 export function buildForDisease(diseaseId: string): PatientRecord[] {
   const index = DISEASES.findIndex((d) => d.id === diseaseId);
   if (index < 0) return [];
   const disease = DISEASES[index];
   const raw = RECIPES[diseaseId];
+  if (!raw) throw new Error(`Missing regimen recipe for ${diseaseId}`);
   const out: PatientRecord[] = [];
   let seq = index * 6;
 
   for (const b of BANDS) {
+    if (!Array.isArray(raw) && raw.applicableBands && !raw.applicableBands.includes(b.band)) continue;
     for (const sex of ["female", "male"] as const) {
       seq += 1;
+      if (!Array.isArray(raw) && raw.applicableSexes && !raw.applicableSexes.includes(sex)) continue;
       const pool = sex === "female" ? FEMALE : MALE;
       const perSex = Math.floor((seq - 1) / 2);
       const first = pool[perSex % pool.length];
       const family = FAMILY[Math.floor(perSex / pool.length) % FAMILY.length];
-      const age = b.min + ((seq * 7) % (b.max - b.min + 1));
+      const ageRange = !Array.isArray(raw) ? raw.exampleAgeRange?.[b.band] : undefined;
+      const minAge = ageRange?.min ?? b.min;
+      const maxAge = ageRange?.max ?? b.max;
+      if (minAge < b.min || maxAge > b.max || minAge > maxAge) {
+        throw new Error(`Invalid synthetic age range for ${disease.id}/${b.band}: ${minAge}-${maxAge}`);
+      }
+      const age = minAge + ((seq * 7) % (maxAge - minAge + 1));
 
-      const recipe = Array.isArray(raw) ? raw : raw ? raw[b.band] ?? raw.default : [];
+      const recipe = Array.isArray(raw) ? raw : raw[b.band] ?? raw.default;
       const items = recipe.map((id) => itemFor(id, b.band));
 
       // Never add, replace or force a drug/form just to satisfy a template count.
@@ -219,12 +228,13 @@ export function validate(records: PatientRecord[]): string[] {
   const problems: string[] = [];
   for (const r of records) {
     const tag = `${r.diseaseId}/${r.band}/${r.sex}`;
-    if (!r.items.length) problems.push(`${tag}: empty teaching example`);
+    const rule = RECIPES[r.diseaseId];
+    if (!r.items.length && (Array.isArray(rule) || rule?.minItems !== 0)) problems.push(`${tag}: empty teaching example without an explicit no-medication plan`);
     for (const item of r.items) {
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) problems.push(`${tag}: invalid quantity`);
     }
     const sum = Math.round(r.items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
-    if (Math.abs(sum - 100) > 0.05) problems.push(`${tag}: shares total ${sum}%`);
+    if (r.items.length > 0 && Math.abs(sum - 100) > 0.05) problems.push(`${tag}: shares total ${sum}%`);
   }
   return problems;
 }

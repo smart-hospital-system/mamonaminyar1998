@@ -65,6 +65,40 @@ if (fs.existsSync(dbPath)) {
   warn("No database and no demo copy found. The first request will create and seed an empty hospital.");
 }
 
+/* ------------------------------------------------- 2b. clinical catalogue rows */
+// The generated clinical examples are also stored in data/disease-regimens.json.
+// Compare the expected row count with the local database so a safe, idempotent
+// catalogue refresh adds new chapters without touching real hospital records.
+if (process.env.AYBEK_ENABLE_DEMO_ACTIONS === "1" && process.env.AYBEK_ENABLE_TEACHING_REGIMENS === "1") {
+const generatedCatalogue = path.join(root, "data", "disease-regimens.json");
+let expected = 0;
+try {
+  expected = Number(JSON.parse(fs.readFileSync(generatedCatalogue, "utf8")).totals?.prescriptionExamples ?? 0);
+} catch {
+  warn("Could not read the generated catalogue count; run `npm run hms:regimens` before deploying an update.");
+}
+const probe = spawnSync("node", ["scripts/catalogue-count.mjs"], { cwd: root, encoding: "utf8" });
+const have = Number((probe.stdout ?? "").trim() || 0);
+if (expected > 0 && have !== expected) {
+  log(`Refreshing the clinical catalogue (${have} stored, ${expected} expected)…`);
+  const seed = spawnSync("npx", ["tsx", "scripts/seed-catalogue.ts", "--confirm-destroy"], {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (seed.status !== 0) {
+    warn("The catalogue seeder did not finish — the hospital still starts, and `npm run hms:catalogue` can be run later.");
+  }
+} else if (expected === 0) {
+  warn("The generated catalogue count is unavailable; the register was not modified.");
+} else {
+  log(`Clinical catalogue is current (${have} prescription examples).`);
+}
+
+} else {
+  log("Automatic teaching catalogue refresh disabled; existing hospital records were not refreshed.");
+}
+
 /* -------------------------------------------------------------------- 3. build */
 const needBuild = needsBuild(root);
 
