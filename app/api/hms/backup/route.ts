@@ -1,3 +1,4 @@
+import { demoActionsEnabled } from "@/lib/request-security";
 import { body, json, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
 import { dumpHms, getSettings, hmsReady, resetHmsData } from "@/lib/hms/db";
@@ -11,8 +12,8 @@ const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
  *
  * The JSON file is the portable backup: it contains patients, prescriptions,
  * stock movements, invoices and the audit trail, and it can be read by any tool.
- * For a byte-exact copy the owner still copies data\slotly.db — both routes are
- * described in Settings → Data and in the Persian handbook.
+ * This JSON export is not a tested restore format. Use the SQLite snapshot tool
+ * for consistent database backup; never raw-copy a live main/WAL/SHM set.
  */
 export const GET = route(async () => {
   await requireHmsApi(["admin"]);
@@ -35,6 +36,7 @@ export const GET = route(async () => {
 });
 
 export const POST = route(async (req) => {
+  if (!demoActionsEnabled()) return json({ error: "Destructive demo reset is disabled." }, 403);
   const user = await requireHmsApi(["admin"]);
   const p = await body<{ action?: string; confirm?: string }>(req);
 

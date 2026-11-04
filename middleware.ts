@@ -4,7 +4,7 @@ const PROTECTED = ["/dashboard"];
 
 /** Allow our own pages to be framed by the workspace preview host. */
 const FRAME_POLICY = [
-  "frame-ancestors 'self' https://*.e2b.app https://*.arena.ai http://localhost:3000",
+  "frame-ancestors 'self' https://*.e2b.app https://arena.ai https://*.arena.ai http://localhost:3000",
 ].join("; ");
 
 export function middleware(req: NextRequest) {
@@ -18,12 +18,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (pathname === "/login" && hasSession) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
-  }
+  // A cookie's presence is not proof of a valid session. Never redirect the
+  // login page based only on it: expired/forged cookies otherwise create a loop.
 
   const res = NextResponse.next();
   // The demo is embedded in the hosted preview iframe, so framing is limited by

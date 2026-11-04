@@ -3,7 +3,7 @@ import { hAll, hGet, hNow, hRun, hUid, getSection, saveSettings } from "./db";
 /* =====================================================================
  * Self-monitoring health engine
  * Scans the whole installation every 30 minutes (client heartbeat), raises
- * alarms by severity, waits 48 hours for a human answer, then auto-heals.
+ * alarms by severity and escalates after 48 hours. Never repairs clinical records.
  * ===================================================================== */
 
 export type Severity = "critical" | "warning" | "info";
@@ -51,18 +51,10 @@ export function scan(): Finding[] {
       severity: "critical",
       category: "Data integrity",
       title: `${orphanRx?.c} prescription(s) reference a deleted patient`,
-      detail: "Orphan records break audit reporting and can hide a medication error. They will be relinked to an archived patient record.",
+      detail: "Orphan records break audit reporting and can hide a medication error. Preserve the original links, verify backups and ask the clinician/data custodian to reconcile them manually.",
       link: "/hms/settings?section=alerts",
-      autoFixable: true,
-      fix: () => {
-        hRun(
-          `INSERT INTO hms_patients (id, mrn, name, gender, created_at)
-           SELECT 'pat_archived', 'MRN-ARCHIVED', 'Archived record', 'Unknown', ? WHERE NOT EXISTS (SELECT 1 FROM hms_patients WHERE id = 'pat_archived')`,
-          [hNow()]
-        );
-        const r = hRun("UPDATE hms_prescriptions SET patient_id = 'pat_archived' WHERE patient_id NOT IN (SELECT id FROM hms_patients)");
-        return `Relinked ${r.changes} orphan prescription(s) to the archived patient record.`;
-      },
+      autoFixable: false,
+
     });
   }
 
@@ -73,21 +65,10 @@ export function scan(): Finding[] {
       severity: "critical",
       category: "Data integrity",
       title: "Duplicate medical record numbers detected",
-      detail: "Two patients share an MRN, which can merge histories. The engine will suffix the newer record.",
+      detail: "Two patients share an MRN, which can merge histories. Do not renumber automatically; reconcile identity with the responsible staff.",
       link: "/hms/patients",
-      autoFixable: true,
-      fix: () => {
-        const dups = hAll<{ mrn: string }>("SELECT mrn FROM hms_patients GROUP BY mrn HAVING COUNT(*) > 1");
-        let fixed = 0;
-        for (const d of dups) {
-          const rows = hAll<{ id: string }>("SELECT id FROM hms_patients WHERE mrn = ? ORDER BY created_at", [d.mrn]);
-          rows.slice(1).forEach((r, i) => {
-            hRun("UPDATE hms_patients SET mrn = ? WHERE id = ?", [`${d.mrn}-D${i + 1}`, r.id]);
-            fixed++;
-          });
-        }
-        return `Re-numbered ${fixed} duplicate MRN(s).`;
-      },
+      autoFixable: false,
+
     });
   }
 
@@ -101,29 +82,10 @@ export function scan(): Finding[] {
       severity: "critical",
       category: "Inpatient",
       title: "Two patients assigned to the same bed",
-      detail: "A bed can only hold one inpatient. The engine will move the later admission to a free bed.",
+      detail: "A bed can only hold one inpatient. Verify the actual bedside situation with ward staff; no automatic reassignment is permitted.",
       link: "/hms/inpatients",
-      autoFixable: true,
-      fix: () => {
-        const conflicts = hAll<{ bed_id: string }>(
-          "SELECT bed_id FROM hms_admissions WHERE status = 'admitted' AND bed_id IS NOT NULL GROUP BY bed_id HAVING COUNT(*) > 1"
-        );
-        let moved = 0;
-        for (const c of conflicts) {
-          const rows = hAll<{ id: string }>(
-            "SELECT id FROM hms_admissions WHERE bed_id = ? AND status = 'admitted' ORDER BY admitted_at",
-            [c.bed_id]
-          );
-          for (const row of rows.slice(1)) {
-            const free = hGet<{ id: string }>("SELECT id FROM hms_beds WHERE status = 'available' LIMIT 1");
-            if (!free) break;
-            hRun("UPDATE hms_admissions SET bed_id = ? WHERE id = ?", [free.id, row.id]);
-            hRun("UPDATE hms_beds SET status = 'occupied', patient_id = (SELECT patient_id FROM hms_admissions WHERE id = ?) WHERE id = ?", [row.id, free.id]);
-            moved++;
-          }
-        }
-        return `Reassigned ${moved} admission(s) to free beds.`;
-      },
+      autoFixable: false,
+
     });
   }
 
@@ -139,11 +101,8 @@ export function scan(): Finding[] {
       title: `${expired.length} expired medicine batch(es) in active stock`,
       detail: `${expired.slice(0, 3).map((e) => `${e.name} (${e.batch}, exp ${e.expiry})`).join("; ")}. Dispensing expired stock is a patient-safety breach.`,
       link: "/hms/pharmacy?tab=stock",
-      autoFixable: true,
-      fix: () => {
-        const r = hRun("UPDATE hms_medicines SET active = 0, stock = 0 WHERE expiry IS NOT NULL AND expiry < date('now') AND active = 1");
-        return `Quarantined ${r.changes} expired batch(es) (stock set to zero, item deactivated).`;
-      },
+      autoFixable: false,
+
     });
   }
 
@@ -254,19 +213,8 @@ export function scan(): Finding[] {
       title: `${noBed?.c} admitted patient(s) without a bed`,
       detail: "Every inpatient must occupy a bed for billing and safety rounds.",
       link: "/hms/inpatients",
-      autoFixable: true,
-      fix: () => {
-        const rows = hAll<{ id: string }>("SELECT id FROM hms_admissions WHERE status = 'admitted' AND bed_id IS NULL");
-        let placed = 0;
-        for (const r of rows) {
-          const free = hGet<{ id: string }>("SELECT id FROM hms_beds WHERE status = 'available' LIMIT 1");
-          if (!free) break;
-          hRun("UPDATE hms_admissions SET bed_id = ? WHERE id = ?", [free.id, r.id]);
-          hRun("UPDATE hms_beds SET status = 'occupied' WHERE id = ?", [free.id]);
-          placed++;
-        }
-        return `Assigned ${placed} inpatient(s) to available beds.`;
-      },
+      autoFixable: false,
+
     });
   }
 
@@ -307,24 +255,28 @@ export function scan(): Finding[] {
   return out;
 }
 
+const MONITOR_CODES = new Set(["orphan-prescription", "duplicate-mrn", "bed-conflict", "expired-stock", "low-stock", "unsigned-rx", "lab-overdue", "imaging-overdue", "bed-capacity", "surgery-past", "admission-without-bed", "monitor-off", "stale-sessions"]);
+
 export function syncAlerts(findings: Finding[]): AlertRow[] {
   const existing = hAll<AlertRow>("SELECT * FROM hms_alerts");
   const now = hNow();
-  const due = new Date(Date.now() + 48 * 3600_000).toISOString();
+  const configuredHours = Number(getSection<Record<string, unknown>>("alerts").escalation_hours ?? 48);
+  const hours = Number.isFinite(configuredHours) ? Math.max(1, Math.min(720, configuredHours)) : 48;
+  const due = new Date(Date.now() + hours * 3600_000).toISOString();
   const seen = new Set<string>();
 
   for (const f of findings) {
     seen.add(f.code);
     const row = existing.find((e) => e.code === f.code && e.status !== "resolved");
     if (row) {
-      hRun("UPDATE hms_alerts SET severity = ?, title = ?, detail = ?, last_seen = ?, occurrences = occurrences + 0 WHERE id = ?", [
-        f.severity, f.title, f.detail, now, row.id,
+      hRun("UPDATE hms_alerts SET severity = ?, title = ?, detail = ?, last_seen = ?, auto_fixable = ?, occurrences = occurrences + 0 WHERE id = ?", [
+        row.due_at && row.due_at < now ? "critical" : f.severity, f.title, f.detail, now, f.autoFixable ? 1 : 0, row.id,
       ]);
     } else {
       const resolvedBefore = existing.find((e) => e.code === f.code && e.status === "resolved");
       if (resolvedBefore) {
-        hRun("UPDATE hms_alerts SET status = 'open', severity = ?, title = ?, detail = ?, last_seen = ?, due_at = ?, resolved_at = NULL WHERE id = ?", [
-          f.severity, f.title, f.detail, now, due, resolvedBefore.id,
+        hRun("UPDATE hms_alerts SET status = 'open', severity = ?, title = ?, detail = ?, last_seen = ?, due_at = ?, auto_fixable = ?, resolved_at = NULL WHERE id = ?", [
+          f.severity, f.title, f.detail, now, due, f.autoFixable ? 1 : 0, resolvedBefore.id,
         ]);
       } else {
         hRun(
@@ -338,7 +290,7 @@ export function syncAlerts(findings: Finding[]): AlertRow[] {
 
   // anything open that no longer appears in the scan is auto-resolved
   for (const row of existing) {
-    if (!seen.has(row.code) && row.status !== "resolved") {
+    if (MONITOR_CODES.has(row.code) && !seen.has(row.code) && row.status !== "resolved") {
       hRun("UPDATE hms_alerts SET status = 'resolved', resolved_at = ?, resolution = ? WHERE id = ?", [
         now, "Condition cleared — verified by the automatic health scan.", row.id,
       ]);
@@ -378,6 +330,10 @@ export function resolve(id: string, note: string, by: string) {
 export function autoHeal(id: string, by: string): { ok: boolean; message: string } {
   const alert = hGet<AlertRow>("SELECT * FROM hms_alerts WHERE id = ?", [id]);
   if (!alert) return { ok: false, message: "Alert not found." };
+  // Explicitly scoped housekeeping only; never execute a clinical/data repair.
+  if (!["stale-sessions", "monitor-off"].includes(alert.code)) {
+    return { ok: false, message: "Clinical and inventory records require manual authorized review; automatic repair is disabled." };
+  }
   const findings = scan();
   const finding = findings.find((f) => f.code === alert.code);
   if (!finding || !finding.fix) {
@@ -396,11 +352,8 @@ export function escalateExpired() {
   );
   const report: { code: string; healed: boolean; message: string }[] = [];
   for (const row of expiredRows) {
-    const res = autoHeal(row.id, "auto-escalation");
-    if (!res.ok) {
-      hRun("UPDATE hms_alerts SET severity = 'critical' WHERE id = ?", [row.id]);
-    }
-    report.push({ code: row.code, healed: res.ok, message: res.message });
+    hRun("UPDATE hms_alerts SET severity = 'critical' WHERE id = ?", [row.id]);
+    report.push({ code: row.code, healed: false, message: "Deadline exceeded: escalated for manual review. Clinical data was not modified." });
   }
   return report;
 }

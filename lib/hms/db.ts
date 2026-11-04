@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { getDb } from "@/lib/db";
 import { seedHms } from "./seed";
@@ -115,7 +116,7 @@ let ready = false;
 export function hmsDb(): DatabaseSync {
   const db = getDb();
   if (!ready) {
-    db.exec("PRAGMA foreign_keys = OFF;");
+    // Adding HMS tables must not disable the booking application's foreign keys.
     db.exec(SCHEMA);
     ready = true;
   }
@@ -152,7 +153,7 @@ export function hRun(sql: string, params: unknown[] = []) {
 }
 
 export function hUid(prefix: string) {
-  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  return `${prefix}_${randomUUID()}`;
 }
 
 export function hNow() {
@@ -163,7 +164,15 @@ export function hNow() {
 export function hmsReady() {
   const db = hmsDb();
   const row = db.prepare("SELECT COUNT(*) AS c FROM hms_users").get() as { c: number } | undefined;
-  if (!row || Number(row.c) === 0) seedHms(db);
+  if (!row || Number(row.c) === 0) {
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name GLOB 'hms_*'").all() as { name: string }[];
+    const populated = tables.some(({ name }) => {
+      if (!/^hms_[a-z0-9_]+$/.test(name)) throw new Error("Unrecognized hospital table; manual review required.");
+      return !!db.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
+    });
+    if (populated) throw new Error("Hospital records exist without staff accounts. Automatic demo seeding refused; preserve the database and review access recovery manually.");
+    seedHms(db);
+  }
   return db;
 }
 
@@ -255,9 +264,9 @@ export const DEFAULT_SETTINGS: HmsSettings = {
   alerts: {
     enabled: true,
     interval_minutes: 30,
-    sound: true,
+    sound: false,
     escalation_hours: 48,
-    auto_heal: true,
+    auto_heal: false,
     quiet_from: "22:00",
     quiet_to: "06:00",
     notify_roles: ["admin", "doctor"],
@@ -299,6 +308,8 @@ export function getSettings(): HmsSettings {
       /* ignore corrupt row */
     }
   }
+  // Legacy stored true values never re-enable autonomous clinical repairs.
+  out.alerts = { ...out.alerts, auto_heal: false };
   return out;
 }
 

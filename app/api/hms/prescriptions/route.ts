@@ -1,7 +1,8 @@
 import { body, json, qp, route } from "@/lib/api";
 import { requireHmsApi } from "@/lib/hms/auth";
-import { hAudit, hNow, hRun, hUid, hGet } from "@/lib/hms/db";
+import { hAudit, hNow, hRun, hUid, hGet, hmsReady } from "@/lib/hms/db";
 import { listPrescriptions, getPrescription } from "@/lib/hms/queries";
+import { validatePrescriptionInput } from "@/lib/hms/prescription-validation";
 import { screenPrescription, type RxLine } from "@/lib/hms/ai";
 
 type ItemInput = {
@@ -28,6 +29,8 @@ export const POST = route(async (req) => {
     patient_id?: string; encounter_id?: string; diagnosis?: string; icd10?: string;
     notes?: string; follow_up?: string; template?: number; items?: ItemInput[]; sign?: boolean;
   }>(req);
+  const invalid = validatePrescriptionInput(p);
+  if (invalid) return json({ error: invalid }, 422);
   if (!p.patient_id) return json({ error: "Choose a patient first." }, 422);
   const items = (p.items ?? []).filter((i) => i.drug?.trim());
   if (!items.length) return json({ error: "Add at least one medicine." }, 422);
@@ -35,12 +38,20 @@ export const POST = route(async (req) => {
   const patient = hGet<{ name: string; allergies: string | null }>("SELECT name, allergies FROM hms_patients WHERE id = ?", [p.patient_id]);
   if (!patient) return json({ error: "Patient not found." }, 404);
 
+  if (p.encounter_id) {
+    const encounter = hGet<{ patient_id: string; doctor_id: string }>("SELECT patient_id, doctor_id FROM hms_encounters WHERE id = ?", [p.encounter_id]);
+    if (!encounter || encounter.patient_id !== p.patient_id) return json({ error: "Encounter does not match this patient." }, 422);
+    if (user.role !== "admin" && encounter.doctor_id !== user.id) return json({ error: "Only the encounter author may attach a prescription." }, 403);
+  }
   const safety = screenPrescription(items as RxLine[], patient.allergies);
   if (safety.verdict === "stop" && !p.sign) {
     // clinical override is allowed only when explicitly signing with consent
     return json({ error: "Safety screen blocked this prescription.", safety }, 422);
   }
 
+  const db = hmsReady();
+  db.exec("BEGIN IMMEDIATE");
+  try {
   const id = hUid("rx");
   const seq = Number(hGet<{ c: number }>("SELECT COUNT(*) AS c FROM hms_prescriptions")?.c ?? 0);
   const year = new Date().getFullYear();
@@ -77,7 +88,13 @@ export const POST = route(async (req) => {
   }
 
   hAudit(user, p.sign ? "signed" : "created", "prescription", id, `${p.sign ? "Signed" : "Drafted"} ${rxNo} for ${patient.name}`);
-  return json({ ok: true, id, rx_no: rxNo, safety, prescription: getPrescription(id) }, 201);
+  const response = json({ ok: true, id, rx_no: rxNo, safety, prescription: getPrescription(id) }, 201);
+  db.exec("COMMIT");
+  return response;
+  } catch (error) {
+    try { db.exec("ROLLBACK"); } catch { /* preserve original failure */ }
+    throw error;
+  }
 });
 
 export const dynamic = "force-dynamic";

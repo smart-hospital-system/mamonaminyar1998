@@ -1,13 +1,8 @@
 /**
- * Treatment recipes — legacy 4–6-line teaching examples plus sparse clinical recipes.
- *
- * The older synthetic teaching recipes keep their historical four-line and
- * liquid-preparation floor. New clinical examples may opt out of that floor
- * when fewer medicines, or no routine medicine, is the evidence-based choice;
- * the engine must never add unrelated drugs just to fill a prescription.
- *
- * Doses come from the formulary band table, never from here. Every recipe is a
- * teaching example, not an instruction to prescribe all listed medicines.
+ * Unvalidated legacy teaching recipes, not patient-specific prescribing guidance.
+ * Existing lists are preserved for specialist review. No minimum drug count,
+ * syrup, vial or injection requirement is imposed by the generator.
+ * Do not use this catalogue to select treatment without independent clinical validation.
  */
 export type Recipe =
   | string[]
@@ -16,7 +11,7 @@ export type Recipe =
       child?: string[];
       adult?: string[];
       elderly?: string[];
-      /** Legacy recipes auto-fill to four lines and a liquid; new clinical plans can opt out. */
+      /** Legacy metadata only; the engine never adds drugs to satisfy a count or dosage-form requirement. */
       autoFill?: boolean;
       minItems?: number;
       requireLiquid?: boolean;

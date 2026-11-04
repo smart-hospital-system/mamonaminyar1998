@@ -10,7 +10,7 @@
     "start": "next start -H 0.0.0.0 -p 3000",
     "seed": "tsx scripts/seed.ts",
     "db:reset": "node scripts/reset-db.mjs",
-    "lint": "next lint",
+    "lint": "npm run check && npm run typecheck",
     "hms:verify": "tsx scripts/verify-hms.ts",
     "hms:regimens": "tsx scripts/build-regimens.ts",
     "hms:store": "tsx scripts/build-store.ts",
@@ -24,6 +24,8 @@
     "watch:css": "tailwindcss -i ./frontend/tailwind.input.css -o ./frontend/tailwind.css --watch",
     "check:css": "node scripts/check_tailwind.cjs",
     "ash:build": "npm run build:css",
+    "typecheck": "tsc --noEmit",
+    "test:next": "node --import tsx --test tests/next/*.test.ts",
     "release:disc": "node scripts/build-disc.mjs",
     "release:iso": "node scripts/build-disc.mjs && node scripts/make-iso.mjs"
   },
@@ -38,7 +40,8 @@
     "react-dom": "19.3.1",
     "recharts": "3.10.1",
     "swr": "2.5.1",
-    "tailwind-merge": "3.3.1"
+    "tailwind-merge": "3.3.1",
+    "@next/env": "15.5.28"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -55,6 +58,6 @@
     "postcss": "8.5.32"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13.0"
   }
 }

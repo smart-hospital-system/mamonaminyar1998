@@ -1,3 +1,8 @@
+
+if (process.env.AYBEK_ENABLE_DEMO_ACTIONS !== "1" || !process.argv.includes("--confirm-destroy")) {
+  console.error("Refused: destructive demo operation requires AYBEK_ENABLE_DEMO_ACTIONS=1 and --confirm-destroy. Stop the app and verify a backup first.");
+  process.exit(1);
+}
 /**
  * Reset only the hospital layer, keeping the booking workspace untouched.
  *
@@ -6,10 +11,11 @@
  * re-seeds the full hospital from `lib/hms/seed.ts` (9 staff accounts, patients,
  * consults, prescriptions, lab and imaging orders, ten beds, stock, invoices).
  *
- * This deletes patient data. On a live installation take a backup first:
- *   npm run backup:data      (or copy data\slotly.db)
+ * This deletes patient data. Never use on a live installation. Stop the server
+ * and verify a SQLite-consistent, recoverable backup before authorized maintenance.
+ * A raw copy of the main file while WAL is active is not a safe backup.
  *
- * Usage: npm run hms:reset
+ * Disposable demos only: explicit environment opt-in and --confirm-destroy required.
  */
 import { DatabaseSync } from "node:sqlite";
 import path from "node:path";
@@ -31,4 +37,4 @@ for (const t of tables) db.exec(`DROP TABLE IF EXISTS "${t.name}"`);
 db.exec("PRAGMA foreign_keys = ON;");
 
 console.log(`Dropped ${tables.length} hospital table(s) from ${path.basename(file)}.`);
-console.log("Open the app (or run `npm run hms:verify`) and the demo hospital is rebuilt automatically.");
+console.log("Only in this explicitly disposable demo: starting the app initializes missing hospital tables. The read-only verifier never seeds.");

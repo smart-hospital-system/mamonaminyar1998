@@ -189,28 +189,14 @@ export function buildForDisease(diseaseId: string): PatientRecord[] {
 
       const recipe = Array.isArray(raw) ? raw : raw[b.band] ?? raw.default;
       const items = recipe.map((id) => itemFor(id, b.band));
-      const autoFill = Array.isArray(raw) || raw.autoFill !== false;
 
-      // Legacy teaching recipes keep their historical liquid/syrup floor.
-      // Clinical examples opt out when extra medicines would not be indicated.
-      if (autoFill) {
-        const needsSyrup = b.band === "child" && !items.some((i) => ["Syrup", "Suspension"].includes(i.form));
-        if (needsSyrup || !items.some((i) => isLiquidPrep(i.form))) {
-          const plain = items.findIndex((i) => i.drugId === "paracetamol");
-          const syrup = itemFor("paracetamol_syrup", b.band);
-          if (plain >= 0) items[plain] = syrup;
-          else if (items.length < 6) items.push(syrup);
-          else items[items.length - 1] = syrup;
-        }
-      }
-
-      if (items.length > 0) {
-        const total = items.reduce((n, i) => n + i.quantity, 0) || 1;
-        for (const i of items) i.sharePct = Math.round((i.quantity / total) * 1000) / 10;
-        const before = Math.round(items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
-        const last = items[items.length - 1];
-        last.sharePct = Math.round((last.sharePct + (100 - before)) * 10) / 10;
-      }
+      // Never add, replace or force a drug/form just to satisfy a template count.
+      // This is an unvalidated teaching fixture, not a patient-specific regimen.
+      const total = items.reduce((n, i) => n + i.quantity, 0) || 1;
+      for (const i of items) i.sharePct = Math.round((i.quantity / total) * 1000) / 10;
+      const before = Math.round(items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
+      const last = items[items.length - 1];
+      if (last) last.sharePct = Math.round((last.sharePct + (100 - before)) * 10) / 10;
 
       out.push({
         patientId: `dp-${String(seq).padStart(4, "0")}`,
@@ -243,14 +229,10 @@ export function validate(records: PatientRecord[]): string[] {
   for (const r of records) {
     const tag = `${r.diseaseId}/${r.band}/${r.sex}`;
     const rule = RECIPES[r.diseaseId];
-    const minItems = !Array.isArray(rule) && rule?.minItems !== undefined ? rule.minItems : 4;
-    const requireLiquid = !Array.isArray(rule) && rule?.requireLiquid !== undefined ? rule.requireLiquid : true;
-    const requireChildSyrup = !Array.isArray(rule) && rule?.requireChildSyrup !== undefined ? rule.requireChildSyrup : true;
-    if (r.items.length < minItems) problems.push(`${tag}: only ${r.items.length} medicines (minimum ${minItems})`);
-    if (r.items.length > 6) problems.push(`${tag}: ${r.items.length} medicines exceeds the six-item limit`);
-    if (requireLiquid && !r.items.some((i) => isLiquidPrep(i.form))) problems.push(`${tag}: no liquid or vial`);
-    if (requireChildSyrup && r.band === "child" && !r.items.some((i) => ["Syrup", "Suspension"].includes(i.form)))
-      problems.push(`${tag}: no oral syrup for a child`);
+    if (!r.items.length && (Array.isArray(rule) || rule?.minItems !== 0)) problems.push(`${tag}: empty teaching example without an explicit no-medication plan`);
+    for (const item of r.items) {
+      if (!Number.isFinite(item.quantity) || item.quantity <= 0) problems.push(`${tag}: invalid quantity`);
+    }
     const sum = Math.round(r.items.reduce((n, i) => n + i.sharePct, 0) * 10) / 10;
     if (r.items.length > 0 && Math.abs(sum - 100) > 0.05) problems.push(`${tag}: shares total ${sum}%`);
   }

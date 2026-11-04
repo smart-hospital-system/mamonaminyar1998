@@ -276,7 +276,7 @@ export const GUIDE: GuideChapter[] = [
       { n: 3, title: "Acknowledge", where: "Alarm row → Acknowledge", action: "Tells the team you are handling it; the timer keeps running." },
       { n: 4, title: "Apply the suggested fix", where: "Alarm drawer → Steps", action: "Each alarm carries the exact page to open and what to change. Follow the numbered steps." },
       { n: 5, title: "Auto-repair", where: "Alarm drawer → Repair now", action: "Only shown when a safe automatic repair exists (quarantine expired stock, relink orphan records, reassign duplicate beds)." },
-      { n: 6, title: "The 48-hour rule", where: "Automatic", action: "If an alarm is still open after 48 hours the engine attempts the safest repair itself, and escalates severity if it cannot." },
+      { n: 6, title: "The 48-hour rule", where: "Automatic", action: "If an alarm is still open after the configured deadline (48 hours by default), severity becomes critical. No clinical or inventory record is changed; authorized staff must review it." },
     ],
   },
 ];

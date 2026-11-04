@@ -75,7 +75,7 @@ export async function getHmsUser(): Promise<HmsUser | null> {
       [hashToken(token)]
     );
     if (!session) return null;
-    if (new Date(session.expires_at).getTime() < Date.now()) {
+    if (!Number.isFinite(Date.parse(session.expires_at)) || Date.parse(session.expires_at) <= Date.now()) {
       hRun("DELETE FROM hms_sessions WHERE token = ?", [hashToken(token)]);
       return null;
     }

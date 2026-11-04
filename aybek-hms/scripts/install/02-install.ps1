@@ -25,19 +25,11 @@ Write-Banner "AYBEK HOSPITAL - STEP 2: INSTALL PACKAGES"
 
 $root = Get-HmsRoot -Override $Path
 Set-Location -LiteralPath $root
-Assert-Node -MinimumMajor 20 | Out-Null
+Assert-Node -MinimumMajor 22 | Out-Null
 
-# ------------------------------------------------------------ existing install
+# Always verify/install against the lockfile. A nonempty node_modules directory
+# does not prove dependencies are complete, current or security-patched.
 $nodeModules = Join-Path $root "node_modules"
-if ((Test-Path -LiteralPath $nodeModules) -and -not $Force) {
-    $count = (Get-ChildItem -LiteralPath $nodeModules -Directory | Measure-Object).Count
-    Write-Ok "node_modules already contains $count packages"
-    Write-Info "Use -Force to reinstall from scratch."
-    Write-Banner "STEP 2 SKIPPED - ALREADY INSTALLED"
-    Write-Host "      Next: .\scripts\install\03-seed.ps1" -ForegroundColor Cyan
-    if (-not $NoPause) { Read-Host "Press Enter to close" | Out-Null }
-    exit 0
-}
 
 # ------------------------------------------------------------------ offline mode
 if ($OfflineFrom) {
@@ -58,14 +50,11 @@ if (Test-Path -LiteralPath (Join-Path $root "package-lock.json")) {
     & npm ci --no-audit --no-fund
     $code = $LASTEXITCODE
     if ($code -ne 0) {
-        Write-Warn "npm ci failed (exit $code) - falling back to npm install"
-        & npm install --no-audit --no-fund
-        $code = $LASTEXITCODE
+        Stop-WithMessage "Locked dependency installation failed (exit $code)." "Check the connection/offline cache and use the matching package-lock.json. The installer will not silently replace the lockfile."
     }
 } else {
-    Write-Step "npm install"
-    & npm install --no-audit --no-fund
-    $code = $LASTEXITCODE
+    Stop-WithMessage "package-lock.json is missing; reproducible installation refused." "Obtain the complete matching source package. The installer will not invent a new dependency tree."
+
 }
 
 if ($code -ne 0) {

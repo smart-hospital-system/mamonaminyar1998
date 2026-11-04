@@ -17,14 +17,16 @@
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import nextEnv from "@next/env";
+const { loadEnvConfig } = nextEnv;
+import { deploymentConfig, needsBuild } from "./deploy-config.mjs";
 
 const root = process.cwd();
+loadEnvConfig(root);
 // Next.js telemetry is on by default and phones home on every build; on a
 // hospital machine with no internet that is a pointless delay.
 process.env.NEXT_TELEMETRY_DISABLED = process.env.NEXT_TELEMETRY_DISABLED ?? "1";
 
-const PORT = process.env.PORT ?? "3000";
-const HOST = process.env.HOSTNAME ?? "0.0.0.0";
 
 const log = (msg) => console.log(`\x1b[36m[deploy]\x1b[0m ${msg}`);
 const warn = (msg) => console.warn(`\x1b[33m[deploy]\x1b[0m ${msg}`);
@@ -34,14 +36,17 @@ const fail = (msg) => {
 };
 
 /* ------------------------------------------------------------- 1. Node version */
-const major = Number(process.versions.node.split(".")[0]);
-if (major < 20) {
-  fail(`Node ${process.versions.node} is too old. Install Node 20 LTS or newer (nodejs.org), then run again.`);
-}
+let config;
+try { config = deploymentConfig(root, process.env); } catch (error) { fail(error.message); }
+const { port: PORT, host: HOST, dbPath } = config;
+// Pass one resolved database choice through build and server processes.
+process.env.SLOTLY_DB_PATH = dbPath;
 log(`Node ${process.versions.node} · ${process.platform}`);
 
 /* ----------------------------------------------------------------- 2. database */
-const dbPath = path.join(root, "data", "slotly.db");
+if (!fs.existsSync(dbPath) && [`${dbPath}-wal`, `${dbPath}-shm`, `${dbPath}-journal`].some((p) => fs.existsSync(p))) {
+  fail("Database sidecars exist without the main file. Stop and recover from a verified backup; no demo was copied.");
+}
 const demoPath = path.join(root, "data", "demo-hospital.db");
 
 if (fs.existsSync(dbPath)) {
@@ -53,7 +58,8 @@ if (fs.existsSync(dbPath)) {
   log(`Database found (${(bytes / 1024 / 1024).toFixed(1)} MB on disk) — keeping the existing hospital records.`);
 } else if (fs.existsSync(demoPath)) {
   fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  fs.copyFileSync(demoPath, dbPath);
+  fs.copyFileSync(demoPath, dbPath, fs.constants.COPYFILE_EXCL);
+  fs.chmodSync(dbPath, 0o600);
   log("No database yet — installed the demonstration hospital that ships with the source.");
 } else {
   warn("No database and no demo copy found. The first request will create and seed an empty hospital.");
@@ -63,6 +69,7 @@ if (fs.existsSync(dbPath)) {
 // The generated clinical examples are also stored in data/disease-regimens.json.
 // Compare the expected row count with the local database so a safe, idempotent
 // catalogue refresh adds new chapters without touching real hospital records.
+if (process.env.AYBEK_ENABLE_DEMO_ACTIONS === "1" && process.env.AYBEK_ENABLE_TEACHING_REGIMENS === "1") {
 const generatedCatalogue = path.join(root, "data", "disease-regimens.json");
 let expected = 0;
 try {
@@ -74,7 +81,7 @@ const probe = spawnSync("node", ["scripts/catalogue-count.mjs"], { cwd: root, en
 const have = Number((probe.stdout ?? "").trim() || 0);
 if (expected > 0 && have !== expected) {
   log(`Refreshing the clinical catalogue (${have} stored, ${expected} expected)…`);
-  const seed = spawnSync("npx", ["tsx", "scripts/seed-catalogue.ts"], {
+  const seed = spawnSync("npx", ["tsx", "scripts/seed-catalogue.ts", "--confirm-destroy"], {
     cwd: root,
     stdio: "inherit",
     shell: process.platform === "win32",
@@ -88,9 +95,12 @@ if (expected > 0 && have !== expected) {
   log(`Clinical catalogue is current (${have} prescription examples).`);
 }
 
+} else {
+  log("Automatic teaching catalogue refresh disabled; existing hospital records were not refreshed.");
+}
+
 /* -------------------------------------------------------------------- 3. build */
-const buildId = path.join(root, ".next", "BUILD_ID");
-const needBuild = !fs.existsSync(buildId);
+const needBuild = needsBuild(root);
 
 if (needBuild) {
   log("Building the application (this takes about a minute on first run)…");
@@ -98,12 +108,12 @@ if (needBuild) {
   if (build.status !== 0) fail("The build failed. Scroll up for the first error — nothing was started.");
   log("Build finished.");
 } else {
-  log("Existing build found — skipping the rebuild.");
+  log("Existing build is newer than application sources — skipping the rebuild.");
 }
 
 /* -------------------------------------------------------------------- 4. serve */
 log(`Starting on http://localhost:${PORT}  (reachable from other devices on the network at this computer's IP)`);
-log(`Sign in with doctor@aybek.hospital / mamonaminyar`);
+warn("Synthetic demo accounts have published credentials. Change them before any real records; do not expose an unchanged demo to the internet.");
 
 const child = spawn("npx", ["next", "start", "-H", HOST, "-p", PORT], {
   cwd: root,
@@ -111,6 +121,8 @@ const child = spawn("npx", ["next", "start", "-H", HOST, "-p", PORT], {
   shell: process.platform === "win32",
   env: { ...process.env, PORT },
 });
+
+child.on("error", () => fail("Unable to start Next.js. Verify Node and installed dependencies."));
 
 child.on("exit", (code, signal) => {
   if (signal) log(`Server stopped by ${signal}.`);

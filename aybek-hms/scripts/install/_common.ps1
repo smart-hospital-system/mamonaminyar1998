@@ -25,12 +25,14 @@ function Get-HmsRoot {
         return (Resolve-Path -LiteralPath $env:AYBEK_HMS_ROOT).Path
     }
 
-    # scripts\install\_common.ps1  ->  project root is two levels up
-    $candidate = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-    if (Test-Path -LiteralPath (Join-Path $candidate "package.json")) { return $candidate }
-
-    $preferred = "C:\AybekHMS"
-    if (Test-Path -LiteralPath (Join-Path $preferred "package.json")) { return $preferred }
+    # Support both repo/aybek-hms/scripts/install and packaged scripts/install.
+    # Ascend from this script, never guess an unrelated installation on another drive.
+    $candidate = $PSScriptRoot
+    while ($candidate) {
+        if ((Test-Path -LiteralPath (Join-Path $candidate "package.json")) -and
+            (Test-Path -LiteralPath (Join-Path $candidate "lib\hms\db.ts"))) { return $candidate }
+        $candidate = Split-Path -Parent $candidate
+    }
 
     throw "Cannot find the project folder. Run the script with -Path `"D:\your\aybek-folder`" or set `$env:AYBEK_HMS_ROOT."
 }
@@ -72,7 +74,7 @@ function Get-NodeVersion {
 }
 
 function Assert-Node {
-    param([int]$MinimumMajor = 20)
+    param([int]$MinimumMajor = 22)
 
     $raw = Get-NodeVersion
     if (-not $raw) {
@@ -80,8 +82,9 @@ function Assert-Node {
             "Install Node.js 22 LTS from https://nodejs.org (Windows Installer .msi), then reopen PowerShell."
     }
     $major = [int](($raw -replace "^v", "") -split "\.")[0]
-    if ($major -lt $MinimumMajor) {
-        Stop-WithMessage "Node.js $raw is too old - version $MinimumMajor or newer is required." `
+    $minor = [int](($raw -replace "^v", "") -split "\.")[1]
+    if ($major -lt $MinimumMajor -or ($major -eq 22 -and $minor -lt 13)) {
+        Stop-WithMessage "Node.js $raw is too old - Node 22.13 or newer is required for node:sqlite." `
             "Install Node.js 22 LTS from https://nodejs.org and run this script again."
     }
     Write-Ok "Node.js $raw detected"
@@ -130,7 +133,7 @@ function Confirm-Action {
 
 function New-BackupFolder {
     param([string]$Root)
-    $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
+    $stamp = (Get-Date -Format "yyyy-MM-dd_HHmmss") + "_" + [Guid]::NewGuid().ToString("N").Substring(0, 8)
     $folder = Join-Path $Root "backups\$stamp"
     New-Item -ItemType Directory -Force -Path $folder | Out-Null
     return $folder
