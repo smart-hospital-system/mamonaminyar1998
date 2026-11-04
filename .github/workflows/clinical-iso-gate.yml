@@ -86,10 +86,13 @@ jobs:
         run: npm run hms:regimens -- --check
 
       - name: Type-check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Run application tests
         run: npm test
+
+      - name: Run Next.js route and security regression tests
+        run: npm run test:next
 
       - name: Verify hospital database schema
         run: node scripts/init-next-demo.mjs && npm run hms:verify
