@@ -46,7 +46,7 @@ jobs:
         run: npm run check:secrets
 
       - name: Type-check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Restore the Next.js build cache
         uses: actions/cache@v5
